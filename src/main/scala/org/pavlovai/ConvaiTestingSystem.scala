@@ -23,7 +23,7 @@ object Bot extends TelegramBot with Webhook with Commands {
     Await.result(this.shutdown(), 15.seconds)
     Failure(new RuntimeException("no config"))
   }.get*/
-  override val port = System.getenv("PORT")
+  override val port = Option(System.getenv("PORT")).fold(80) { _.toInt }
   override val webhookUrl = "https://dfcf4071.ngrok.io"
 
   onCommand("/begin") { implicit msg => reply("???") }
