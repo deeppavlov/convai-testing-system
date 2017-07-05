@@ -22,5 +22,5 @@ object Bot extends TelegramBot with Webhook with Commands with ActorBroker {
   override val port = Option(System.getenv("PORT")).fold(80) { _.toInt }
   override val webhookUrl = "https://convaibot.herokuapp.com"
 
-  override def broker: Option[ActorRef] = Some(system.actorOf(Props(new HumanMessageHandler(request)), "human-messages-handler"))
+  override val broker: Option[ActorRef] = Some(system.actorOf(Props(new HumanMessageHandler(request)), "human-messages-handler"))
 }
