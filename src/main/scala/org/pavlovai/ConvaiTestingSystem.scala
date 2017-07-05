@@ -1,28 +1,27 @@
 package org.pavlovai
 
-import akka.actor.{ActorRef, Props}
-import info.mukel.telegrambot4s.actors.ActorBroker
-import info.mukel.telegrambot4s.api.declarative.Commands
-import info.mukel.telegrambot4s.api.{TelegramBot, Webhook}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import com.typesafe.config.ConfigFactory
+import org.pavlovai.telegram.Bot
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 object ConvaiTestingSystem extends App {
-  Bot.run()
-}
+  private val conf = ConfigFactory.load()
+  private implicit val akkaSystem = ActorSystem("convai-testing-system", conf)
+  private val materializer: ActorMaterializer = ActorMaterializer()
 
-object Bot extends TelegramBot with Webhook with Commands with ActorBroker {
-  lazy val token: String = fromSettings("telegram.token")
-  override val webhookUrl: String = fromSettings("telegram.webhook")
-  override val port: Int = Option(System.getenv("PORT")).fold(80) { _.toInt }
-
-  override val broker: Option[ActorRef] = Some(system.actorOf(Props(new HumanMessageHandler(request)), "human-messages-handler"))
-
-  def fromSettings(key: String): String = Try(system.settings.config.getString(key)).orElse {
+  private def setting(key: String): Try[String] = Try(conf.getString(key)).orElse {
     System.err.println("No configuration for telegram.token found!")
-    Await.result(this.shutdown(), 15.seconds)
     Failure(new RuntimeException("not configured"))
-  }.get
+  }
+
+  (setting("telegram.token"), setting("telegram.webhook")) match {
+    case (Success(token), Success(webhook)) =>
+      new Bot(akkaSystem, materializer, token, webhook).run()
+    case _ => System.err.println("telegram bot not started, because it not configured! Check config file.")
+  }
 }
+
+
