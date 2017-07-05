@@ -18,13 +18,13 @@ object ConvaiTestingSystem extends App {
 object Bot extends TelegramBot with Webhook with Commands {
   import info.mukel.telegrambot4s.Implicits._
 
-  override val token: String = "449249979:AAGmARla8ShY7BdZLCGmX81AyDPgMXmiDAY" /*Try(system.settings.config.getString("telegram.token")).orElse {
+  lazy val token: String = "449249979:AAGmARla8ShY7BdZLCGmX81AyDPgMXmiDAY" /*Try(system.settings.config.getString("telegram.token")).orElse {
     System.err.println("No configuration for telegram.token found!")
     Await.result(this.shutdown(), 15.seconds)
     Failure(new RuntimeException("no config"))
   }.get*/
   override val port = 80
-  override val webhookUrl = "https://convaibot.herokuapp.com"
+  override val webhookUrl = "https://dfcf4071.ngrok.io"
 
   onCommand("/begin") { implicit msg => reply("???") }
   onCommand("/end") { implicit msg => reply("!!!") }
