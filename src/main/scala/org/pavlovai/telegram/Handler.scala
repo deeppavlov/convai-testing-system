@@ -1,11 +1,11 @@
 package org.pavlovai.telegram
 
 import akka.actor.{Actor, ActorLogging}
-import info.mukel.telegrambot4s.actors.ActorBroker
 import info.mukel.telegrambot4s.api._
-import info.mukel.telegrambot4s.api.declarative._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
+
+import scala.collection.mutable
 
 /**
   * @author vadim
@@ -13,36 +13,37 @@ import info.mukel.telegrambot4s.models._
   */
 class Handler(gate: BotBase) extends Actor with ActorLogging {
   import Handler._
-  //import info.mukel.telegrambot4s.Implicits._
 
-  self ! Initialize
+  private val avaliableUsers = mutable.Set[Long]()
 
   override def receive: Receive = {
-    case Initialize =>
-
-    case Command(chatId, "/help") =>
-      gate.request(SendMessage(Left(chatId),
+    case Command(chat, "/help") =>
+      gate.request(SendMessage(Left(chat.id),
         """
-          |#TODO
+          |*TODO*
           |
           |- write help
           |- read help
           |- fix help
           |
-          |![img](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
+          |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
         """.stripMargin, Some(ParseMode.Markdown)))
 
-    case Update(_, Some(message), _, _, _, _, _, _, _, _) =>
-      gate.request(SendMessage(Left(message.source), message.text.toString))
+    case Command(Chat(id, ChatType.Private, _, _, _, _, _, _, _, _), "/begin") =>
+      avaliableUsers += id
+
+    case Command(chat, "/end") =>
+      avaliableUsers -= chat.id
+
+    case Update(num, Some(message), _, _, _, _, _, _, _, _) =>
+      gate.request(SendMessage(Left(message.source), "Messages of this type aren't supported \uD83D\uDE1E"))
   }
 }
 
 object Handler {
-  case object Initialize
-
   private case object Command {
-    def unapply(message: Update): Option[(Long, String)] = {
-      if (message.message.exists(_.text.exists(_.startsWith("/")))) Some((message.message.get.source, message.message.get.text.get)) else None
+    def unapply(message: Update): Option[(Chat, String)] = {
+      if (message.message.exists(_.text.exists(_.startsWith("/")))) Some((message.message.get.chat, message.message.get.text.get)) else None
     }
   }
 }
