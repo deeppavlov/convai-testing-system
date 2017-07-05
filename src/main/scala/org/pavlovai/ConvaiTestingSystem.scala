@@ -14,13 +14,15 @@ object ConvaiTestingSystem extends App {
 }
 
 object Bot extends TelegramBot with Webhook with Commands with ActorBroker {
-  lazy val token: String = Try(system.settings.config.getString("telegram.token")).orElse {
-    System.err.println("No configuration for telegram.token found!")
-    Await.result(this.shutdown(), 15.seconds)
-    Failure(new RuntimeException("no config"))
-  }.get
-  override val port = Option(System.getenv("PORT")).fold(80) { _.toInt }
-  override val webhookUrl = "https://convaibot.herokuapp.com"
+  lazy val token: String = fromSettings("telegram.token")
+  override val webhookUrl: String = fromSettings("telegram.webhook")
+  override val port: Int = Option(System.getenv("PORT")).fold(80) { _.toInt }
 
   override val broker: Option[ActorRef] = Some(system.actorOf(Props(new HumanMessageHandler(request)), "human-messages-handler"))
+
+  def fromSettings(key: String): String = Try(system.settings.config.getString(key)).orElse {
+    System.err.println("No configuration for telegram.token found!")
+    Await.result(this.shutdown(), 15.seconds)
+    Failure(new RuntimeException("not configured"))
+  }.get
 }

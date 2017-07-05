@@ -16,5 +16,4 @@ class HumanMessageHandler(request: RequestHandler) extends Actor with ActorLoggi
     case Update(_, Some(message), _, _, _, _, _, _, _, _) =>
       request(SendMessage(message.source, "olololo"))
   }
-
 }
