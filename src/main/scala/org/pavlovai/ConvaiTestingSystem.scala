@@ -23,7 +23,7 @@ object Bot extends TelegramBot with Webhook with Commands {
     Await.result(this.shutdown(), 15.seconds)
     Failure(new RuntimeException("no config"))
   }.get*/
-  override val port = 443
+  override val port = 80
   override val webhookUrl = "https://convaibot.herokuapp.com"
 
   onCommand("/begin") { implicit msg => reply("???") }
