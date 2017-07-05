@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra">
+	<info organisation="convai-testing-system"
+		module="convai-testing-system$sbt_2.12"
+		revision="0.1"
+		status="integration"
+		publication="20170705114804"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+	</publications>
+	<dependencies>
+		<dependency org="org.scala-sbt" name="sbt" rev="0.13.8" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-native-packager" rev="1.0.3" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.vafer" name="jdeb" rev="1.3" conf="default->default(compile)"/>
+		<dependency org="commons-io" name="commons-io" rev="2.4" conf="default->default(compile)"/>
+		<dependency org="org.apache.commons" name="commons-compress" rev="1.7" conf="default->default(compile)"/>
+		<dependency org="org.tukaani" name="xz" rev="1.4" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-core" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-model" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-utils" rev="3.0.17" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-settings" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-settings-builder" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-interpolation" rev="1.19" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-component-annotations" rev="1.5.5" conf="default->default(compile)"/>
+		<dependency org="org.sonatype.plexus" name="plexus-sec-dispatcher" rev="1.3" conf="default->default(compile)"/>
+		<dependency org="org.sonatype.plexus" name="plexus-cipher" rev="1.4" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-repository-metadata" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-artifact" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-plugin-api" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.plexus" rev="0.0.0.M5" conf="default->default(compile)"/>
+		<dependency org="javax.enterprise" name="cdi-api" rev="1.0" conf="default->default(compile)"/>
+		<dependency org="javax.annotation" name="jsr250-api" rev="1.0" conf="default->default(compile)"/>
+		<dependency org="javax.inject" name="javax.inject" rev="1" conf="default->default(compile)"/>
+		<dependency org="com.google.guava" name="guava" rev="10.0.1" conf="default->default(compile)"/>
+		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9" conf="default->default(compile)"/>
+		<dependency org="org.sonatype.sisu" name="sisu-guice" rev="3.1.0" conf="default->default(compile)"/>
+		<dependency org="aopalliance" name="aopalliance" rev="1.0" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.inject" rev="0.0.0.M5" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-classworlds" rev="2.5.1" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-model-builder" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-aether-provider" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-api" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-spi" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-util" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-impl" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.apache.ant" name="ant" rev="1.9.3" conf="default->default(compile)"/>
+		<dependency org="org.apache.ant" name="ant-launcher" rev="1.9.3" conf="default->default(compile)"/>
+		<dependency org="org.bouncycastle" name="bcpg-jdk15on" rev="1.51" conf="default->default(compile)"/>
+		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.51" conf="default->default(compile)"/>
+	</dependencies>
+</ivy-module>
