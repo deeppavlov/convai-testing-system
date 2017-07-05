@@ -16,7 +16,6 @@ import scala.concurrent.ExecutionContext
   */
 class Bot(sys: ActorSystem,
           mat: ActorMaterializer,
-          val logger: Logger,
           override val token: String,
           override val webhookUrl: String
          ) extends BotBase with Webhook with Commands with ActorBroker {
@@ -24,6 +23,7 @@ class Bot(sys: ActorSystem,
   implicit val system: ActorSystem = sys
   implicit val materializer: ActorMaterializer = mat
   val client: RequestHandler = new AkkaClient(token)
+  val logger = Logger(getClass)
 
   override val port: Int = Option(System.getenv("PORT")).fold{
     logger.warn("PORT env variable not found, use port 8080")

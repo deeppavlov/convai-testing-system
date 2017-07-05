@@ -15,6 +15,8 @@ class Handler(gate: BotBase with Commands with ActorBroker) extends Actor with A
   import Handler._
   import info.mukel.telegrambot4s.Implicits._
 
+  self ! Initialize
+
   override def receive: Receive = {
     case Initialize =>
       gate.onCommand("/help") { implicit msg =>

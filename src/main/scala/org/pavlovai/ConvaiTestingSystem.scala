@@ -6,6 +6,8 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import org.pavlovai.telegram.Bot
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 object ConvaiTestingSystem extends App {
@@ -20,8 +22,13 @@ object ConvaiTestingSystem extends App {
   }
 
   (setting("telegram.token"), setting("telegram.webhook")) match {
-    case (Success(token), Success(webhook)) => new Bot(akkaSystem, materializer, logger, token, webhook).run()
+    case (Success(token), Success(webhook)) => new Bot(akkaSystem, materializer, token, webhook).run()
     case _ => logger.error("telegram bot not started, because it not configured! Check config file.")
+  }
+
+  sys.addShutdownHook {
+    Await.ready(akkaSystem.terminate(), 30.seconds)
+    logger.info("system shutting down")
   }
 }
 
