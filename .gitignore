@@ -1,5 +1,5 @@
 *.class
 *.log
-/target
+target/
 *.swp
 .idea/
