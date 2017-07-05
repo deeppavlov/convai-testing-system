@@ -1,6 +1,7 @@
 package org.pavlovai
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
+import info.mukel.telegrambot4s.models.Update
 
 /**
   * @author vadim
@@ -8,7 +9,8 @@ import akka.actor.{Actor, ActorLogging}
   */
 class HumanMessageHandler extends Actor with ActorLogging {
   override def receive: Receive = {
-    case _ =>
+    case u: Update =>
+      log.info(u.toString)
   }
 
 }
