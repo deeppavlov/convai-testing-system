@@ -18,7 +18,7 @@ class Bot(sys: ActorSystem,
           mat: ActorMaterializer,
           override val token: String,
           override val webhookUrl: String
-         ) extends BotBase with Webhook with Commands with ActorBroker {
+         ) extends BotBase with Webhook with ActorBroker {
   implicit val executionContext: ExecutionContext = sys.dispatcher
   implicit val system: ActorSystem = sys
   implicit val materializer: ActorMaterializer = mat
