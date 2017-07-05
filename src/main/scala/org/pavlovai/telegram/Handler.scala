@@ -20,11 +20,11 @@ class Handler(gate: BotBase) extends Actor with ActorLogging {
   override def receive: Receive = {
     case Initialize =>
 
-    case Update(_, Some(message), _, _, _, _, _, _, _, _) if message.text.head == "/" =>
+    case Update(_, Some(message), _, _, _, _, _, _, _, _) if message.text.getOrElse("null").head == '/' =>
       gate.request(SendMessage(message.source, "command"))
 
-    case Update(_, Some(message), _, _, _, _, _, _, _, _) if message.text.head != "/" =>
-      gate.request(SendMessage(message.source, "query"))
+    case Update(_, Some(message), _, _, _, _, _, _, _, _) =>
+      gate.request(SendMessage(message.source, message.text.toString))
   }
 }
 
