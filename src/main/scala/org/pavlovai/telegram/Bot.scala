@@ -2,9 +2,13 @@ package org.pavlovai.telegram
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.stream.ActorMaterializer
+import com.typesafe.scalalogging.Logger
 import info.mukel.telegrambot4s.actors.ActorBroker
 import info.mukel.telegrambot4s.api.declarative.Commands
-import info.mukel.telegrambot4s.api.{TelegramBot, Webhook}
+import info.mukel.telegrambot4s.api.{BotBase, RequestHandler, TelegramBot, Webhook}
+import info.mukel.telegrambot4s.clients.AkkaClient
+
+import scala.concurrent.ExecutionContext
 
 /**
   * @author vadim
@@ -12,11 +16,14 @@ import info.mukel.telegrambot4s.api.{TelegramBot, Webhook}
   */
 class Bot(sys: ActorSystem,
           mat: ActorMaterializer,
+          val logger: Logger,
           override val token: String,
           override val webhookUrl: String
-         ) extends TelegramBot with Webhook with Commands with ActorBroker {
-  override implicit val system: ActorSystem = sys
-  override implicit val materializer: ActorMaterializer = mat
+         ) extends BotBase with Webhook with Commands with ActorBroker {
+  implicit val executionContext: ExecutionContext = sys.dispatcher
+  implicit val system: ActorSystem = sys
+  implicit val materializer: ActorMaterializer = mat
+  val client: RequestHandler = new AkkaClient(token)
 
   override val port: Int = Option(System.getenv("PORT")).fold{
     logger.warn("PORT env variable not found, use port 8080")
@@ -26,5 +33,5 @@ class Bot(sys: ActorSystem,
     port.toInt
   }
 
-  override val broker: Option[ActorRef] = Some(system.actorOf(Props(new HumanMessageHandler(this)), "human-messages-handler"))
+  override val broker: Option[ActorRef] = Some(system.actorOf(Props(new Handler(this)), "human-messages-handler"))
 }

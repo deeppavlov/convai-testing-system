@@ -11,8 +11,8 @@ import info.mukel.telegrambot4s.models._
   * @author vadim
   * @since 04.07.17
   */
-class HumanMessageHandler(gate: TelegramBot with Commands with ActorBroker) extends Actor with ActorLogging {
-  import HumanMessageHandler._
+class Handler(gate: BotBase with Commands with ActorBroker) extends Actor with ActorLogging {
+  import Handler._
   import info.mukel.telegrambot4s.Implicits._
 
   override def receive: Receive = {
@@ -28,6 +28,6 @@ class HumanMessageHandler(gate: TelegramBot with Commands with ActorBroker) exte
   }
 }
 
-object HumanMessageHandler {
+object Handler {
   case object Initialize
 }
