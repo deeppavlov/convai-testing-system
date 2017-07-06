@@ -1,4 +1,4 @@
-package org.pavlovai
+package org.pavlovai.dialog
 
 import org.scalatest.WordSpec
 
@@ -9,13 +9,13 @@ import scala.concurrent.duration._
   * @author vadim
   * @since 05.07.17
   */
-class ContextDatasetSpec extends WordSpec {
+class ContextSpec extends WordSpec {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   "randomLine" must {
     "return random string" in {
-      val l1 = Await.result(ContextDataset.randomLine, 15.seconds)
-      val l2 = Await.result(ContextDataset.randomLine, 15.seconds)
+      val l1 = Await.result(Context.selectRandom, 15.seconds)
+      val l2 = Await.result(Context.selectRandom, 15.seconds)
 
       assert(l1.nonEmpty)
       assert(l2.nonEmpty)

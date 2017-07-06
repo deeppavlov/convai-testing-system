@@ -16,6 +16,7 @@ import scala.concurrent.ExecutionContext
   */
 class Bot(sys: ActorSystem,
           mat: ActorMaterializer,
+          telegramUserRepo: ActorRef,
           override val token: String,
           override val webhookUrl: String
          ) extends BotBase with Webhook with ActorBroker {
@@ -33,5 +34,8 @@ class Bot(sys: ActorSystem,
     port.toInt
   }
 
-  override val broker: Option[ActorRef] = Some(system.actorOf(Props(new Handler(this)), "human-messages-handler"))
+  override val broker: Option[ActorRef] = Some(telegramUserRepo)
+
+  telegramUserRepo ! TelegramService.SetGateway(this.request)
 }
+
