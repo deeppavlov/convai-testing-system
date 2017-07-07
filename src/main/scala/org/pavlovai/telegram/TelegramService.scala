@@ -4,7 +4,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
-import org.pavlovai.dialog.Dialog
+import org.pavlovai
+import org.pavlovai.dialog.Talk
 
 import scala.collection.mutable
 
@@ -29,51 +30,71 @@ class TelegramService extends Actor with ActorLogging with Stash {
     case SetGateway(g) => context.become(initialized(g))
 
     case Command(chat, "/help") =>
-      request(SendMessage(Left(chat.id),
-        """
-          |*TODO*
-          |
-          |- write help
-          |- read help
-          |- fix help
-          |
-          |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
-        """.stripMargin, Some(ParseMode.Markdown)))
+      request(helpMessage(chat.id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") =>
-      log.info("chat {} ready to talk", username.getOrElse("unknown"))
+      log.info("chatId {} ready to talk", username.getOrElse("unknown"))
       readyToTalk(id)
       request(SendMessage(Left(id), "*Please wait for your partner.*", Some(ParseMode.Markdown)))
 
     case Command(chat, "/end") =>
-      log.info("chat {} leave talk", chat.username.getOrElse("unknown"))
+      log.info("chatId {} leave talk", chat.username.getOrElse("unknown"))
       leave(chat.id)
 
     case Command(chat, _) =>
       request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
-      activeUsers.find { case (k, _) => k.id == message.chat.id }.foreach { case (user, dialog) =>
-        message.text.foreach(dialog ! Dialog.MessageTo(user, _))
+      activeUsers.find { case (k, v) => k.id == message.chat.id && v.isDefined }.foreach {
+        case (user, Some(dialog)) => message.text.foreach(dialog ! Talk.MessageFrom(user, _))
+        case _ => throw new IllegalStateException("illegal state!")
       }
 
     //TODO: make this more beautiful
     case Update(num, Some(message), _, _, _, _, _, _, _, _) if isNotInDialog(message.chat.id) =>
       request(SendMessage(Left(message.chat.id), "*Please wait for your partner.*", Some(ParseMode.Markdown)))
 
-    case ActivateUser(dialog) =>
-      if (availableUsers.nonEmpty) {
-        val user = org.pavlovai.dialog.User(availableUsers.toVector(scala.util.Random.nextInt(availableUsers.size)))
-        availableUsers -= user.id
-        activeUsers += user -> dialog
-        Some(user)
+    case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
+
+    case HoldUsers(count) =>
+      def getUsers(count: Int, acc: List[pavlovai.User]): List[pavlovai.User] = {
+        if (count == 0) acc
+        else if (availableUsers.nonEmpty) {
+          val id = availableUsers.toVector(scala.util.Random.nextInt(availableUsers.size))
+          val newAcc = pavlovai.User(id) :: acc
+          availableUsers -= id
+          getUsers(count - 1, newAcc)
+        } else {
+          acc.foreach(u => availableUsers.add(u.id))
+          List.empty
+        }
+      }
+
+      if (availableUsers.size >= count) {
+        val activated = getUsers(count, List.empty)
+        activated.foreach(u => activeUsers += u -> None)
+        if(activated.nonEmpty) Some(activated) else None
       } else None
 
-    case DeactivateUser(org.pavlovai.dialog.User(id)) => readyToTalk(id)
+    case AddHoldedUsersToTalk(users, dialog) =>
+      if (activeUsers.forall { case (u, _) => users.contains(u) }) users.foreach { user =>
+        activeUsers.get(user).foreach {
+          case None => activeUsers += user -> Some(dialog)
+          case _ => log.warning("attempt to establish talk with user in talk")
+        }
+      } else {
+        log.error("user not in hold list")
+        throw new IllegalStateException("user not in hold list")
+      }
+
+    case MessageTo(org.pavlovai.User(id), text) =>
+      request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
+
+    case DeactivateUsers(us) => us.foreach { case org.pavlovai.User(id) => readyToTalk(id) }
   }
 
   private val availableUsers = mutable.Set[Long]()
-  private val activeUsers = mutable.Map[org.pavlovai.dialog.User, ActorRef]()
+  private val activeUsers = mutable.Map[pavlovai.User, Option[ActorRef]]()
 
   private def readyToTalk(chatId: Long) = {
     availableUsers += chatId
@@ -86,7 +107,20 @@ class TelegramService extends Actor with ActorLogging with Stash {
   }
 
   private def isInDialog(chatId: Long) = activeUsers.exists { case (k, _) => k.id == chatId }
-  private def isNotInDialog(chat: Long) = !isInDialog(chat)
+  private def isNotInDialog(chatId: Long) = availableUsers.contains(chatId)
+
+  private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
+    """
+      |*Help message*
+      |
+      |Use:
+      |
+      |- /begin for start talk
+      |- /end for end talk
+      |- /help for help
+      |
+      |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
+    """.stripMargin, Some(ParseMode.Markdown))
 }
 
 object TelegramService {
@@ -100,6 +134,9 @@ object TelegramService {
 
   case class SetGateway(gate: RequestHandler)
 
-  case class ActivateUser(dialog: ActorRef)
-  case class DeactivateUser(user: org.pavlovai.dialog.User)
+  case class HoldUsers(count: Int)
+  case class AddHoldedUsersToTalk(user: List[pavlovai.User], dialog: ActorRef)
+  case class DeactivateUsers(user: List[pavlovai.User])
+
+  case class MessageTo(user: pavlovai.User, text: String)
 }
