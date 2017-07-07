@@ -33,13 +33,13 @@ object ConvaiTestingSystem extends App {
 
   val route =
     get {
-      pathPrefix("api.telegram.org" / """.+""".r / "sendMessage") { token =>
+      pathPrefix(""".+""".r / "sendMessage") { token =>
         parameters("chat_id", "text") { (chat_id, text) =>
           complete(s"The color is '$chat_id' and the background is '$text'")
         }
       }
     } ~ get {
-      pathPrefix("api.telegram.org" / """.+""".r / "getUpdates") { token =>
+      pathPrefix(""".+""".r / "getUpdates") { token =>
         complete("OK")
       }
     }
