@@ -33,6 +33,9 @@ class TelegramService extends Actor with ActorLogging with Stash {
   private def initialized(request: RequestHandler): Receive = {
     case SetGateway(g) => context.become(initialized(g))
 
+    case Command(chat, "/start") =>
+      request(helpMessage(chat.id))
+
     case Command(chat, "/help") =>
       request(helpMessage(chat.id))
 
@@ -77,6 +80,7 @@ class TelegramService extends Actor with ActorLogging with Stash {
       sender ! (if (availableUsers.size >= count) {
         val activated = getUsers(count, List.empty)
         activated.foreach(u => activeUsers += u -> None)
+        activated
       } else List.empty)
 
     case UserService.AddHoldedUsersToTalk(users, dialog) =>
