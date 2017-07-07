@@ -37,7 +37,7 @@ class TalkService(telegramUserRepo: ActorRef) extends Actor with ActorLogging wi
           assembleDialogs()
         }
       case Some(_) => log.error("not consistent state!")
-      case None => log.debug("no collocutors found, wait")
+      case None => log.info("no collocutors found, wait")
     }
   }
 }
