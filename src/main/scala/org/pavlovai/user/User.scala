@@ -1,4 +1,4 @@
-package org.pavlovai
+package org.pavlovai.user
 
 /**
   * @author vadim

@@ -1,6 +1,5 @@
-package org.pavlovai.dialog
+package org.pavlovai
 
-import org.pavlovai.Context
 import org.scalatest.WordSpec
 
 import scala.concurrent.Await

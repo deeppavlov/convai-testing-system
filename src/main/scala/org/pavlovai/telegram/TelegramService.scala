@@ -1,11 +1,15 @@
 package org.pavlovai.telegram
 
+import java.security.SecureRandom
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
 import org.pavlovai
 import org.pavlovai.dialog.Talk
+import org.pavlovai.user
+import org.pavlovai.user.UserService
 
 import scala.collection.mutable
 
@@ -56,12 +60,12 @@ class TelegramService extends Actor with ActorLogging with Stash {
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
 
-    case HoldUsers(count) =>
-      def getUsers(count: Int, acc: List[pavlovai.User]): List[pavlovai.User] = {
+    case UserService.HoldUsers(count) =>
+      def getUsers(count: Int, acc: List[user.User]): List[user.User] = {
         if (count == 0) acc
         else if (availableUsers.nonEmpty) {
-          val id = availableUsers.toVector(scala.util.Random.nextInt(availableUsers.size))
-          val newAcc = pavlovai.User(id) :: acc
+          val id = availableUsers.toVector(rnd.nextInt(availableUsers.size))
+          val newAcc = user.User(id) :: acc
           availableUsers -= id
           getUsers(count - 1, newAcc)
         } else {
@@ -70,13 +74,12 @@ class TelegramService extends Actor with ActorLogging with Stash {
         }
       }
 
-      if (availableUsers.size >= count) {
+      sender ! (if (availableUsers.size >= count) {
         val activated = getUsers(count, List.empty)
         activated.foreach(u => activeUsers += u -> None)
-        if(activated.nonEmpty) Some(activated) else None
-      } else None
+      } else List.empty)
 
-    case AddHoldedUsersToTalk(users, dialog) =>
+    case UserService.AddHoldedUsersToTalk(users, dialog) =>
       if (activeUsers.forall { case (u, _) => users.contains(u) }) users.foreach { user =>
         activeUsers.get(user).foreach {
           case None => activeUsers += user -> Some(dialog)
@@ -87,14 +90,14 @@ class TelegramService extends Actor with ActorLogging with Stash {
         throw new IllegalStateException("user not in hold list")
       }
 
-    case MessageTo(org.pavlovai.User(id), text) =>
+    case UserService.MessageTo(org.pavlovai.user.User(id), text) =>
       request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
 
-    case DeactivateUsers(us) => us.foreach { case org.pavlovai.User(id) => readyToTalk(id) }
+    case UserService.DeactivateUsers(us) => us.foreach { case org.pavlovai.user.User(id) => readyToTalk(id) }
   }
 
   private val availableUsers = mutable.Set[Long]()
-  private val activeUsers = mutable.Map[pavlovai.User, Option[ActorRef]]()
+  private val activeUsers = mutable.Map[user.User, Option[ActorRef]]()
 
   private def readyToTalk(chatId: Long) = {
     availableUsers += chatId
@@ -121,6 +124,8 @@ class TelegramService extends Actor with ActorLogging with Stash {
       |
       |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
     """.stripMargin, Some(ParseMode.Markdown))
+
+  private val rnd = scala.util.Random.javaRandomToRandom(new SecureRandom())
 }
 
 object TelegramService {
@@ -133,10 +138,4 @@ object TelegramService {
   }
 
   case class SetGateway(gate: RequestHandler)
-
-  case class HoldUsers(count: Int)
-  case class AddHoldedUsersToTalk(user: List[pavlovai.User], dialog: ActorRef)
-  case class DeactivateUsers(user: List[pavlovai.User])
-
-  case class MessageTo(user: pavlovai.User, text: String)
 }
