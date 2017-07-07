@@ -24,14 +24,18 @@ class TalkService(userService: ActorRef) extends Actor with ActorLogging with ak
 
   private val blockingResources = mutable.Map[ActorRef, List[User]]()
 
+  private def createDialog(a: User, b: User, txt: String): Unit = {
+    val t = context.actorOf(Talk.props(a, b, txt, userService))
+    userService ! UserService.AddHoldedUsersToTalk(List(a, b), t)
+    blockingResources += t -> List(a, b)
+    context.watch(t)
+  }
+
   private def assembleDialogs() {
     (userService ? UserService.HoldUsers(2)).foreach {
       case (u1: User) :: (u2: User) :: Nil =>
         Context.selectRandom.foreach { txt =>
-          val t = context.actorOf(Talk.props(u1, u2, txt, userService))
-          userService ! UserService.AddHoldedUsersToTalk(List(u1, u2), t)
-          blockingResources += t -> List(u1, u2)
-          context.watch(t)
+          createDialog(u1, u2, txt)
           assembleDialogs()
         }
       case Nil => log.debug("no collocutors found, wait")

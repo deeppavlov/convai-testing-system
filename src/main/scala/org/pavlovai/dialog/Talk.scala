@@ -10,6 +10,9 @@ import org.pavlovai.user.{User, UserService}
 class Talk(a: User, b: User, context: String, gate: ActorRef) extends Actor with ActorLogging {
   import Talk._
 
+  gate ! UserService.MessageTo(a, context)
+  gate ! UserService.MessageTo(b, context)
+
   override def receive: Receive = {
     case MessageFrom(user, text) =>
       val oppanent = if (user == a) b else if (user == b) a else throw new IllegalArgumentException(s"$user not in talk")

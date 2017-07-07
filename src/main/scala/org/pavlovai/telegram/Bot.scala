@@ -1,6 +1,7 @@
 package org.pavlovai.telegram
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import info.mukel.telegrambot4s.actors.ActorBroker
@@ -17,6 +18,7 @@ import scala.concurrent.ExecutionContext
 class Bot(sys: ActorSystem,
           mat: ActorMaterializer,
           telegramUserRepo: ActorRef,
+          override val routes: Route,
           override val token: String,
           override val webhookUrl: String
          ) extends BotBase with Webhook with ActorBroker {
