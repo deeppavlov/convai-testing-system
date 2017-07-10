@@ -10,7 +10,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.Logger
 import info.mukel.telegrambot4s.models.{Message, Update}
-import org.pavlovai.rest.BotManager.BotMessage
+import org.pavlovai.rest.BotManager.{BotMessage, SendMes}
 import spray.json.{DefaultJsonProtocol, JsValue, RootJsonFormat}
 
 /**
@@ -38,9 +38,9 @@ object Routes extends SprayJsonSupport with DefaultJsonProtocol with Directives 
       }
     } ~ */post {
       pathPrefix(""".+""".r / "sendMessage") { token =>
-        entity(as[SendMes]) { bm =>
+        entity(as[SendMes]) { case SendMes(to, mes) =>
 
-          val r = (botService ? BotManager.SendMessage(token, bm)).mapTo[Message]
+          val r = (botService ? BotManager.SendMessage(token, to, mes)).mapTo[Message]
           onComplete(r) {
             case util.Success(m) => complete(toJson(m))
             case util.Failure(ex) => complete(StatusCodes.InternalServerError)
@@ -59,7 +59,4 @@ object Routes extends SprayJsonSupport with DefaultJsonProtocol with Directives 
       }
     }
   }
-
-  case class SendMes(chat_id: String, payload: BotMessage)
-  implicit val firstMessageFormat: RootJsonFormat[SendMes] = jsonFormat2(SendMes)
 }
