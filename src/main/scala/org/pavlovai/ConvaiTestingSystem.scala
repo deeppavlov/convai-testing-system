@@ -1,23 +1,16 @@
 package org.pavlovai
 
 import akka.actor.{ActorSystem, PoisonPill}
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import akka.Done
-import akka.http.javadsl.server.PathMatchers
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.StatusCodes
-import akka.stream.ActorMaterializer
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import org.pavlovai.dialog.TalkService
+import org.pavlovai.rest.{BotManager, Routes}
 import org.pavlovai.telegram.{Bot, TelegramService}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.io.StdIn
 import scala.util.{Failure, Success, Try}
 
 object ConvaiTestingSystem extends App {
@@ -29,21 +22,11 @@ object ConvaiTestingSystem extends App {
 
   private val telegramService = akkaSystem.actorOf(TelegramService.props, "telegram-service")
   private val talkService = akkaSystem.actorOf(TalkService.props(telegramService), "talk-service")
+  private val botService = akkaSystem.actorOf(BotManager.props, "bot-manager-service")
+
   akkaSystem.scheduler.schedule(1.second, 1.second)(talkService ! TalkService.AssembleDialogs)
 
-  val route =
-    get {
-      pathPrefix(""".+""".r / "sendMessage") { token =>
-        parameters("chat_id", "text") { (chat_id, text) =>
-          complete(s"The color is '$chat_id' and the background is '$text'")
-        }
-      }
-    } ~ get {
-      pathPrefix(""".+""".r / "getUpdates") { token =>
-        complete("OK")
-      }
-    }
-
+  private implicit val timeout: Timeout = 5.seconds
 
   private def setting(key: String): Try[String] = Try(conf.getString(key)).orElse {
     logger.error("No configuration for telegram.token found!")
@@ -51,7 +34,7 @@ object ConvaiTestingSystem extends App {
   }
 
   (setting("telegram.token"), setting("telegram.webhook")) match {
-    case (Success(token), Success(webhook)) => new Bot(akkaSystem, materializer, telegramService, route, token, webhook).run()
+    case (Success(token), Success(webhook)) => new Bot(akkaSystem, materializer, telegramService, Routes.route(botService, logger), token, webhook).run()
     case _ => logger.error("telegram bot not started, because it not configured! Check config file.")
   }
 
@@ -62,5 +45,4 @@ object ConvaiTestingSystem extends App {
     logger.info("system shutting down")
   }
 }
-
 
