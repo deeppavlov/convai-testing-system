@@ -5,6 +5,7 @@ import java.time.Instant
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
+import org.pavlovai.user.{Bot, Gate}
 import spray.json._
 
 import scala.util.Random
@@ -13,22 +14,25 @@ import scala.util.Random
   * @author vadim
   * @since 10.07.17
   */
-class BotManager extends Actor with ActorLogging {
-  import BotManager._
+class BotService extends Actor with ActorLogging {
+  import BotService._
 
   private val rnd = Random
 
   override def receive: Receive = {
     case GetMessages(id) => sender ! Seq(Update(0, Some(Message(0, None, Instant.now().getNano, Chat(0, ChatType.Private), text = Some("test")))))
     //TODO
+    case m @ SendMessage(id, to, FirstMessage(text)) => sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(to, ChatType.Private), text = Some(m.toJson.toString))
     case m @ SendMessage(id, to, NormalMessage(text, evaluation)) => sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(to, ChatType.Private), text = Some(m.toJson.toString))
     case m @ SendMessage(id, to, EndMessage(evaluation)) => sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(to, ChatType.Private), text = Some(m.toJson.toString()))
+
+    case Gate.DeliverMessageToUser(Bot(chat_id), text) => ???
   }
 }
 
-object BotManager extends SprayJsonSupport with DefaultJsonProtocol  {
+object BotService extends SprayJsonSupport with DefaultJsonProtocol  {
 
-  def props: Props = Props[BotManager]
+  def props: Props = Props[BotService]
 
   sealed trait BotMessage
   case class FirstMessage(text: String) extends BotMessage
@@ -54,7 +58,7 @@ object BotManager extends SprayJsonSupport with DefaultJsonProtocol  {
       case Seq(JsString("/end")) => json.convertTo[EndMessage]
       case _ if json.asJsObject.fields.contains("evaluation") => json.convertTo[NormalMessage]
       case _ if !json.asJsObject.fields.contains("evaluation") => json.convertTo[FirstMessage]
-      case _ => throw new RuntimeException(s"Invalid json format: $json")
+      case _ => serializationError(s"Invalid json format: $json")
     }
   }
 

@@ -6,8 +6,9 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import org.pavlovai.dialog.TalkService
-import org.pavlovai.rest.{BotManager, Routes}
+import org.pavlovai.rest.{BotService, Routes}
 import org.pavlovai.telegram.{Bot, TelegramService}
+import org.pavlovai.user.CumulativeGate
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -21,8 +22,9 @@ object ConvaiTestingSystem extends App {
   private val logger = Logger(getClass)
 
   private val telegramService = akkaSystem.actorOf(TelegramService.props, "telegram-service")
-  private val talkService = akkaSystem.actorOf(TalkService.props(telegramService), "talk-service")
-  private val botService = akkaSystem.actorOf(BotManager.props, "bot-manager-service")
+  private val botService = akkaSystem.actorOf(BotService.props, "bot-service")
+  private val apiGate = akkaSystem.actorOf(CumulativeGate.props(botService, telegramService), "api-gate-service")
+  private val talkService = akkaSystem.actorOf(TalkService.props(telegramService, apiGate), "talk-service")
 
   akkaSystem.scheduler.schedule(1.second, 1.second)(talkService ! TalkService.AssembleDialogs)
 

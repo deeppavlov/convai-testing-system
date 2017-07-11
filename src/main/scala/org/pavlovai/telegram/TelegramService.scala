@@ -6,10 +6,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
-import org.pavlovai
-import org.pavlovai.dialog.Talk
-import org.pavlovai.user
-import org.pavlovai.user.UserService
+import org.pavlovai.user.Gate.PushMessageToTalk
+import org.pavlovai.user.{Gate, Human, UserRepository}
 
 import scala.collection.mutable
 
@@ -52,8 +50,8 @@ class TelegramService extends Actor with ActorLogging with Stash {
       request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
-      activeUsers.find { case (k, v) => k.id == message.chat.id && v.isDefined }.foreach {
-        case (user, Some(dialog)) => message.text.foreach(dialog ! Talk.MessageFrom(user, _))
+      activeUsers.find { case (k, v) => k.chat_id == message.chat.id && v.isDefined }.foreach {
+        case (user, Some(dialog)) => message.text.foreach(dialog ! PushMessageToTalk(user, _))
         case _ => throw new IllegalStateException("illegal state!")
       }
 
@@ -63,16 +61,16 @@ class TelegramService extends Actor with ActorLogging with Stash {
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
 
-    case UserService.HoldUsers(count) =>
-      def getUsers(count: Int, acc: List[user.User]): List[user.User] = {
+    case UserRepository.HoldUsers(count) =>
+      def getUsers(count: Int, acc: List[Human]): List[Human] = {
         if (count == 0) acc
         else if (availableUsers.nonEmpty) {
           val id = availableUsers.toVector(rnd.nextInt(availableUsers.size))
-          val newAcc = user.User(id) :: acc
+          val newAcc = Human(id) :: acc
           availableUsers -= id
           getUsers(count - 1, newAcc)
         } else {
-          acc.foreach(u => availableUsers.add(u.id))
+          acc.foreach(u => availableUsers.add(u.chat_id))
           List.empty
         }
       }
@@ -83,37 +81,44 @@ class TelegramService extends Actor with ActorLogging with Stash {
         activated
       } else List.empty)
 
-    case UserService.AddHoldedUsersToTalk(users, dialog) =>
-      if (activeUsers.forall { case (u, _) => users.contains(u) }) users.foreach { user =>
+    case UserRepository.AddHoldedUsersToTalk(users, dialog) =>
+      if (activeUsers.forall {
+        case (u: Human, _) => users.contains(u)
+        case _ => false
+      }) users.foreach { case user: Human =>
         activeUsers.get(user).foreach {
           case None => activeUsers += user -> Some(dialog)
           case _ => log.warning("attempt to establish talk with user in talk")
         }
+      case _ => log.warning("adding not human, ignored!")
       } else {
         log.error("user not in hold list")
         throw new IllegalStateException("user not in hold list")
       }
 
-    case UserService.MessageTo(org.pavlovai.user.User(id), text) =>
+    case Gate.DeliverMessageToUser(Human(id), text) =>
       request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
 
-    case UserService.DeactivateUsers(us) => us.foreach { case org.pavlovai.user.User(id) => readyToTalk(id) }
+    case UserRepository.DeactivateUsers(us) => us.foreach {
+      case Human(id) => readyToTalk(id)
+      case _ => log.warning("deactivating not a human user, ignored!")
+    }
   }
 
   private val availableUsers = mutable.Set[Long]()
-  private val activeUsers = mutable.Map[user.User, Option[ActorRef]]()
+  private val activeUsers = mutable.Map[Human, Option[ActorRef]]()
 
   private def readyToTalk(chatId: Long) = {
     availableUsers += chatId
-    activeUsers.keys.find(_.id == chatId).foreach(activeUsers.remove)
+    activeUsers.keys.find(_.chat_id == chatId).foreach(activeUsers.remove)
   }
 
   private def leave(chatId: Long) = {
     availableUsers -= chatId
-    activeUsers.keys.find(_.id == chatId).foreach(activeUsers.remove)
+    activeUsers.keys.find(_.chat_id == chatId).foreach(activeUsers.remove)
   }
 
-  private def isInDialog(chatId: Long) = activeUsers.exists { case (k, _) => k.id == chatId }
+  private def isInDialog(chatId: Long) = activeUsers.exists { case (k, _) => k.chat_id == chatId }
   private def isNotInDialog(chatId: Long) = availableUsers.contains(chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),

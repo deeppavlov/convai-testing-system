@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import org.pavlovai.dialog.TalkService.AssembleDialogs
 import org.pavlovai.user.User
-import org.pavlovai.user.UserService.{AddHoldedUsersToTalk, HoldUsers}
+import org.pavlovai.user.UserRepository.{AddHoldedUsersToTalk, HoldUsers}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -56,7 +56,7 @@ class TalkServiceSpec extends TestKit(ActorSystem("TalkServiceSpec")) with Impli
   }
 
   class FakeUserService(usersInStoreCount: Int) extends Actor {
-    import org.pavlovai.user.UserService._
+    import org.pavlovai.user.UserRepository._
 
     private var availableUsers = usersInStoreCount
 

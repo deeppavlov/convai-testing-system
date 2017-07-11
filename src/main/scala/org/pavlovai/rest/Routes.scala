@@ -20,7 +20,7 @@ import spray.json.{JsValue, _}
   */
 object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport {
 
-  import BotManager._
+  import BotService._
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   def route(botService: ActorRef, log: Logger)(implicit timeout: Timeout, materializer: ActorMaterializer): Route =
@@ -29,7 +29,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       post {
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
-          val r = (botService ? BotManager.SendMessage(token, to, mes)).mapTo[Message]
+          val r = (botService ? BotService.SendMessage(token, to, mes)).mapTo[Message]
           onComplete(r) {
             case util.Success(m) => complete(toJson(m))
             case util.Failure(ex) => complete(StatusCodes.InternalServerError)
@@ -38,7 +38,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       }
     } ~ get {
     pathPrefix(""".+""".r / "getUpdates") { token =>
-      val lO = (botService ? BotManager.GetMessages(token)).mapTo[Seq[Update]]
+      val lO = (botService ? BotService.GetMessages(token)).mapTo[Seq[Update]]
       onComplete(lO) {
         case util.Success(l) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
@@ -59,7 +59,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
 
     override def read(json: JsValue): SendMes = json.asJsObject.getFields("chat_id", "text") match {
       case Seq(JsNumber(chat_id), JsString(msg)) => SendMes(chat_id.toIntExact, msg.parseJson.convertTo[BotMessage])
-      case _ => throw new RuntimeException(s"Invalid json format: $json")
+      case _ => serializationError(s"Invalid json format: $json")
     }
   }
 
