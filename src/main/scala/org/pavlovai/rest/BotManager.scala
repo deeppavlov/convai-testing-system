@@ -5,8 +5,7 @@ import java.time.Instant
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
-import org.pavlovai.rest.Routes.jsonFormat2
-import spray.json.{DefaultJsonProtocol, JsObject, JsValue, JsonFormat, RootJsonFormat, _}
+import spray.json._
 
 import scala.util.Random
 
@@ -44,7 +43,7 @@ object BotManager extends SprayJsonSupport with DefaultJsonProtocol  {
   implicit val summaryEvaluationFormat: JsonFormat[SummaryEvaluation] = jsonFormat3(SummaryEvaluation)
   implicit val endMessageFormat: JsonFormat[EndMessage] = jsonFormat1(EndMessage)
   implicit val firstMessageFormat: JsonFormat[FirstMessage] = jsonFormat1(FirstMessage)
-  implicit val actionFormat1 = new JsonFormat[BotMessage] {
+  implicit val botMessageFormat = new JsonFormat[BotMessage] {
     override def write(obj: BotMessage): JsValue = obj match {
       case FirstMessage(text: String) => JsObject("text" -> text.toJson)
       case NormalMessage(text: String, evaluation: Int) => JsObject("text" -> text.toJson, "evaluation" -> evaluation.toJson)
@@ -60,7 +59,4 @@ object BotManager extends SprayJsonSupport with DefaultJsonProtocol  {
   }
 
   implicit val sendMessageFormat: JsonFormat[SendMessage] = jsonFormat3(SendMessage)
-
-  case class SendMes(chat_id: Long, payload: BotMessage)
-  implicit val sendMesFormat: JsonFormat[SendMes] = jsonFormat2(SendMes)
 }
