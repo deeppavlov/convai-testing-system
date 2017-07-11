@@ -2,13 +2,14 @@ package org.pavlovai.rest
 
 import java.time.Instant
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
-import org.pavlovai.user.{Bot, Gate}
+import org.pavlovai.user.{Bot, Gate, User, UserRepository}
 import spray.json._
+import collection.JavaConverters._
 
-import scala.util.Random
+import scala.util.{Random, Try}
 
 /**
   * @author vadim
@@ -16,6 +17,8 @@ import scala.util.Random
   */
 class BotService extends Actor with ActorLogging {
   import BotService._
+
+  private val registredBots: Seq[String] = Try(context.system.settings.config.getStringList("bot.registered").asScala).getOrElse(Seq.empty)
 
   private val rnd = Random
 
@@ -27,6 +30,10 @@ class BotService extends Actor with ActorLogging {
     case m @ SendMessage(id, to, EndMessage(evaluation)) => sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(to, ChatType.Private), text = Some(m.toJson.toString()))
 
     case Gate.DeliverMessageToUser(Bot(chat_id), text) => ???
+
+    case UserRepository.HoldUsers(count: Int) => ???
+    case UserRepository.AddHoldedUsersToTalk(user: List[User], dialog: ActorRef) => ???
+    case UserRepository.DeactivateUsers(user: List[User]) => ???
   }
 }
 
@@ -37,7 +44,7 @@ object BotService extends SprayJsonSupport with DefaultJsonProtocol  {
   sealed trait BotMessage
   case class FirstMessage(text: String) extends BotMessage
   case class NormalMessage(text: String, evaluation: Int) extends BotMessage
-  case class SummaryEvaluation(quality: Int, breadth: Int, engagment: Int)
+  case class SummaryEvaluation(quality: Int, breadth: Int, engagement: Int)
   case class EndMessage(evaluation: SummaryEvaluation) extends BotMessage
 
   case class SendMessage(id: String, to: Long, text: BotMessage)
