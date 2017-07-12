@@ -7,8 +7,9 @@ import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
 import org.pavlovai.user.Gate.PushMessageToTalk
-import org.pavlovai.user.{Gate, Human, UserRepository}
+import org.pavlovai.user.{ChatRepository, Gate, HumanUserWithChat}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -39,7 +40,7 @@ class TelegramService extends Actor with ActorLogging with Stash {
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") =>
       log.info("chatId {} ready to talk", username.getOrElse("unknown"))
-      readyToTalk(id)
+      readyToTalk(id, username.getOrElse("unknown"))
       request(SendMessage(Left(id), "*Please wait for your partner.*", Some(ParseMode.Markdown)))
 
     case Command(chat, "/end") =>
@@ -61,16 +62,18 @@ class TelegramService extends Actor with ActorLogging with Stash {
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
 
-    case UserRepository.HoldUsers(count) =>
-      def getUsers(count: Int, acc: List[Human]): List[Human] = {
+
+
+    case ChatRepository.HoldChats(count) =>
+      @tailrec
+      def getUsers(count: Int, acc: List[HumanUserWithChat]): List[HumanUserWithChat] = {
         if (count == 0) acc
         else if (availableUsers.nonEmpty) {
-          val id = availableUsers.toVector(rnd.nextInt(availableUsers.size))
-          val newAcc = Human(id) :: acc
-          availableUsers -= id
-          getUsers(count - 1, newAcc)
+          val humanChat = availableUsers.toVector(rnd.nextInt(availableUsers.size))
+          availableUsers -= humanChat
+          getUsers(count - 1, humanChat :: acc)
         } else {
-          acc.foreach(u => availableUsers.add(u.chat_id))
+          acc.foreach(availableUsers.add)
           List.empty
         }
       }
@@ -81,45 +84,45 @@ class TelegramService extends Actor with ActorLogging with Stash {
         activated
       } else List.empty)
 
-    case UserRepository.AddHoldedUsersToTalk(users, dialog) =>
+    case ChatRepository.AddHoldedChatsToTalk(users, dialog) =>
       if (activeUsers.forall {
-        case (u: Human, _) => users.contains(u)
+        case (u: HumanUserWithChat, _) => users.contains(u)
         case _ => false
-      }) users.foreach { case user: Human =>
-        activeUsers.get(user).foreach {
-          case None => activeUsers += user -> Some(dialog)
-          case _ => log.warning("attempt to establish talk with user in talk")
+      }) {
+        users.foreach { case user: HumanUserWithChat =>
+          activeUsers.get(user).foreach {
+            case None => activeUsers += user -> Some(dialog)
+            case _ => log.warning("attempt to establish talk with user in talk")
+          }
+        case _ => log.warning("unrecognized chat type, ignored!")
         }
-      case _ => log.warning("adding not human, ignored!")
-      } else {
-        log.error("user not in hold list")
-        throw new IllegalStateException("user not in hold list")
-      }
+      } else log.error("user not in hold list")
 
-    case Gate.DeliverMessageToUser(Human(id), text) =>
+
+    case Gate.DeliverMessageToUser(HumanUserWithChat(id, _), text) =>
       request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
 
-    case UserRepository.DeactivateUsers(us) => us.foreach {
-      case Human(id) => readyToTalk(id)
+    case ChatRepository.DeactivateChats(us) => us.foreach {
+      case HumanUserWithChat(id, username) => readyToTalk(id, username)
       case _ => log.warning("deactivating not a human user, ignored!")
     }
   }
 
-  private val availableUsers = mutable.Set[Long]()
-  private val activeUsers = mutable.Map[Human, Option[ActorRef]]()
+  private val availableUsers = mutable.Set[HumanUserWithChat]()
+  private val activeUsers = mutable.Map[HumanUserWithChat, Option[ActorRef]]()
 
-  private def readyToTalk(chatId: Long) = {
-    availableUsers += chatId
+  private def readyToTalk(chatId: Long, username: String) = {
+    availableUsers += HumanUserWithChat(chatId, username)
     activeUsers.keys.find(_.chat_id == chatId).foreach(activeUsers.remove)
   }
 
   private def leave(chatId: Long) = {
-    availableUsers -= chatId
+    availableUsers.retain(_.chat_id != chatId)
     activeUsers.keys.find(_.chat_id == chatId).foreach(activeUsers.remove)
   }
 
   private def isInDialog(chatId: Long) = activeUsers.exists { case (k, _) => k.chat_id == chatId }
-  private def isNotInDialog(chatId: Long) = availableUsers.contains(chatId)
+  private def isNotInDialog(chatId: Long) = availableUsers.exists(_.chat_id == chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
     """

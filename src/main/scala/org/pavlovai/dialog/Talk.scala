@@ -1,13 +1,13 @@
 package org.pavlovai.dialog
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import org.pavlovai.user.{Gate, User, UserRepository}
+import org.pavlovai.user.{Gate, UserWithChat, ChatRepository}
 
 /**
   * @author vadim
   * @since 06.07.17
   */
-class Talk(a: User, b: User, context: String, gate: ActorRef) extends Actor with ActorLogging {
+class Talk(a: UserWithChat, b: UserWithChat, context: String, gate: ActorRef) extends Actor with ActorLogging {
   gate ! Gate.DeliverMessageToUser(a, context)
   gate ! Gate.DeliverMessageToUser(b, context)
 
@@ -19,5 +19,5 @@ class Talk(a: User, b: User, context: String, gate: ActorRef) extends Actor with
 }
 
 object Talk {
-  def props(userA: User, userB: User, context: String, gate: ActorRef) = Props(new Talk(userA, userB, context, gate))
+  def props(userA: UserWithChat, userB: UserWithChat, context: String, gate: ActorRef) = Props(new Talk(userA, userB, context, gate))
 }

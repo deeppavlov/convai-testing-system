@@ -5,6 +5,6 @@ package org.pavlovai.user
   * @since 11.07.17
   */
 object Gate {
-  case class DeliverMessageToUser(receiver: User, message: String)
-  case class PushMessageToTalk(from: User, message: String)
+  case class DeliverMessageToUser(receiver: UserWithChat, message: String)
+  case class PushMessageToTalk(from: UserWithChat, message: String)
 }

@@ -26,8 +26,6 @@ object ConvaiTestingSystem extends App {
   private val apiGate = akkaSystem.actorOf(CumulativeGate.props(botService, telegramService), "api-gate-service")
   private val talkService = akkaSystem.actorOf(TalkService.props(telegramService, apiGate), "talk-service")
 
-  akkaSystem.scheduler.schedule(1.second, 1.second)(talkService ! TalkService.AssembleDialogs)
-
   private implicit val timeout: Timeout = 5.seconds
 
   private def setting(key: String): Try[String] = Try(conf.getString(key)).orElse {

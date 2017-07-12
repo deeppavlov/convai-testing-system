@@ -10,8 +10,8 @@ class CumulativeGate(botGate: ActorRef, telegramGate: ActorRef) extends Actor wi
   import Gate._
 
   override def receive: Receive = {
-    case message @ DeliverMessageToUser(_: Human, _) => telegramGate ! message
-    case message @ DeliverMessageToUser(_: Bot, _) => botGate ! message
+    case message @ DeliverMessageToUser(_: HumanUserWithChat, _) => telegramGate ! message
+    case message @ DeliverMessageToUser(_: BotUserWithChat, _) => botGate ! message
   }
 }
 
