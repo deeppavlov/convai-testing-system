@@ -35,22 +35,28 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/help") =>
       request(helpMessage(chat.id))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) =>
       daddy ! DialogFather.UserAvailable(HumanChat(id, username.getOrElse("unknown")))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id, username) =>
+      request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
+
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id, username) =>
       daddy ! DialogFather.UserUnavailable(HumanChat(id, username.getOrElse("unknown")))
+
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id, username) =>
+      request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(chat, _) =>
       request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(HumanChat(message.chat.id, message.chat.username.getOrElse("unknown"))) =>
+    case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id, message.chat.username) =>
       val user = HumanChat(message.chat.id, message.chat.username.getOrElse("unknown"))
       activeUsers.get(user).foreach { talk =>
         message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
       }
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(HumanChat(message.chat.id, message.chat.username.getOrElse("unknown"))) =>
+    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id, message.chat.username) =>
       request(helpMessage(message.chat.id))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
@@ -65,8 +71,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
   private val activeUsers = mutable.Map[HumanChat, ActorRef]()
 
-  private def isInDialog(user: HumanChat) = activeUsers.keySet.contains(user)
-  private def isNotInDialog(user: HumanChat) = !isInDialog(user)
+  private def isInDialog(chatId: Long, username: Option[String]) = activeUsers.keySet.contains(HumanChat(chatId, username.getOrElse("unknown")))
+  private def isNotInDialog(chatId: Long, username: Option[String]) = !isInDialog(chatId, username)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
     """
