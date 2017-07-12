@@ -18,7 +18,7 @@ import scala.util.{Random, Try}
   * @author vadim
   * @since 10.07.17
   */
-class BotEndpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
+class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
   import BotEndpoint._
 
   private val rnd: Random = Random
@@ -26,7 +26,7 @@ class BotEndpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
   private val botsQueues: Map[String, mutable.Queue[Update]] =
     Try(context.system.settings.config.getStringList("bot.registered").asScala).getOrElse(Seq.empty)
       .map { token =>
-        talkConstructor ! UserAvailable(Bot(token))
+        daddy ! UserAvailable(Bot(token))
         token -> mutable.Queue.empty[Update]
       }.toMap
 

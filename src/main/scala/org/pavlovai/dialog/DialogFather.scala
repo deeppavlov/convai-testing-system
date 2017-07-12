@@ -19,7 +19,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
   private val rnd = Random
   private val cooldownPeriod = Try(Duration.fromNanos(context.system.settings.config.getDuration("bot.talk_period_min").toNanos)).getOrElse(1.minutes)
 
-  private val gate = context.actorOf(Endpoint.props(self), name = "communication-gate")
+  private val gate = context.actorOf(Endpoint.props(self), name = "communication-endpoint")
 
   context.system.scheduler.schedule(1.second, 1.second) {
     self ! AssembleDialogs
@@ -35,17 +35,25 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
     case AssembleDialogs => assembleDialogs()
 
     case Terminated(t) =>
-      usersChatsInTalks.get(t).foreach(_.foreach { u =>
-        gate ! Endpoint.RemoveTargetTalkForUserWithChat(u)
-        u match {
-          case u: HumanChat => busyHumans -= u
-          case _ =>
+      usersChatsInTalks.get(t).foreach { ul =>
+        ul.foreach { u =>
+          gate ! Endpoint.RemoveTargetTalkForUserWithChat(u)
+          u match {
+            case u: HumanChat => busyHumans -= u
+            case _ =>
+          }
         }
-      })
+
+        log.info("users {} leave from dialog", ul)
+      }
     case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
 
-    case UserAvailable(user: User) => availableUsers += user
-    case UserUnavailable(user: User) => availableUsers -= user
+    case UserAvailable(user: User) =>
+      log.info("new user available: {}", user)
+      availableUsers += user
+    case UserUnavailable(user: User) =>
+      log.info("user leave: {}", user)
+      availableUsers -= user
 
   }
 
@@ -62,6 +70,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
     rnd.shuffle(users).zip(users.reverse).take(users.size / 2).foreach { case (a, b) =>
       ContextQuestions.selectRandom.foreach { txt =>
         val t = context.actorOf(Dialog.props(a, b, txt, gate))
+        log.info("start talk between {} and {}", a, b)
         gate ! Endpoint.AddTargetTalkForUserWithChat(a, t)
         gate ! Endpoint.AddTargetTalkForUserWithChat(b, t)
         usersChatsInTalks += t -> List(a, b)

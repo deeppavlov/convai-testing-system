@@ -13,7 +13,7 @@ import scala.collection.mutable
   * @author vadim
   * @since 04.07.17
   */
-class TelegramEndpoint(talkConstructor: ActorRef) extends Actor with ActorLogging with Stash {
+class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Stash {
   import TelegramEndpoint._
 
   override def receive: Receive = unititialized
@@ -37,11 +37,11 @@ class TelegramEndpoint(talkConstructor: ActorRef) extends Actor with ActorLoggin
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") =>
       log.info("chatId {} ready to talk", username.getOrElse("unknown"))
-      talkConstructor ! DialogFather.UserAvailable(HumanChat(id, username.getOrElse("unknown")))
+      daddy ! DialogFather.UserAvailable(HumanChat(id, username.getOrElse("unknown")))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") =>
       log.info("chatId {} leave talk", username.getOrElse("unknown"))
-      talkConstructor ! DialogFather.UserUnavailable(HumanChat(id, username.getOrElse("unknown")))
+      daddy ! DialogFather.UserUnavailable(HumanChat(id, username.getOrElse("unknown")))
 
     case Command(chat, _) =>
       request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
