@@ -52,7 +52,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
       if (!availableUsers.add(user)) log.info("new user available: {}", user)
     case UserUnavailable(user: User) =>
       if(availableUsers.remove(user)) {
-        log.info("user leave: {}", user)
+        log.info("user leave: {}, dialog killed", user)
         usersChatsInTalks.filter { case (_, users) => users.contains(user) }.keySet.foreach(_ ! PoisonPill)
       }
   }

@@ -30,7 +30,18 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case SetGateway(g) => context.become(initialized(g))
 
     case Command(chat, "/start") =>
-      request(helpMessage(chat.id))
+      request(SendMessage(Left(chat.id),
+        """
+          |*Welcome!*
+          |
+          |Use:
+          |
+          |- /begin for start talk
+          |- /end for end talk
+          |- /help for help
+          |
+          |[](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
+        """.stripMargin, Some(ParseMode.Markdown)))
 
     case Command(chat, "/help") =>
       request(helpMessage(chat.id))
