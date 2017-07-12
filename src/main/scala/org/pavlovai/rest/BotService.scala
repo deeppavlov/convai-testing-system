@@ -4,6 +4,7 @@ import java.time.Instant
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.sun.xml.internal.bind.v2.TODO
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
 import org.pavlovai.user.{BotUserWithChat, ChatRepository, Gate}
 import spray.json._
@@ -32,6 +33,9 @@ class BotService extends Actor with ActorLogging {
   private val botsQueues: Map[String, mutable.Queue[Update]] =
     Try(context.system.settings.config.getStringList("bot.registered").asScala).getOrElse(Seq.empty)
       .map(_ -> mutable.Queue.empty[Update]).toMap
+
+  //TODO
+  self ! Gate.DeliverMessageToUser(BotUserWithChat(1, "0000000"), """ { "text": "\start Ololosenki Lolo" } """)
 
   private val activeBots: mutable.Map[BotUserWithChat, ActorRef] = mutable.Map.empty[BotUserWithChat, ActorRef]
 
@@ -114,7 +118,7 @@ object BotService extends SprayJsonSupport with DefaultJsonProtocol  {
 
   implicit val normalMessageFormat: JsonFormat[TextWithEvaluationMessage] = jsonFormat2(TextWithEvaluationMessage)
   implicit val summaryEvaluationFormat: JsonFormat[SummaryEvaluation] = jsonFormat3(SummaryEvaluation)
-  implicit val endMessageFormat: JsonFormat[TalkEvaluationMessage] = jsonFormat1(TalkEvaluationMessage)
+  implicit val talkEvaluationFormat: JsonFormat[TalkEvaluationMessage] = jsonFormat(TalkEvaluationMessage.apply _, "evaluation")
   implicit val firstMessageFormat: JsonFormat[TextMessage] = jsonFormat1(TextMessage)
   implicit val botMessageFormat = new JsonFormat[BotMessage] {
     override def write(obj: BotMessage): JsValue = obj match {
