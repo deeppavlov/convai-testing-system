@@ -33,6 +33,9 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
     case Timeout => self ! PoisonPill
   }
+
+  //TODO
+  override def postStop(): Unit = super.postStop()
 }
 
 object Dialog {
