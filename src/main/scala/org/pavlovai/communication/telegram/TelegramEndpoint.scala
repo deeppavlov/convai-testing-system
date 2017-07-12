@@ -36,11 +36,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       request(helpMessage(chat.id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") =>
-      log.info("chatId {} ready to talk", username.getOrElse("unknown"))
       daddy ! DialogFather.UserAvailable(HumanChat(id, username.getOrElse("unknown")))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") =>
-      log.info("chatId {} leave talk", username.getOrElse("unknown"))
       daddy ! DialogFather.UserUnavailable(HumanChat(id, username.getOrElse("unknown")))
 
     case Command(chat, _) =>

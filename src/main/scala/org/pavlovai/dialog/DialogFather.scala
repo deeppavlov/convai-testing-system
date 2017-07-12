@@ -1,6 +1,6 @@
 package org.pavlovai.dialog
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 import akka.util.Timeout
 import org.pavlovai.communication._
 
@@ -49,18 +49,19 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
     case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
 
     case UserAvailable(user: User) =>
-      log.info("new user available: {}", user)
-      availableUsers += user
+      if (!availableUsers.add(user)) log.info("new user available: {}", user)
     case UserUnavailable(user: User) =>
-      log.info("user leave: {}", user)
-      availableUsers -= user
-
+      if(availableUsers.remove(user)) {
+        log.info("user leave: {}", user)
+        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.keySet.foreach(_ ! PoisonPill)
+      }
   }
 
   private def addToBlockLists(a: User) {
     a match {
       case u: HumanChat => busyHumans += u
-      case u: Bot => cooldownBots += u -> cooldownPeriod.fromNow
+      case u: Bot =>
+        if(cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
       case _ =>
     }
   }
