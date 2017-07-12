@@ -1,6 +1,4 @@
-package org.pavlovai.rest
-
-import java.util.Base64
+package org.pavlovai.communication.rest
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -9,10 +7,10 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import com.typesafe.scalalogging.Logger
-import info.mukel.telegrambot4s.marshalling.HttpMarshalling.toJson
 import info.mukel.telegrambot4s.models.{Message, Update}
 import spray.json.{JsValue, _}
+
+import scala.concurrent.duration._
 
 /**
   * @author vadim
@@ -20,16 +18,18 @@ import spray.json.{JsValue, _}
   */
 object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport {
 
-  import BotService._
+  import BotEndpoint._
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
-  def route(botService: ActorRef, log: Logger)(implicit timeout: Timeout, materializer: ActorMaterializer): Route =
+  implicit val timeout: Timeout = 5.seconds
+
+  def route(botService: ActorRef)(implicit materializer: ActorMaterializer): Route =
 
     path(""".+""".r / "sendMessage") { token =>
       post {
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
-          val r = (botService ? BotService.SendMessage(token, to, mes)).mapTo[Message]
+          val r = (botService ? BotEndpoint.SendMessage(token, to, mes)).mapTo[Message]
           onComplete(r) {
             case util.Success(m) => complete(toJson(m))
             case util.Failure(ex) => complete(StatusCodes.InternalServerError)
@@ -38,13 +38,13 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       }
     } ~ get {
     pathPrefix(""".+""".r / "getUpdates") { token =>
-      val lO = (botService ? BotService.GetMessages(token)).mapTo[Seq[Update]]
+      val lO = (botService ? BotEndpoint.GetMessages(token)).mapTo[Seq[Update]]
       onComplete(lO) {
         case util.Success(l) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
           complete(toJson(l))
         case util.Failure(ex) =>
-          log.warn("erroe while getUpdates processing: " + ex.toString)
+          //log.warn("erroe while getUpdates processing: " + ex.toString)
           complete(StatusCodes.BadRequest)
       }
     }

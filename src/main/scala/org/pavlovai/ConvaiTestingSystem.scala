@@ -5,10 +5,10 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
-import org.pavlovai.dialog.TalkService
-import org.pavlovai.rest.{BotService, Routes}
-import org.pavlovai.telegram.{Bot, TelegramService}
-import org.pavlovai.user.CumulativeGate
+import org.pavlovai.dialog.DialogFather
+import org.pavlovai.communication.rest.{BotEndpoint, Routes}
+import org.pavlovai.communication.telegram.{BotWorker, TelegramEndpoint}
+import org.pavlovai.communication.Endpoint
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -21,26 +21,12 @@ object ConvaiTestingSystem extends App {
   private implicit val executionContext = akkaSystem.dispatcher
   private val logger = Logger(getClass)
 
-  private val telegramService = akkaSystem.actorOf(TelegramService.props, "telegram-service")
-  private val botService = akkaSystem.actorOf(BotService.props, "bot-service")
-  private val apiGate = akkaSystem.actorOf(CumulativeGate.props(botService, telegramService), "api-gate-service")
-  private val talkService = akkaSystem.actorOf(TalkService.props(telegramService, apiGate), "talk-service")
+  private val talkConstructor = akkaSystem.actorOf(DialogFather.props, "talk-constructor")
 
   private implicit val timeout: Timeout = 5.seconds
 
-  private def setting(key: String): Try[String] = Try(conf.getString(key)).orElse {
-    logger.error("No configuration for telegram.token found!")
-    Failure(new RuntimeException("not configured"))
-  }
-
-  (setting("telegram.token"), setting("telegram.webhook")) match {
-    case (Success(token), Success(webhook)) => new Bot(akkaSystem, materializer, telegramService, Routes.route(botService, logger), token, webhook).run()
-    case _ => logger.error("telegram bot not started, because it not configured! Check config file.")
-  }
-
   sys.addShutdownHook {
-    telegramService ! PoisonPill
-    talkService ! PoisonPill
+    talkConstructor ! PoisonPill
     Await.ready(akkaSystem.terminate(), 30.seconds)
     logger.info("system shutting down")
   }
