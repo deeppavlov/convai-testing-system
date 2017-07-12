@@ -16,6 +16,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
+  private implicit val ec = context.dispatcher
   context.system.scheduler.scheduleOnce(timeout) { self ! Timeout }
 
   private var messagesCount: Int = 0
