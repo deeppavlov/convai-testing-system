@@ -3,6 +3,7 @@ package org.pavlovai.dialog
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import org.pavlovai.communication.{Bot, Endpoint, TelegramChat, User}
 
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.{Random, Try}
 
@@ -25,7 +26,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   override def receive: Receive = {
     def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-      case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, "Ololo???", id)//Endpoint.DeliverMessageToUser(u, text, id)
+      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
       case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
     }
 
@@ -39,22 +40,61 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         messagesCount += 1
         if (messagesCount > maxLen) self ! EndDialog(None)
 
-      case EndDialog(u) => context.become(dialogFinishing)
+      case EndDialog(u) => context.become(dialogEvaluationQuality)
     }
   }
 
-  private def dialogFinishing: Receive = {
-    def lastMessageFor(user: User): Endpoint.MessageFromDialog = user match {
-      case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, "Ololo???", id)
-      case u: Bot => Endpoint.DeliverMessageToUser(u, "/end", id)
+  private def dialogEvaluationQuality: Receive = {
+    def lastMessageFor(user: User): Unit = user match {
+      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the quality", id)
+      case u: Bot => gate ! Endpoint.DeliverMessageToUser(u, "/end", id)
     }
 
-    gate ! lastMessageFor(a)
-    gate ! lastMessageFor(b)
+    lastMessageFor(a)
+    lastMessageFor(b)
 
     {
       case EndDialog(u) => log.debug("already finishing")
-      case _ => ???
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(r => r > 0 && r <= 10) =>
+        log.info(s"the $user rated the quality by $rate")
+        context.become(dialogEvaluationBreadth)
+      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
+    }
+  }
+
+  private def dialogEvaluationBreadth: Receive = {
+    def lastMessageFor(user: User): Unit = user match {
+      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the breadth", id)
+      case u: Bot =>
+    }
+
+    lastMessageFor(a)
+    lastMessageFor(b)
+
+    {
+      case EndDialog(u) => log.debug("already finishing")
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => rate > 0 && rate <= 10) =>
+        log.info(s"the $user rated the breadth by $rate")
+        context.become(dialogEvaluationEngagement)
+      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
+    }
+  }
+
+  private def dialogEvaluationEngagement: Receive = {
+    def lastMessageFor(user: User): Unit = user match {
+      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the engagement", id)
+      case u: Bot =>
+    }
+
+    lastMessageFor(a)
+    lastMessageFor(b)
+
+    {
+      case EndDialog(u) => log.debug("already engagement")
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => rate > 0 && rate <= 10) =>
+        log.info(s"the $user rated the engagement by $rate")
+        self ! PoisonPill
+      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
     }
   }
 }
