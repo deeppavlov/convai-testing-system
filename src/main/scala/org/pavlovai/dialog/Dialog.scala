@@ -23,44 +23,43 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   private var messagesCount: Int = 0
 
-  gate ! firstMessageFor(a, txt)
-  gate ! firstMessageFor(b, txt)
-
   override def receive: Receive = {
-    case PushMessageToTalk(from, text) =>
-      val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
-      gate ! Endpoint.DeliverMessageToUser(oppanent, text, id)
-      messagesCount += 1
-      if (messagesCount > maxLen) self ! PoisonPill
+    def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
+      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+      case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
+    }
 
-      //TODO
-    case EndDialog => self ! PoisonPill
+    gate ! firstMessageFor(a, txt)
+    gate ! firstMessageFor(b, txt)
+
+    {
+      case PushMessageToTalk(from, text) =>
+        val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
+        gate ! Endpoint.DeliverMessageToUser(oppanent, text, id)
+        messagesCount += 1
+        if (messagesCount > maxLen) self ! EndDialog
+
+      case EndDialog => self ! PoisonPill //context.become(dialogFinishing)
+    }
   }
 
- /* private def dialogFinishing: Receive = {
-
+  //TODO
+  private def dialogFinishing: Receive = {
+    def lastMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
+      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+      case u: Bot => Endpoint.DeliverMessageToUser(u, "/end", id)
+    }
 
     {
       case EndDialog => log.debug("already finishing")
     }
-  }*/
+  }
 
-  //TODO
   override def postStop(): Unit = {
     gate ! Endpoint.DeliverMessageToUser(a, "/end", id)
     gate ! Endpoint.DeliverMessageToUser(b, "/end", id)
     super.postStop()
   }
-
-  private def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-    case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, text, id) //Endpoint.DeliverMessageToUser(u, text, id)
-    case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
-  }
-
-  /*private def lastMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
-    case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
-    case u: Bot => Endpoint.DeliverMessageToUser(u, "/end", id)
-  }*/
 }
 
 object Dialog {

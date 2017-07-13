@@ -1,6 +1,6 @@
 package org.pavlovai.dialog
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import akka.util.Timeout
 import org.pavlovai.communication._
 
@@ -49,10 +49,10 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
 
     case UserAvailable(user: User) =>
       if (!availableUsers.add(user)) log.info("new user available: {}", user)
-    case UserUnavailable(user: User) =>
+    case UserLeave(user: User) =>
       if(availableUsers.remove(user)) {
         log.info("user leave: {}, dialog killed", user)
-        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.keySet.foreach(_ ! PoisonPill)
+        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.keySet.foreach(_ ! Dialog.EndDialog)
       }
   }
 
@@ -84,5 +84,5 @@ object DialogFather {
   private case object CleanCooldownList
 
   case class UserAvailable(user: User)
-  case class UserUnavailable(user: User)
+  case class UserLeave(user: User)
 }
