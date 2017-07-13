@@ -86,7 +86,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           Left(h.chatId),
           text,
           Some(ParseMode.Markdown),
-          replyMarkup = Some(ReplyKeyboardMarkup(Seq(Seq(
+          replyMarkup = Some(ReplyKeyboardMarkup(oneTimeKeyboard = Some(true), keyboard = Seq(Seq(
             KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5"), KeyboardButton("6"), KeyboardButton("7"), KeyboardButton("8"), KeyboardButton("9"), KeyboardButton("10")
           ))))
         )
