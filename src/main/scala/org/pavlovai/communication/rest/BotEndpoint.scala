@@ -47,11 +47,11 @@ class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
       activeBots.get(Bot(token)).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
       sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
-    case Endpoint.DeliverMessageToUser(Bot(token), text) =>
+    case Endpoint.DeliverMessageToUser(Bot(token), text, dialogId) =>
       botsQueues.get(token).fold[Any] {
         log.warning("bot {} not registered", token)
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))
-      }(_ += Update(0, Some(Message(0, None, Instant.now().getNano, Chat(token.hashCode, ChatType.Private), text = Some(text)))) )
+      }(_ += Update(0, Some(Message(0, None, Instant.now().getNano, Chat(dialogId, ChatType.Private), text = Some(text)))) )
 
     case Endpoint.AddTargetTalkForUserWithChat(user: Bot, talk: ActorRef) => activeBots += user -> talk
 

@@ -3,7 +3,7 @@ package org.pavlovai.dialog
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import org.pavlovai.dialog.DialogFather.AssembleDialogs
-import org.pavlovai.communication.{User, HumanChat}
+import org.pavlovai.communication.{User, TelegramChat}
 import org.pavlovai.communication.ChatRepository.{AddHoldedChatsToTalk, HoldChats}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 

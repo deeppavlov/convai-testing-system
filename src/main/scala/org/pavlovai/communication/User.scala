@@ -7,4 +7,4 @@ package org.pavlovai.communication
 sealed trait User
 
 case class Bot(token: String) extends User
-case class HumanChat(chat_id: Long, username: String) extends User
+case class TelegramChat(chat_id: Long) extends User

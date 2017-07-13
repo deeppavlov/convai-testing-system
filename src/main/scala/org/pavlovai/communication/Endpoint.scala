@@ -29,13 +29,13 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
   private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate), routerBotToken, webhook).run()
 
   override def receive: Receive = {
-    case message @ DeliverMessageToUser(_: HumanChat, _) => telegramGate forward message
-    case message @ DeliverMessageToUser(_: Bot, _) => botGate forward message
+    case message @ DeliverMessageToUser(_: TelegramChat, _, _) => telegramGate forward message
+    case message @ DeliverMessageToUser(_: Bot, _, _) => botGate forward message
 
-    case m @ AddTargetTalkForUserWithChat(_: HumanChat, _) => telegramGate forward m
+    case m @ AddTargetTalkForUserWithChat(_: TelegramChat, _) => telegramGate forward m
     case m @ AddTargetTalkForUserWithChat(_: Bot, _) => botGate forward m
 
-    case m @ RemoveTargetTalkForUserWithChat(_: HumanChat) => telegramGate forward m
+    case m @ RemoveTargetTalkForUserWithChat(_: TelegramChat) => telegramGate forward m
     case m @ RemoveTargetTalkForUserWithChat(_: Bot) => botGate forward m
   }
 }
@@ -43,7 +43,7 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
 object Endpoint {
   def props(talkConstructor: ActorRef): Props = Props(new Endpoint(talkConstructor))
 
-  case class DeliverMessageToUser(receiver: User, message: String)
+  case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Int)
 
   case class AddTargetTalkForUserWithChat(user: User, talk: ActorRef)
   case class RemoveTargetTalkForUserWithChat(user: User)

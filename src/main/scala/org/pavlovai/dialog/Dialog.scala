@@ -1,10 +1,10 @@
 package org.pavlovai.dialog
 
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
-import org.pavlovai.communication.{Bot, Endpoint, HumanChat, User}
+import org.pavlovai.communication.{Bot, Endpoint, TelegramChat, User}
 
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Random, Try}
 
 /**
   * @author vadim
@@ -12,6 +12,8 @@ import scala.util.Try
   */
 class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with ActorLogging {
   import Dialog._
+
+  private val id = Random.nextInt()
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
@@ -27,7 +29,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   override def receive: Receive = {
     case PushMessageToTalk(from, text) =>
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
-      gate ! Endpoint.DeliverMessageToUser(oppanent, text)
+      gate ! Endpoint.DeliverMessageToUser(oppanent, text, id)
       messagesCount += 1
       if (messagesCount > maxLen) self ! PoisonPill
 
@@ -36,17 +38,17 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   //TODO
   override def postStop(): Unit = super.postStop()
+
+  private def firstMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
+    case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+    case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
+  }
 }
 
 object Dialog {
   def props(userA: User, userB: User, context: String, gate: ActorRef) = Props(new Dialog(userA, userB, context, gate))
 
   case class PushMessageToTalk(from: User, message: String)
-
-  private def firstMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
-    case u: HumanChat => Endpoint.DeliverMessageToUser(u, text)
-    case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text)
-  }
 
   private case object Timeout
 }

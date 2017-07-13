@@ -27,7 +27,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
   }
 
   private val availableUsers: mutable.Set[User] = mutable.Set.empty[User]
-  private val busyHumans: mutable.Set[HumanChat] = mutable.Set.empty[HumanChat]
+  private val busyHumans: mutable.Set[TelegramChat] = mutable.Set.empty[TelegramChat]
   private val cooldownBots: mutable.Map[Bot, Deadline] = mutable.Map.empty[Bot, Deadline]
   private val usersChatsInTalks = mutable.Map[ActorRef, List[User]]()
 
@@ -39,7 +39,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
         ul.foreach { u =>
           gate ! Endpoint.RemoveTargetTalkForUserWithChat(u)
           u match {
-            case u: HumanChat => busyHumans -= u
+            case u: TelegramChat => busyHumans -= u
             case _ =>
           }
         }
@@ -59,7 +59,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
 
   private def addToBlockLists(a: User) {
     a match {
-      case u: HumanChat => busyHumans += u
+      case u: TelegramChat => busyHumans += u
       case u: Bot =>
         if(cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
       case _ =>

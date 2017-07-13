@@ -5,7 +5,7 @@ import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
 import org.pavlovai.dialog.{Dialog, DialogFather}
-import org.pavlovai.communication.{Endpoint, HumanChat}
+import org.pavlovai.communication.{Endpoint, TelegramChat}
 
 import scala.collection.mutable
 
@@ -46,44 +46,44 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/help") =>
       request(helpMessage(chat.id))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) =>
-      daddy ! DialogFather.UserAvailable(HumanChat(id, username.getOrElse("unknown")))
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
+      daddy ! DialogFather.UserAvailable(TelegramChat(id))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id, username) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id, username) =>
-      daddy ! DialogFather.UserUnavailable(HumanChat(id, username.getOrElse("unknown")))
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
+      daddy ! DialogFather.UserUnavailable(TelegramChat(id))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id, username) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(chat, _) =>
       request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id, message.chat.username) =>
-      val user = HumanChat(message.chat.id, message.chat.username.getOrElse("unknown"))
+    case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
+      val user = TelegramChat(message.chat.id)
       activeUsers.get(user).foreach { talk =>
         message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
       }
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id, message.chat.username) =>
+    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) =>
       request(helpMessage(message.chat.id))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
 
 
-    case Endpoint.AddTargetTalkForUserWithChat(user: HumanChat, talk: ActorRef) => activeUsers += user -> talk
-    case Endpoint.RemoveTargetTalkForUserWithChat(user: HumanChat) => activeUsers -= user
+    case Endpoint.AddTargetTalkForUserWithChat(user: TelegramChat, talk: ActorRef) => activeUsers += user -> talk
+    case Endpoint.RemoveTargetTalkForUserWithChat(user: TelegramChat) => activeUsers -= user
 
-    case Endpoint.DeliverMessageToUser(HumanChat(id, _), text) =>
+    case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
       request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
   }
 
-  private val activeUsers = mutable.Map[HumanChat, ActorRef]()
+  private val activeUsers = mutable.Map[TelegramChat, ActorRef]()
 
-  private def isInDialog(chatId: Long, username: Option[String]) = activeUsers.keySet.contains(HumanChat(chatId, username.getOrElse("unknown")))
-  private def isNotInDialog(chatId: Long, username: Option[String]) = !isInDialog(chatId, username)
+  private def isInDialog(chatId: Long) = activeUsers.keySet.contains(TelegramChat(chatId))
+  private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
     """
