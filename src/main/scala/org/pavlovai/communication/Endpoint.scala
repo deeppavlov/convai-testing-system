@@ -32,11 +32,11 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
     case message @ DeliverMessageToUser(_: TelegramChat, _, _) => telegramGate forward message
     case message @ DeliverMessageToUser(_: Bot, _, _) => botGate forward message
 
-    case m @ AddTargetTalkForUserWithChat(_: TelegramChat, _) => telegramGate forward m
-    case m @ AddTargetTalkForUserWithChat(_: Bot, _) => botGate forward m
+    case m @ ActivateTalkForUser(_: TelegramChat, _) => telegramGate forward m
+    case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
 
-    case m @ RemoveTargetTalkForUserWithChat(_: TelegramChat, _) => telegramGate forward m
-    case m @ RemoveTargetTalkForUserWithChat(_: Bot, _) => botGate forward m
+    case m @ FinishTalkForUser(_: TelegramChat, _) => telegramGate forward m
+    case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
 
     case m: AskEvaluationFromHuman => telegramGate forward m
   }
@@ -51,7 +51,7 @@ object Endpoint {
   case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Int) extends MessageFromDialog
   case class AskEvaluationFromHuman(receiver: Human, question: String, fromDialogId: Int) extends MessageFromDialog
 
-  case class AddTargetTalkForUserWithChat(user: User, talk: ActorRef)
-  case class RemoveTargetTalkForUserWithChat(user: User, talk: ActorRef)
+  case class ActivateTalkForUser(user: User, talk: ActorRef)
+  case class FinishTalkForUser(user: User, talk: ActorRef)
 }
 

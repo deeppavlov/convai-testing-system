@@ -1,5 +1,7 @@
 package org.pavlovai.dialog
 
+import java.time.Instant
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import akka.util.Timeout
 import org.pavlovai.communication._
@@ -36,7 +38,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
     case Terminated(t) =>
       usersChatsInTalks.get(t).foreach { ul =>
         ul.foreach { u =>
-          gate ! Endpoint.RemoveTargetTalkForUserWithChat(u, t)
+          gate ! Endpoint.FinishTalkForUser(u, t)
           u match {
             case u: TelegramChat => busyHumans -= u
             case _ =>
@@ -57,10 +59,10 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
   }
 
   private def startDialog(a: User, b: User, txt: String): Unit = {
-    val t = context.actorOf(Dialog.props(a, b, txt, gate))
+    val t = context.actorOf(Dialog.props(a, b, txt, gate), name = s"dialog-${java.util.UUID.randomUUID()}")
     log.info("start talk between {} and {}", a, b)
-    gate ! Endpoint.AddTargetTalkForUserWithChat(a, t)
-    gate ! Endpoint.AddTargetTalkForUserWithChat(b, t)
+    gate ! Endpoint.ActivateTalkForUser(a, t)
+    gate ! Endpoint.ActivateTalkForUser(b, t)
     usersChatsInTalks += t -> List(a, b)
     context.watch(t)
     addToBlockLists(a)

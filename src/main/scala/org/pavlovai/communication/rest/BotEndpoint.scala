@@ -1,6 +1,6 @@
 package org.pavlovai.communication.rest
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -18,8 +18,9 @@ import scala.util.{Random, Try}
   * @author vadim
   * @since 10.07.17
   */
-class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
+class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging {
   import BotEndpoint._
+  import Dialog._
 
   private val rnd: Random = Random
 
@@ -45,26 +46,27 @@ class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
 
     case SendMessage(token, chat, m: TalkEvaluationMessage) =>
       activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.EndDialog(Some(Bot(token))))
-      sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
+      sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
+      //TODO slowdown robots
       activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
-      sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
+      sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
     case Endpoint.DeliverMessageToUser(Bot(token), text, dialogId) =>
       botsQueues.get(token).fold[Any] {
         log.warning("bot {} not registered", token)
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))
-      }(_ += Update(0, Some(Message(0, None, Instant.now().getNano, Chat(dialogId, ChatType.Private), text = Some(text)))) )
+      }(_ += Update(0, Some(Message(0, None, Instant.now(clock).getNano, Chat(dialogId, ChatType.Private), text = Some(text)))) )
 
-    case Endpoint.AddTargetTalkForUserWithChat(user: Bot, talk: ActorRef) => activeChats.put(user -> talk.hashCode(), talk)
+    case Endpoint.ActivateTalkForUser(user: Bot, talk) => activeChats.put(user -> talk.chatId, talk)
 
-    case Endpoint.RemoveTargetTalkForUserWithChat(user: Bot, talk) => activeChats.remove(user -> talk.hashCode())
+    case Endpoint.FinishTalkForUser(user: Bot, talk) => activeChats.remove(user -> talk.chatId)
   }
 }
 
 object BotEndpoint extends SprayJsonSupport with DefaultJsonProtocol  {
-  def props(talkConstructor: ActorRef): Props = Props(new BotEndpoint(talkConstructor))
+  def props(talkConstructor: ActorRef, clock: Clock = Clock.systemDefaultZone()): Props = Props(new BotEndpoint(talkConstructor, clock))
 
   sealed trait BotMessage {
     val text: String
