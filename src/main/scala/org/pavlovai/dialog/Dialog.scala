@@ -38,8 +38,8 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   //TODO
   override def postStop(): Unit = {
-    gate ! firstMessageFor(a, "/end")
-    gate ! firstMessageFor(b, "/end")
+    gate ! Endpoint.DeliverMessageToUser(a, "/end", id)
+    gate ! Endpoint.DeliverMessageToUser(b, "/end", id)
     super.postStop()
   }
 
