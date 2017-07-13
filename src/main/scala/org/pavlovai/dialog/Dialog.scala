@@ -19,7 +19,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
   private implicit val ec = context.dispatcher
-  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
+  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog(None) }
 
   private var messagesCount: Int = 0
 
@@ -37,9 +37,9 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
         gate ! Endpoint.DeliverMessageToUser(oppanent, text, id)
         messagesCount += 1
-        if (messagesCount > maxLen) self ! EndDialog
+        if (messagesCount > maxLen) self ! EndDialog(None)
 
-      case EndDialog => context.become(dialogFinishing)
+      case EndDialog(u) => context.become(dialogFinishing)
     }
   }
 
@@ -53,7 +53,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
     gate ! lastMessageFor(b)
 
     {
-      case EndDialog => log.debug("already finishing")
+      case EndDialog(u) => log.debug("already finishing")
       case _ => ???
     }
   }
@@ -64,5 +64,5 @@ object Dialog {
 
   case class PushMessageToTalk(from: User, message: String)
 
-  case object EndDialog
+  case class EndDialog(sender: Option[User])
 }
