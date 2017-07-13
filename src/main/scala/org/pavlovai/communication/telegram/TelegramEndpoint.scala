@@ -42,7 +42,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           |- /help for help
           |
           |[](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
-        """.stripMargin, Some(ParseMode.Markdown)))
+        """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Command(chat, "/help") =>
       telegramCall(helpMessage(chat.id))
@@ -78,7 +78,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.RemoveTargetTalkForUserWithChat(user: TelegramChat) => activeUsers -= user
 
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
-      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
+      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Endpoint.AskEvaluationFromHuman(h, text, _) =>
       telegramCall(
@@ -109,7 +109,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |- /help for help
       |
       |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
-    """.stripMargin, Some(ParseMode.Markdown))
+    """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 }
 
 object TelegramEndpoint {
