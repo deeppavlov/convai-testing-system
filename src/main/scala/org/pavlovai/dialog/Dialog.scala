@@ -1,7 +1,7 @@
 package org.pavlovai.dialog
 
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
-import org.pavlovai.communication.{Bot, Endpoint, TelegramChat, User}
+import org.pavlovai.communication._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -46,7 +46,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   private def dialogEvaluationQuality: Receive = {
     def lastMessageFor(user: User): Unit = user match {
-      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the quality", id)
+      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Chat is finished, please evaluate the quality", id)
       case u: Bot => gate ! Endpoint.DeliverMessageToUser(u, "/end", id)
     }
 
@@ -58,7 +58,8 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 10)).isSuccess =>
         log.info(s"the $user rated the quality by $rate")
         context.become(dialogEvaluationBreadth)
-      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
+      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, "Please use integers in diapason [1, 10]", id)
+      case m: PushMessageToTalk => log.debug("ignore message {}", m)
     }
   }
 
@@ -76,7 +77,8 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
         log.info(s"the $user rated the breadth by $rate")
         context.become(dialogEvaluationEngagement)
-      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
+      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, "Please use integers in diapason [1, 10]", id)
+      case m: PushMessageToTalk => log.debug("ignore message {}", m)
     }
   }
 
@@ -93,8 +95,10 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       case EndDialog(u) => log.debug("already engagement")
       case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
         log.info(s"the $user rated the engagement by $rate")
+        gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", id)
         self ! PoisonPill
-      case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
+      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, "Please use integers in diapason [1, 10]", id)
+      case m: PushMessageToTalk => log.debug("ignore message {}", m)
     }
   }
 }
