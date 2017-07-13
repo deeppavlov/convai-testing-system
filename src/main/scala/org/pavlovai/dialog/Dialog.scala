@@ -37,7 +37,11 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   }
 
   //TODO
-  override def postStop(): Unit = super.postStop()
+  override def postStop(): Unit = {
+    gate ! firstMessageFor(a, "/end")
+    gate ! firstMessageFor(b, "/end")
+    super.postStop()
+  }
 
   private def firstMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
     case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
