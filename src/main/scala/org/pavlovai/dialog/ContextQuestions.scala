@@ -9,7 +9,12 @@ import scala.util.{Failure, Success, Try}
   * @author vadim
   * @since 05.07.17
   */
-object ContextQuestions {
+
+trait ContextQuestions {
+  def selectRandom(implicit ec: ExecutionContext): Future[String]
+}
+
+object ContextQuestions extends ContextQuestions {
   private val rnd = scala.util.Random.javaRandomToRandom(new SecureRandom())
 
   def selectRandom(implicit ec: ExecutionContext): Future[String] = {

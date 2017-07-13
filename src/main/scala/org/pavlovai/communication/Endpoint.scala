@@ -37,13 +37,19 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
 
     case m @ RemoveTargetTalkForUserWithChat(_: TelegramChat) => telegramGate forward m
     case m @ RemoveTargetTalkForUserWithChat(_: Bot) => botGate forward m
+
+    case m: AskEvaluationFromHuman => telegramGate forward m
   }
 }
 
 object Endpoint {
   def props(talkConstructor: ActorRef): Props = Props(new Endpoint(talkConstructor))
 
-  case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Int)
+  sealed trait MessageFromDialog {
+    val fromDialogId: Int
+  }
+  case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Int) extends MessageFromDialog
+  case class AskEvaluationFromHuman(receiver: Human, question: String, fromDialogId: Int) extends MessageFromDialog
 
   case class AddTargetTalkForUserWithChat(user: User, talk: ActorRef)
   case class RemoveTargetTalkForUserWithChat(user: User)

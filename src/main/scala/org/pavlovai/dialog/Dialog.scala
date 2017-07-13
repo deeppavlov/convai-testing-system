@@ -19,7 +19,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
   private implicit val ec = context.dispatcher
-  context.system.scheduler.scheduleOnce(timeout) { self ! Timeout }
+  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
 
   private var messagesCount: Int = 0
 
@@ -33,8 +33,17 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       messagesCount += 1
       if (messagesCount > maxLen) self ! PoisonPill
 
-    case Timeout => self ! PoisonPill
+      //TODO
+    case EndDialog => self ! PoisonPill
   }
+
+ /* private def dialogFinishing: Receive = {
+
+
+    {
+      case EndDialog => log.debug("already finishing")
+    }
+  }*/
 
   //TODO
   override def postStop(): Unit = {
@@ -43,10 +52,15 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
     super.postStop()
   }
 
-  private def firstMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
-    case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+  private def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
+    case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, text, id) //Endpoint.DeliverMessageToUser(u, text, id)
     case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
   }
+
+  /*private def lastMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
+    case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+    case u: Bot => Endpoint.DeliverMessageToUser(u, "/end", id)
+  }*/
 }
 
 object Dialog {
@@ -54,5 +68,5 @@ object Dialog {
 
   case class PushMessageToTalk(from: User, message: String)
 
-  private case object Timeout
+  case object EndDialog
 }

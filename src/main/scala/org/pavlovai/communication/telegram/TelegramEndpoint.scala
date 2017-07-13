@@ -2,8 +2,9 @@ package org.pavlovai.communication.telegram
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
+import info.mukel.telegrambot4s.methods.ParseMode.ParseMode
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
-import info.mukel.telegrambot4s.models._
+import info.mukel.telegrambot4s.models.{ReplyMarkup, _}
 import org.pavlovai.dialog.{Dialog, DialogFather}
 import org.pavlovai.communication.{Endpoint, TelegramChat}
 
@@ -26,11 +27,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case m => stash()
   }
 
-  private def initialized(request: RequestHandler): Receive = {
+  private def initialized(telegramCall: RequestHandler): Receive = {
     case SetGateway(g) => context.become(initialized(g))
 
     case Command(chat, "/start") =>
-      request(SendMessage(Left(chat.id),
+      telegramCall(SendMessage(Left(chat.id),
         """
           |*Welcome!*
           |
@@ -44,22 +45,22 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         """.stripMargin, Some(ParseMode.Markdown)))
 
     case Command(chat, "/help") =>
-      request(helpMessage(chat.id))
+      telegramCall(helpMessage(chat.id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
-      request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
       daddy ! DialogFather.UserUnavailable(TelegramChat(id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
-      request(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(chat, _) =>
-      request(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
       val user = TelegramChat(message.chat.id)
@@ -68,16 +69,26 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       }
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) =>
-      request(helpMessage(message.chat.id))
+      telegramCall(helpMessage(message.chat.id))
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _) => request(helpMessage(message.chat.id))
+    case Update(num, Some(message), _, _, _, _, _, _, _, _) => telegramCall(helpMessage(message.chat.id))
 
 
     case Endpoint.AddTargetTalkForUserWithChat(user: TelegramChat, talk: ActorRef) => activeUsers += user -> talk
     case Endpoint.RemoveTargetTalkForUserWithChat(user: TelegramChat) => activeUsers -= user
 
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
-      request(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
+      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown)))
+
+    case Endpoint.AskEvaluationFromHuman(h, text, _) =>
+      telegramCall(
+        SendMessage(
+          Left(h.chatId),
+          text,
+          Some(ParseMode.Markdown),
+          replyMarkup = Some(info.mukel.telegrambot4s.models.ReplyKeyboardRemove())
+        )
+      )
   }
 
   private val activeUsers = mutable.Map[TelegramChat, ActorRef]()
