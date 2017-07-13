@@ -30,7 +30,7 @@ class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
         token -> mutable.Queue.empty[Update]
       }.toMap
 
-  private val activeBots: mutable.Map[Bot, ActorRef] = mutable.Map.empty[Bot, ActorRef]
+  private val activeChats: mutable.Map[(Bot, Long), ActorRef] = mutable.Map.empty[(Bot, Long), ActorRef]
 
   override def receive: Receive = {
     case GetMessages(token) =>
@@ -44,11 +44,11 @@ class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
       }
 
     case SendMessage(token, chat, m: TalkEvaluationMessage) =>
-      activeBots.get(Bot(token)).foreach(_ ! Dialog.EndDialog(Some(Bot(token))))
+      activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.EndDialog(Some(Bot(token))))
       sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
-      activeBots.get(Bot(token)).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
+      activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
       sender ! Message(rnd.nextInt(), None, Instant.now().getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
     case Endpoint.DeliverMessageToUser(Bot(token), text, dialogId) =>
@@ -57,9 +57,9 @@ class BotEndpoint(daddy: ActorRef) extends Actor with ActorLogging {
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))
       }(_ += Update(0, Some(Message(0, None, Instant.now().getNano, Chat(dialogId, ChatType.Private), text = Some(text)))) )
 
-    case Endpoint.AddTargetTalkForUserWithChat(user: Bot, talk: ActorRef) => activeBots += user -> talk
+    case Endpoint.AddTargetTalkForUserWithChat(user: Bot, talk: ActorRef) => activeChats.put(user -> talk.hashCode(), talk)
 
-    case Endpoint.RemoveTargetTalkForUserWithChat(user: Bot) => activeBots -= user
+    case Endpoint.RemoveTargetTalkForUserWithChat(user: Bot, talk) => activeChats.remove(user -> talk.hashCode())
   }
 }
 

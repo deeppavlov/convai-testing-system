@@ -36,7 +36,7 @@ class DialogFather extends Actor with ActorLogging with akka.pattern.AskSupport 
     case Terminated(t) =>
       usersChatsInTalks.get(t).foreach { ul =>
         ul.foreach { u =>
-          gate ! Endpoint.RemoveTargetTalkForUserWithChat(u)
+          gate ! Endpoint.RemoveTargetTalkForUserWithChat(u, t)
           u match {
             case u: TelegramChat => busyHumans -= u
             case _ =>

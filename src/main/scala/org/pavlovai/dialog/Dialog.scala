@@ -3,9 +3,8 @@ package org.pavlovai.dialog
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import org.pavlovai.communication._
 
-import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.util.{Random, Try}
+import scala.util.Try
 
 /**
   * @author vadim
@@ -14,7 +13,7 @@ import scala.util.{Random, Try}
 class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with ActorLogging {
   import Dialog._
 
-  private val id = Random.nextInt()
+  private val id = self.hashCode()
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
