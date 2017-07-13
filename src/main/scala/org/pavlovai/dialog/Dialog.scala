@@ -37,66 +37,22 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         messagesCount += 1
         if (messagesCount > maxLen) self ! EndDialog(None)
 
-      case EndDialog(u) => context.become(dialogEvaluationQuality)
+      case EndDialog(u) =>
+        context.become(onEvaluation(
+          context.actorOf(EvaluationProcess.props(a, gate), name=s"evaluation-process-${self.chatId}-$a"),
+          context.actorOf(EvaluationProcess.props(b, gate), name=s"evaluation-process-${self.chatId}-$b")
+        ))
     }
   }
 
-  private def dialogEvaluationQuality: Receive = {
-    def lastMessageFor(user: User): Unit = user match {
-      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Chat is finished, please evaluate the quality", self.chatId)
-      case u: Bot => gate ! Endpoint.DeliverMessageToUser(u, "/end", self.chatId)
-    }
+  def onEvaluation(aEvaluation: ActorRef, bEvaluation: ActorRef): Receive = {
+    case EvaluationProcess.CompleteEvaluation(user, q, b, e) =>
+      log.info("evaluation from {}: quality={}, breadth={}, engagement={}", user, q, b, e)
+      self ! PoisonPill
 
-    lastMessageFor(a)
-    lastMessageFor(b)
-
-    {
-      case EndDialog(u) => log.debug("already finishing")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 10)).isSuccess =>
-        log.info(s"the $user rated the quality by $rate")
-        context.become(dialogEvaluationBreadth)
-      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""", self.chatId)
-      case m: PushMessageToTalk => log.debug("ignore message {}", m)
-    }
-  }
-
-  private def dialogEvaluationBreadth: Receive = {
-    def lastMessageFor(user: User): Unit = user match {
-      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the breadth", self.chatId)
-      case u: Bot =>
-    }
-
-    lastMessageFor(a)
-    lastMessageFor(b)
-
-    {
-      case EndDialog(u) => log.debug("already finishing")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
-        log.info(s"the $user rated the breadth by $rate")
-        context.become(dialogEvaluationEngagement)
-      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""", self.chatId)
-      case m: PushMessageToTalk => log.debug("ignore message {}", m)
-    }
-  }
-
-  private def dialogEvaluationEngagement: Receive = {
-    def lastMessageFor(user: User): Unit = user match {
-      case u: TelegramChat => gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the engagement", self.chatId)
-      case u: Bot =>
-    }
-
-    lastMessageFor(a)
-    lastMessageFor(b)
-
-    {
-      case EndDialog(u) => log.debug("already engagement")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
-        log.info(s"the $user rated the engagement by $rate")
-        gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", self.chatId)
-        self ! PoisonPill
-      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""", self.chatId)
-      case m: PushMessageToTalk => log.debug("ignore message {}", m)
-    }
+    case EndDialog(u) => log.debug("already engagement")
+    case m @ PushMessageToTalk(from, _) =>
+      (if (from == a) aEvaluation else if (from == b) bEvaluation else throw new IllegalArgumentException(s"$from not in talk")) forward m
   }
 }
 
