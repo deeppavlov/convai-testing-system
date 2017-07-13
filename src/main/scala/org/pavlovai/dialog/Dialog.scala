@@ -25,7 +25,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
   override def receive: Receive = {
     def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+      case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, "Ololo???", id)//Endpoint.DeliverMessageToUser(u, text, id)
       case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, id)
     }
 
@@ -39,26 +39,23 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         messagesCount += 1
         if (messagesCount > maxLen) self ! EndDialog
 
-      case EndDialog => self ! PoisonPill //context.become(dialogFinishing)
+      case EndDialog => context.become(dialogFinishing)
     }
   }
 
-  //TODO
   private def dialogFinishing: Receive = {
-    def lastMessageFor(user: User, text: String): Endpoint.DeliverMessageToUser = user match {
-      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, id)
+    def lastMessageFor(user: User): Endpoint.MessageFromDialog = user match {
+      case u: TelegramChat => Endpoint.AskEvaluationFromHuman(u, "Ololo???", id)
       case u: Bot => Endpoint.DeliverMessageToUser(u, "/end", id)
     }
 
+    gate ! lastMessageFor(a)
+    gate ! lastMessageFor(b)
+
     {
       case EndDialog => log.debug("already finishing")
+      case _ => ???
     }
-  }
-
-  override def postStop(): Unit = {
-    gate ! Endpoint.DeliverMessageToUser(a, "/end", id)
-    gate ! Endpoint.DeliverMessageToUser(b, "/end", id)
-    super.postStop()
   }
 }
 
