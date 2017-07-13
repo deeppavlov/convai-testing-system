@@ -55,7 +55,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
     {
       case EndDialog(u) => log.debug("already finishing")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(r => r > 0 && r <= 10) =>
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 10)).isSuccess =>
         log.info(s"the $user rated the quality by $rate")
         context.become(dialogEvaluationBreadth)
       case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
@@ -73,7 +73,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
     {
       case EndDialog(u) => log.debug("already finishing")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => rate > 0 && rate <= 10) =>
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
         log.info(s"the $user rated the breadth by $rate")
         context.become(dialogEvaluationEngagement)
       case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
@@ -91,7 +91,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
     {
       case EndDialog(u) => log.debug("already engagement")
-      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => rate > 0 && rate <= 10) =>
+      case PushMessageToTalk(user, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
         log.info(s"the $user rated the engagement by $rate")
         self ! PoisonPill
       case PushMessageToTalk(from, _) => gate ! Endpoint.DeliverMessageToUser(from, "Please use integers in diapason [1, 10]", id)
