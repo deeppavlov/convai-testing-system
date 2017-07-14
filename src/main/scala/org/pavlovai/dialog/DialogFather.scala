@@ -59,7 +59,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
           k ! PoisonPill //TODO
         }
         user match {
-          case u: Human => noobs.remove(u)
+          case u: Human =>
+            noobs.remove(u)
+            gate ! Endpoint.DeliverMessageToUser(user, "Bye", None)
           case _ =>
         }
       }
