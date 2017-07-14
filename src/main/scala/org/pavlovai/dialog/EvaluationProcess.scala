@@ -22,7 +22,6 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           gate ! Endpoint.DeliverMessageToUser(u, "/end", Some(dialog.chatId))
-          dialog ! PoisonPill
       }
   }
 
