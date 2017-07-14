@@ -47,7 +47,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
       daddy ! DialogFather.UserLeave(TelegramChat(id))
-      engagedUsers.remove(id)
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
@@ -68,7 +67,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
 
     case Endpoint.ActivateTalkForUser(user: TelegramChat, talk: ActorRef) => activeUsers += user -> talk
-    case Endpoint.FinishTalkForUser(user: TelegramChat, _) => activeUsers -= user
+    case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
+      activeUsers -= user
+      engagedUsers.remove(user.chatId)
 
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
