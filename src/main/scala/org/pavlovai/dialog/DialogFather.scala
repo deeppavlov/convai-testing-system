@@ -76,7 +76,10 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private def userAvailable(user: User): Unit = {
     if (availableUsers.add(user)) {
-      user match { case u: Human => noobs.add(u) }
+      user match {
+        case u: Human => noobs.add(u)
+        case _ =>
+      }
       log.debug("new user available: {}", user)
     }
   }
@@ -84,7 +87,10 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   private def userLeave(user: User): Unit = {
     if(availableUsers.remove(user)) {
       log.info("user leave: {}, dialog killed", user)
-      user match { case u: Human => noobs.remove(u) }
+      user match {
+        case u: Human => noobs.remove(u)
+        case _ =>
+      }
       usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
         k ! Dialog.EndDialog(Some(user))
       }
