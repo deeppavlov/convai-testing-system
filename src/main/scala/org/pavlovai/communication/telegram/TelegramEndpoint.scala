@@ -95,8 +95,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
     """
-      |*Help message*
-      |
       |Use:
       |
       |- /begin for start talk
