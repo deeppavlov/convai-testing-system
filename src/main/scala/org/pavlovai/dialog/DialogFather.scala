@@ -85,6 +85,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   }
 
   private def userLeave(user: User): Unit = {
+    println("????")
     if(availableUsers.remove(user)) {
       log.info("user leave: {}, dialog killed", user)
       user match {
@@ -107,6 +108,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   }
 
   private def userLeaveChat(user: User, chat: ActorRef): Unit = {
+    println("!!!!!!")
     gate ! Endpoint.FinishTalkForUser(user, chat)
     user match {
       case u: Human => noobs.add(u)
