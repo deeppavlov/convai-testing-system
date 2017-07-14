@@ -65,7 +65,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         log.info("user leave: {}, dialog killed", user)
         leaved.add(user)
         usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
-          k ! PoisonPill //TODO
+          k ! Dialog.EndDialog(Some(user))
         }
         user match {
           case u: Human =>
