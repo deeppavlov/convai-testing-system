@@ -62,15 +62,13 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case UserAvailable(user: User) => userAvailable(user)
     case UserLeave(user: User) =>
       if(availableUsers.remove(user)) {
-        log.info("user leave: {}, dialog killed", user)
+        log.info("user leave: {}", user)
         leaved.add(user)
         usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
           k ! Dialog.EndDialog(Some(user))
         }
         user match {
-          case u: Human =>
-            noobs.remove(u)
-            gate ! Endpoint.DeliverMessageToUser(user, "Bye", None)
+          case u: Human => noobs.remove(u)
           case _ =>
         }
       }

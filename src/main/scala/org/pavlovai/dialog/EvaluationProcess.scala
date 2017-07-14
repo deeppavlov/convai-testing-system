@@ -22,7 +22,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           gate ! Endpoint.DeliverMessageToUser(u, "/end", Some(dialog.chatId))
-          self ! PoisonPill
+          dialog ! PoisonPill
       }
   }
 
@@ -48,7 +48,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
   private def dialogEvaluationEngagement(u: Human): Receive = {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
       log.info(s"the $u rated the engagement by $rate")
-      self ! PoisonPill
+      dialog ! PoisonPill
       gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", Some(dialog.chatId))
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)
