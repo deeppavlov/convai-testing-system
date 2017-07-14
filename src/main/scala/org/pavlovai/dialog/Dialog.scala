@@ -38,10 +38,11 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         if (messagesCount > maxLen) self ! EndDialog(None)
 
       case EndDialog(u) =>
-        context.become(onEvaluation(
+        /*context.become(onEvaluation(
           context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-$a"),
           context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-$b")
-        ))
+        ))*/
+        self ! PoisonPill
     }
   }
 
