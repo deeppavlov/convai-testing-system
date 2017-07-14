@@ -53,10 +53,13 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       }
   }
 
+  private var restEvaluations = 2
   def onEvaluation(aEvaluation: ActorRef, bEvaluation: ActorRef): Receive = {
     case EvaluationProcess.CompleteEvaluation(user, q, b, e) =>
       log.info("evaluation from {}: quality={}, breadth={}, engagement={}", user, q, b, e)
-      self ! PoisonPill
+      restEvaluations -= 1
+      if (restEvaluations == 0)
+        self ! PoisonPill
 
     case EndDialog(u) => log.debug("already engagement")
     case m @ PushMessageToTalk(from, _) =>
