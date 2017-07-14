@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
-import org.pavlovai.communication.{Endpoint, TelegramChat}
+import org.pavlovai.communication.{Endpoint, Human, TelegramChat}
 import org.pavlovai.dialog.{Dialog, DialogFather}
 
 import scala.collection.mutable
@@ -47,12 +47,14 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(helpMessage(chat.id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
+      alreadyStartChat.add(id)
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
+      alreadyStartChat.remove(id)
       daddy ! DialogFather.UserLeave(TelegramChat(id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
@@ -94,7 +96,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
   private val activeUsers = mutable.Map[TelegramChat, ActorRef]()
 
-  private def isInDialog(chatId: Long) = activeUsers.keySet.contains(TelegramChat(chatId))
+  private val alreadyStartChat: mutable.Set[Long] = mutable.Set.empty[Long]
+
+  private def isInDialog(chatId: Long) = alreadyStartChat.contains(chatId)//activeUsers.keySet.contains(TelegramChat(chatId))
   private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
