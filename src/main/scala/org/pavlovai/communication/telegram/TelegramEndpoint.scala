@@ -66,7 +66,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
 
     case Endpoint.ActivateTalkForUser(user: TelegramChat, talk: ActorRef) => activeUsers += user -> talk
-    case Endpoint.FinishTalkForUser(user: TelegramChat, _) => activeUsers -= user
+    case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
+      println("ASDASDASDAS")
+      activeUsers -= user
 
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
