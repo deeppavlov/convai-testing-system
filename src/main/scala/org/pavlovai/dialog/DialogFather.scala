@@ -44,7 +44,13 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
     case Terminated(t) =>
       usersChatsInTalks.get(t).foreach { ul =>
-        ul.foreach(userLeaveChat(_, t))
+        ul.foreach { user =>
+          gate ! Endpoint.FinishTalkForUser(user, t)
+          user match {
+            case u: Human => noobs.add(u)
+            case _ =>
+          }
+        }
         log.info("users {} leave from dialog", ul)
       }
       usersChatsInTalks.remove(t)
@@ -101,14 +107,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       case u: Human => noobs.remove(u)
       case u: Bot =>
         if(cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
-      case _ =>
-    }
-  }
-
-  private def userLeaveChat(user: User, chat: ActorRef): Unit = {
-    gate ! Endpoint.FinishTalkForUser(user, chat)
-    user match {
-      case u: Human => noobs.add(u)
       case _ =>
     }
   }
