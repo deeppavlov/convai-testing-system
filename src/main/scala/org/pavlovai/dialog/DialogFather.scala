@@ -35,9 +35,12 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet ++ cooldownBots.keySet).foreach { case (a, b, txt) =>
-        startDialog(a, b, txt)
-      }
+      availableDialogs(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet ++ cooldownBots.keySet)
+          .filter {
+            case (a: Bot, b: Bot, _) => false
+            case _ => true
+          }
+        .foreach { case (a, b, txt) => startDialog(a, b, txt) }
       noobs.foreach { noob =>
         gate ! Endpoint.DeliverMessageToUser(noob, "Sorry, wait for the opponent", None)
         noobs.remove(noob)
