@@ -25,6 +25,8 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private val noobs: mutable.Set[Human] = mutable.Set.empty[Human]
 
+  gate ! Endpoint.SetDialogFather(self)
+
   context.system.scheduler.schedule(1.second, 1.second) {
     self ! AssembleDialogs
     self ! CleanCooldownList

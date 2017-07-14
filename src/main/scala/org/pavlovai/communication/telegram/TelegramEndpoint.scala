@@ -107,7 +107,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |- /end for end talk
       |- /help for help
       |
-      |[link](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
     """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 }
 

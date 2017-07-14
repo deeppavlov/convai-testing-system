@@ -47,7 +47,7 @@ class Endpoint extends Actor with ActorLogging {
 
   private val uninitialized: Receive = {
     case SetDialogFather(daddy) => context.become(initialized(daddy))
-    case m => log.warning("initialize actor first, ignored {}", m)
+    case m => log.warning("initialize endpoin actor first, ignored {}", m)
   }
 
   override def receive: Receive = uninitialized
