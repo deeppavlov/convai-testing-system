@@ -24,6 +24,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
 
   private val noobs: mutable.Set[Human] = mutable.Set.empty[Human]
+  private val leaved: mutable.Set[User] = mutable.Set.empty[User]
 
   gate ! Endpoint.SetDialogFather(self)
 
@@ -47,13 +48,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         ul.foreach { user =>
           gate ! Endpoint.FinishTalkForUser(user, t)
           user match {
-            case u: Human => noobs.add(u)
+            case u: Human if !leaved.contains(u) => noobs.add(u)
             case _ =>
           }
         }
         log.info("users {} leave from dialog", ul)
       }
       usersChatsInTalks.remove(t)
+      leaved.clear()
 
     case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
 
@@ -61,6 +63,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case UserLeave(user: User) =>
       if(availableUsers.remove(user)) {
         log.info("user leave: {}, dialog killed", user)
+        leaved.add(user)
         usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
           k ! PoisonPill //TODO
         }
