@@ -53,7 +53,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
-    case Endpoint.DeliverMessageToUser(Bot(token), text, dialogId) =>
+    case Endpoint.DeliverMessageToUser(Bot(token), text, Some(dialogId)) =>
       botsQueues.get(token).fold[Any] {
         log.warning("bot {} not registered", token)
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))

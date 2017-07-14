@@ -52,15 +52,15 @@ class BotEndpointSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFacto
       val ep = system.actorOf(BotEndpoint.props(daddy.ref, BrokenClock))
       val dialog1 = TestProbe()
       ep ! Endpoint.ActivateTalkForUser(Bot("0"), dialog1.ref)
-      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test1", dialog1.ref.hashCode())
+      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test1", Some(dialog1.ref.hashCode()))
       ep ! GetMessages("0")
       expectMsg(List(Update(0, Some(Message(0, None, Instant.now(BrokenClock).getNano, Chat(dialog1.ref.hashCode(), ChatType.Private), text = Some("test1"))))))
       ep ! GetMessages("0")
       expectMsg(List.empty)
-      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test2", dialog1.ref.hashCode())
+      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test2", Some(dialog1.ref.hashCode()))
       val dialog2 = TestProbe()
       ep ! Endpoint.ActivateTalkForUser(Bot("0"), dialog2.ref)
-      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test3", dialog2.ref.hashCode())
+      ep ! Endpoint.DeliverMessageToUser(Bot("0"), "test3", Some(dialog2.ref.hashCode()))
       ep ! GetMessages("0")
       expectMsg(List(
         Update(0, Some(Message(0, None, Instant.now(BrokenClock).getNano, Chat(dialog1.ref.hashCode(), ChatType.Private), text = Some("test2")))),

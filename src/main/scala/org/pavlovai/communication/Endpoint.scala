@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.ActorMaterializer
 import org.pavlovai.communication.rest.{BotEndpoint, Routes}
 import org.pavlovai.communication.telegram.{BotWorker, TelegramEndpoint}
+import org.pavlovai.dialog.DialogFather
 
 import scala.util.Try
 
@@ -11,11 +12,11 @@ import scala.util.Try
   * @author vadim
   * @since 11.07.17
   */
-class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
+class Endpoint extends Actor with ActorLogging {
   import Endpoint._
 
-  private val telegramGate = context.actorOf(TelegramEndpoint.props(talkConstructor), "telegram-gate")
-  private val botGate = context.actorOf(BotEndpoint.props(talkConstructor), "bot-gate")
+  private val telegramGate = context.actorOf(TelegramEndpoint.props(self), "telegram-gate")
+  private val botGate = context.actorOf(BotEndpoint.props(self), "bot-gate")
 
   //TODO
   private val routerBotToken = Try(context.system.settings.config.getString("telegram.token")).getOrElse("unknown")
@@ -24,11 +25,11 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
     "https://localhost"
   }
 
-  implicit val mat: ActorMaterializer = ActorMaterializer()
+  private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate), routerBotToken, webhook).run()
 
-  override def receive: Receive = {
+  private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ DeliverMessageToUser(_: TelegramChat, _, _) => telegramGate forward message
     case message @ DeliverMessageToUser(_: Bot, _, _) => botGate forward message
 
@@ -39,19 +40,29 @@ class Endpoint(talkConstructor: ActorRef) extends Actor with ActorLogging {
     case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
 
     case m: AskEvaluationFromHuman => telegramGate forward m
+
+    case m: DialogFather.UserAvailable => talkConstructor forward m
+    case m: DialogFather.UserLeave => talkConstructor forward m
   }
+
+  private val uninitialized: Receive = {
+    case SetDialogFather(daddy) => context.become(initialized(daddy))
+    case m => log.warning("initialize actor first, ignored {}", m)
+  }
+
+  override def receive: Receive = uninitialized
 }
 
 object Endpoint {
-  def props(talkConstructor: ActorRef): Props = Props(new Endpoint(talkConstructor))
+  def props: Props = Props(new Endpoint)
 
-  sealed trait MessageFromDialog {
-    val fromDialogId: Int
-  }
-  case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Int) extends MessageFromDialog
-  case class AskEvaluationFromHuman(receiver: Human, question: String, fromDialogId: Int) extends MessageFromDialog
+  sealed trait MessageFromDialog
+  case class DeliverMessageToUser(receiver: User, message: String, fromDialogId: Option[Int]) extends MessageFromDialog
+  case class AskEvaluationFromHuman(receiver: Human, question: String) extends MessageFromDialog
 
   case class ActivateTalkForUser(user: User, talk: ActorRef)
   case class FinishTalkForUser(user: User, talk: ActorRef)
+
+  case class SetDialogFather(daddy: ActorRef)
 }
 

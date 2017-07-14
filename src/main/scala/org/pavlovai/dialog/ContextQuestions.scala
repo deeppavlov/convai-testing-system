@@ -11,14 +11,14 @@ import scala.util.{Failure, Success, Try}
   */
 
 trait ContextQuestions {
-  def selectRandom(implicit ec: ExecutionContext): Future[String]
+  def selectRandom: Try[String]
 }
 
 object ContextQuestions extends ContextQuestions {
   private val rnd = scala.util.Random.javaRandomToRandom(new SecureRandom())
 
-  def selectRandom(implicit ec: ExecutionContext): Future[String] = {
-    Future(io.Source.fromResource("context.txt").getLines.size).flatMap { size =>
+  def selectRandom: Try[String] = {
+    Try(io.Source.fromResource("context.txt").getLines.size).flatMap { size =>
       val dataset = io.Source.fromResource("context.txt")
       def goToIndex(rest: Int, it: Iterator[String]): Try[String] = {
         if (rest <= 1 && it.hasNext) Success(it.next())
@@ -26,7 +26,7 @@ object ContextQuestions extends ContextQuestions {
         else Failure(new RuntimeException())
       }
 
-      Future.fromTry(goToIndex(rnd.nextInt(size), dataset.getLines))
+      goToIndex(rnd.nextInt(size), dataset.getLines)
     }
   }
 }

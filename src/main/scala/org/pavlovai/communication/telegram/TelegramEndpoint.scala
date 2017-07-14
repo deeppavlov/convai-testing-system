@@ -2,11 +2,10 @@ package org.pavlovai.communication.telegram
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
-import info.mukel.telegrambot4s.methods.ParseMode.ParseMode
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
-import info.mukel.telegrambot4s.models.{ReplyMarkup, _}
-import org.pavlovai.dialog.{Dialog, DialogFather}
+import info.mukel.telegrambot4s.models._
 import org.pavlovai.communication.{Endpoint, TelegramChat}
+import org.pavlovai.dialog.{Dialog, DialogFather}
 
 import scala.collection.mutable
 
@@ -80,7 +79,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
-    case Endpoint.AskEvaluationFromHuman(h, text, _) =>
+    case Endpoint.AskEvaluationFromHuman(h, text) =>
       telegramCall(
         SendMessage(
           Left(h.chatId),

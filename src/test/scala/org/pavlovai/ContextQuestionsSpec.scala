@@ -15,11 +15,11 @@ class ContextQuestionsSpec extends WordSpec {
 
   "randomLine" must {
     "return random string" in {
-      val l1 = Await.result(ContextQuestions.selectRandom, 15.seconds)
-      val l2 = Await.result(ContextQuestions.selectRandom, 15.seconds)
+      val l1 = ContextQuestions.selectRandom
+      val l2 = ContextQuestions.selectRandom
 
-      assert(l1.nonEmpty)
-      assert(l2.nonEmpty)
+      assert(l1.isSuccess)
+      assert(l2.isSuccess)
       assert(l1 !== l2)
     }
   }

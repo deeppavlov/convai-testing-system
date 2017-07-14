@@ -22,28 +22,35 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private var messagesCount: Int = 0
 
   override def receive: Receive = {
-    def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-      case u: TelegramChat => Endpoint.DeliverMessageToUser(u, text, self.chatId)
-      case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, self.chatId)
-    }
+    case StartDialog =>
+      def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
+        case u: Human => Endpoint.DeliverMessageToUser(u, text, Some(self.chatId))
+        case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, Some(self.chatId))
+      }
+      if (a.id.hashCode < b.id.hashCode) {
+        gate ! firstMessageFor(a, txt)
+        gate ! firstMessageFor(b, txt)
+      } else {
+        gate ! firstMessageFor(b, txt)
+        gate ! firstMessageFor(a, txt)
+      }
+    case PushMessageToTalk(from, text) =>
+      val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
+      gate ! Endpoint.DeliverMessageToUser(oppanent, text, Some(self.chatId))
+      messagesCount += 1
+      if (messagesCount > maxLen) self ! EndDialog(None)
 
-    gate ! firstMessageFor(a, txt)
-    gate ! firstMessageFor(b, txt)
-
-    {
-      case PushMessageToTalk(from, text) =>
-        val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
-        gate ! Endpoint.DeliverMessageToUser(oppanent, text, self.chatId)
-        messagesCount += 1
-        if (messagesCount > maxLen) self ! EndDialog(None)
-
-      case EndDialog(u) =>
-        /*context.become(onEvaluation(
-          context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-$a"),
-          context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-$b")
-        ))*/
-        self ! PoisonPill
-    }
+    case EndDialog(u) =>
+      val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.id}")
+      val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
+      context.become(onEvaluation(e1, e2))
+      if (a.id.hashCode < b.id.hashCode) {
+        e1 ! EvaluationProcess.StartEvaluation
+        e2 ! EvaluationProcess.StartEvaluation
+      } else {
+        e2 ! EvaluationProcess.StartEvaluation
+        e1 ! EvaluationProcess.StartEvaluation
+      }
   }
 
   def onEvaluation(aEvaluation: ActorRef, bEvaluation: ActorRef): Receive = {
@@ -62,6 +69,7 @@ object Dialog {
 
   case class PushMessageToTalk(from: User, message: String)
 
+  case object StartDialog
   case class EndDialog(sender: Option[User])
 
   implicit class DialogActorRef(ref: ActorRef) {

@@ -5,14 +5,11 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
-import org.pavlovai.dialog.DialogFather
-import org.pavlovai.communication.rest.{BotEndpoint, Routes}
-import org.pavlovai.communication.telegram.{BotWorker, TelegramEndpoint}
 import org.pavlovai.communication.Endpoint
+import org.pavlovai.dialog.{ContextQuestions, DialogFather}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 object ConvaiTestingSystem extends App {
   private val conf = ConfigFactory.load()
@@ -21,7 +18,8 @@ object ConvaiTestingSystem extends App {
   private implicit val executionContext = akkaSystem.dispatcher
   private val logger = Logger(getClass)
 
-  private val talkConstructor = akkaSystem.actorOf(DialogFather.props, "talk-constructor")
+  private val gate = akkaSystem.actorOf(Endpoint.props, name = "communication-endpoint")
+  private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, ContextQuestions), "talk-constructor")
 
   private implicit val timeout: Timeout = 5.seconds
 

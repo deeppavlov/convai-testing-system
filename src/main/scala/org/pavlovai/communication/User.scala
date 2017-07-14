@@ -4,11 +4,16 @@ package org.pavlovai.communication
   * @author vadim
   * @since 06.07.17
   */
-trait User
+trait User {
+  val id: String
+}
 
-case class Bot(token: String) extends User
+case class Bot(token: String) extends User {
+  val id: String = token
+}
 
-sealed trait Human extends User {
+trait Human extends User {
   val chatId: Long
+  val id: String = chatId.toString
 }
 case class TelegramChat(chatId: Long) extends Human
