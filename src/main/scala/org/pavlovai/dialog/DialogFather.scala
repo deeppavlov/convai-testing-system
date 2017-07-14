@@ -47,8 +47,12 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       usersChatsInTalks.get(t).foreach { ul =>
         ul.foreach { user =>
           gate ! Endpoint.FinishTalkForUser(user, t)
-          user match {
+          /*user match {
             case u: Human if !leaved.contains(u) => noobs.add(u)
+            case _ =>
+          }*/
+          user match {
+            case u: Human => availableUsers.remove(user)
             case _ =>
           }
         }

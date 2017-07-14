@@ -13,6 +13,10 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
   import Dialog._
   import EvaluationProcess._
 
+  var q = 0
+  var b = 0
+  var e = 0
+
   override def receive: Receive = {
     case StartEvaluation =>
       user match {
@@ -28,6 +32,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
   private def dialogEvaluationQuality(u: Human): Receive = {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 10)).isSuccess =>
       log.info(s"the $u rated the quality by $rate")
+      q = rate.toInt
       context.become(dialogEvaluationBreadth(u))
       gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the breadth")
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
@@ -38,6 +43,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
   private def dialogEvaluationBreadth(u: Human): Receive = {
       case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
         log.info(s"the $u rated the breadth by $rate")
+        b = rate.toInt
         context.become(dialogEvaluationEngagement(u))
         gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the engagement")
       case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
@@ -47,8 +53,9 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
   private def dialogEvaluationEngagement(u: Human): Receive = {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
       log.info(s"the $u rated the engagement by $rate")
-      dialog ! PoisonPill
+      e = rate.toInt
       gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", Some(dialog.chatId))
+      dialog ! CompleteEvaluation(u ,q, b, e)
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)
   }
