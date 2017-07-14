@@ -40,12 +40,14 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
+      engagedUsers.add(id)
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
       daddy ! DialogFather.UserLeave(TelegramChat(id))
+      engagedUsers.remove(id)
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
@@ -85,8 +87,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
   }
 
   private val activeUsers = mutable.Map[TelegramChat, ActorRef]()
+  private val engagedUsers = mutable.Set[Long]()
 
-  private def isInDialog(chatId: Long) = activeUsers.keySet.contains(TelegramChat(chatId))
+  private def isInDialog(chatId: Long) = engagedUsers.contains(chatId)
   private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
