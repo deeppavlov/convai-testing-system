@@ -1,6 +1,6 @@
 package org.pavlovai.dialog
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 import akka.util.Timeout
 import org.pavlovai.communication._
 
@@ -52,7 +52,17 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
 
     case UserAvailable(user: User) => userAvailable(user)
-    case UserLeave(user: User) => userLeave(user)
+    case UserLeave(user: User) =>
+      if(availableUsers.remove(user)) {
+        log.info("user leave: {}, dialog killed", user)
+        user match {
+          case u: Human => noobs.remove(u)
+          case _ =>
+        }
+        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
+          k ! PoisonPill
+        }
+      }
   }
 
   private def startDialog(a: User, b: User, txt: String): Unit = {
@@ -84,20 +94,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     }
   }
 
-  private def userLeave(user: User): Unit = {
-    println("????")
-    if(availableUsers.remove(user)) {
-      log.info("user leave: {}, dialog killed", user)
-      user match {
-        case u: Human => noobs.remove(u)
-        case _ =>
-      }
-      usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
-        k ! Dialog.EndDialog(Some(user))
-      }
-    }
-  }
-
   private def userAddedToChat(user: User): Unit = {
     user match {
       case u: Human => noobs.remove(u)
@@ -108,7 +104,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   }
 
   private def userLeaveChat(user: User, chat: ActorRef): Unit = {
-    println("!!!!!!")
     gate ! Endpoint.FinishTalkForUser(user, chat)
     user match {
       case u: Human => noobs.add(u)
