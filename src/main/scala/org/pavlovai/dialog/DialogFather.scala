@@ -55,12 +55,12 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case UserLeave(user: User) =>
       if(availableUsers.remove(user)) {
         log.info("user leave: {}, dialog killed", user)
+        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
+          k ! PoisonPill //TODO
+        }
         user match {
           case u: Human => noobs.remove(u)
           case _ =>
-        }
-        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
-          k ! PoisonPill
         }
       }
   }
