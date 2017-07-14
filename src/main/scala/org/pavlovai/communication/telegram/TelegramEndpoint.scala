@@ -33,14 +33,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(chat.id),
         """
           |*Welcome!*
-          |
-          |Use:
-          |
-          |- /begin for start talk
-          |- /end for end talk
-          |- /help for help
-          |
-          |[](http://vkurselife.com/wp-content/uploads/2016/05/b5789b.jpg)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Command(chat, "/help") =>

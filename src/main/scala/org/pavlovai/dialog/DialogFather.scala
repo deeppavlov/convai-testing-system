@@ -47,6 +47,8 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         ul.foreach(userLeaveChat(_, t))
         log.info("users {} leave from dialog", ul)
       }
+      usersChatsInTalks.remove(t)
+
     case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
 
     case UserAvailable(user: User) => userAvailable(user)
@@ -83,12 +85,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     if(availableUsers.remove(user)) {
       log.info("user leave: {}, dialog killed", user)
       user match { case u: Human => noobs.remove(u) }
-      val toRemove = mutable.Set.empty[ActorRef]
       usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
         k ! Dialog.EndDialog(Some(user))
-        toRemove.add(k)
       }
-      toRemove.foreach(usersChatsInTalks.remove)
     }
   }
 

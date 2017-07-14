@@ -40,6 +40,8 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
     "see 'Sorry, wait for the opponent' message if no opponent fond" in {
       val gate = TestProbe()
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+      gate.expectMsg(Endpoint.SetDialogFather(daddy))
+
       daddy ! DialogFather.UserAvailable(Tester(5))
       gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(5), "Sorry, wait for the opponent", None))
       gate.expectNoMsg()
@@ -49,6 +51,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val gate = TestProbe()
       for (_ <- 1 to 3) {
         val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+        gate.expectMsg(Endpoint.SetDialogFather(daddy))
         daddy ! DialogFather.UserAvailable(Tester(1))
         gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Sorry, wait for the opponent", None))
         daddy ! DialogFather.UserAvailable(Tester(2))
@@ -67,6 +70,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
       val gate = TestProbe()
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+      gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester(1))
       gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Sorry, wait for the opponent", None))
       daddy ! DialogFather.UserAvailable(Tester(2))

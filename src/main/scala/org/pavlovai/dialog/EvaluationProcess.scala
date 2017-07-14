@@ -31,7 +31,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
       log.info(s"the $u rated the quality by $rate")
       context.become(dialogEvaluationBreadth(u))
       gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the breadth")
-    case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""")
+    case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)
 
   }
@@ -41,7 +41,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
         log.info(s"the $u rated the breadth by $rate")
         context.become(dialogEvaluationEngagement(u))
         gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the engagement")
-      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""")
+      case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
       case m: PushMessageToTalk => log.debug("ignore message {}", m)
   }
 
@@ -50,7 +50,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
       log.info(s"the $u rated the engagement by $rate")
       self ! PoisonPill
       gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", Some(dialog.chatId))
-    case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers in diapason \[1, 10\]""")
+    case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)
   }
 }
