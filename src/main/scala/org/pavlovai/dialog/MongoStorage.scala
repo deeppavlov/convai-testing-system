@@ -43,7 +43,7 @@ object MongoStorage {
 
   private case class UserSummary(_id: ObjectId, t: String)
   private object UserSummary {
-    def apply(id: String, t: String): UserSummary = new UserSummary(new ObjectId(id), t)
+    def apply(id: String, t: String): UserSummary = new UserSummary(new ObjectId(id.map(_.toInt.toHexString).mkString), t)
   }
 
   private case class DialogEvaluation(_id: ObjectId, ownerId: String, quality: Int, breadth: Int, engagement: Int)
@@ -59,7 +59,7 @@ object MongoStorage {
   private case class Dialog(_id: ObjectId, users: Set[UserSummary], context: String, tread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
     def apply(wd: WriteDialog): Dialog =
-      new Dialog(new ObjectId(wd.id.toString),
+      new Dialog(new ObjectId(wd.id.toHexString),
         wd.users.map(u => UserSummary(u.id, u.getClass.getName)),
         wd.context, wd.tread.map { case (u, t) => DialogThreadItem(u.id, t) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
