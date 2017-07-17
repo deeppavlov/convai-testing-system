@@ -43,7 +43,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
 
       daddy ! DialogFather.UserAvailable(Tester(5))
-      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(5), "Sorry, wait for the opponent", None))
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(5), "Please wait for your partner.", None))
       gate.expectNoMsg()
     }
 
@@ -53,7 +53,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
         val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
         gate.expectMsg(Endpoint.SetDialogFather(daddy))
         daddy ! DialogFather.UserAvailable(Tester(1))
-        gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Sorry, wait for the opponent", None))
+        gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Please wait for your partner.", None))
         daddy ! DialogFather.UserAvailable(Tester(2))
         val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
         gate.expectMsg(Endpoint.ActivateTalkForUser(Tester(2), t))
@@ -66,13 +66,13 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
     "see own and opponent messages" in pending
 
-    "evaluate dialog when other user finish dialog and then start next dialog" in {
+    "evaluate dialog when other user finish dialog" in {
 
       val gate = TestProbe()
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester(1))
-      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Sorry, wait for the opponent", None))
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Please wait for your partner.", None))
       daddy ! DialogFather.UserAvailable(Tester(2))
       val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Tester(2), t))
@@ -82,8 +82,8 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
       daddy ! DialogFather.UserLeave(Tester(2))
 
-      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Chat is finished, please evaluate the quality"))
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Chat is finished, please evaluate the quality"))
+      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Chat is finished, please evaluate the quality"))
 
       t ! Dialog.PushMessageToTalk(Tester(1), "1")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the breadth"))

@@ -1,6 +1,6 @@
 package org.pavlovai.dialog
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import akka.util.Timeout
 import org.pavlovai.communication._
 
@@ -12,10 +12,9 @@ import scala.util.Try
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions) extends Actor with ActorLogging with akka.pattern.AskSupport with DialogConstructionRules {
+class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions) extends Actor with ActorLogging with DialogConstructionRules {
   import DialogFather._
   private implicit val ec = context.dispatcher
-  private implicit val timeout: Timeout = 5.seconds
 
   private val cooldownPeriod: FiniteDuration = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.bot.talk_period_min").toNanos)).getOrElse(1.minutes)
 
@@ -23,100 +22,65 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   private val cooldownBots: mutable.Map[Bot, Deadline] = mutable.Map.empty[Bot, Deadline]
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
 
-  private val noobs: mutable.Set[Human] = mutable.Set.empty[Human]
-  private val leaved: mutable.Set[User] = mutable.Set.empty[User]
-
   gate ! Endpoint.SetDialogFather(self)
 
-  context.system.scheduler.schedule(3.second, 3.second) {
-    self ! AssembleDialogs
-    self ! CleanCooldownList
-  }
+  context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet ++ cooldownBots.keySet)
-          .filter {
-            case (a: Bot, b: Bot, _) => false
-            case _ => true
-          }
-        .foreach { case (a, b, txt) => startDialog(a, b, txt) }
-      noobs.foreach { noob =>
-        gate ! Endpoint.DeliverMessageToUser(noob, "Sorry, wait for the opponent", None)
-        noobs.remove(noob)
-      }
+      cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
+      availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
+        .foreach(assembleDialog)
 
     case Terminated(t) =>
-      usersChatsInTalks.get(t).foreach { ul =>
-        ul.foreach { user =>
-          gate ! Endpoint.FinishTalkForUser(user, t)
-          /*user match {
-            case u: Human if !leaved.contains(u) => noobs.add(u)
-            case _ =>
-          }*/
-          user match {
-            case u: Human => availableUsers.remove(user)
-            case _ =>
-          }
-        }
+      usersChatsInTalks.remove(t).foreach { ul =>
+        ul.foreach(user => gate ! Endpoint.FinishTalkForUser(user, t))
         log.info("users {} leave from dialog", ul)
       }
-      usersChatsInTalks.remove(t)
-      leaved.clear()
 
-    case CleanCooldownList => cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
+    case UserAvailable(user: User) =>
+      if (availableUsers.add(user)) {
+        val dialRes = availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
+        dialRes.foreach(assembleDialog)
+        if (!dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b}.contains(user)) {
+          gate ! Endpoint.DeliverMessageToUser(user, "Please wait for your partner.", None)
+        }
 
-    case UserAvailable(user: User) => userAvailable(user)
-    case UserLeave(user: User) =>
-      if(availableUsers.remove(user)) {
-        log.info("user leave: {}", user)
-        leaved.add(user)
-        usersChatsInTalks.filter { case (_, users) => users.contains(user) }.foreach { case (k, v) =>
-          k ! Dialog.EndDialog(Some(user))
-        }
-        user match {
-          case u: Human => noobs.remove(u)
-          case _ =>
-        }
+        log.debug("new user available: {}", user)
       }
-  }
 
-  private def startDialog(a: User, b: User, txt: String): Unit = {
-    val t = context.actorOf(Dialog.props(a, b, txt, gate), name = s"dialog-${java.util.UUID.randomUUID()}")
-    log.info("start talk between {} and {}", a, b)
-    if (a.id.hashCode < b.id.hashCode) {
-      gate ! Endpoint.ActivateTalkForUser(a, t)
-      gate ! Endpoint.ActivateTalkForUser(b, t)
-      usersChatsInTalks += t -> List(a, b)
-    } else {
-      gate ! Endpoint.ActivateTalkForUser(b, t)
-      gate ! Endpoint.ActivateTalkForUser(a, t)
-      usersChatsInTalks += t -> List(b, a)
-    }
-    context.watch(t)
-    userAddedToChat(a)
-    userAddedToChat(b)
+    case UserLeave(user: User) =>
+      if(availableUsers.remove(user)) log.info("user leave: {}", user)
 
-    t ! Dialog.StartDialog
-  }
-
-  private def userAvailable(user: User): Unit = {
-    if (availableUsers.add(user)) {
-      user match {
-        case u: Human => noobs.add(u)
+      usersChatsInTalks.foreach {
+        case (dialog, users) if users.contains(user) =>
+          log.info("user {} leave, dialog {} finished", user, users)
+          dialog ! Dialog.EndDialog(Some(user))
         case _ =>
       }
-      log.debug("new user available: {}", user)
-    }
   }
 
-  private def userAddedToChat(user: User): Unit = {
-    user match {
-      case u: Human => noobs.remove(u)
-      case u: Bot =>
-        if(cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
-      case _ =>
-    }
+  private def assembleDialog(available: (User, User, String)) = available match {
+    case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
+    case (a, b, txt) =>
+      val dialog = context.actorOf(Dialog.props(a, b, txt, gate), name = s"dialog-${java.util.UUID.randomUUID()}")
+      log.info("start talk between {} and {}", a, b)
+      gate ! Endpoint.ActivateTalkForUser(a, dialog)
+      gate ! Endpoint.ActivateTalkForUser(b, dialog)
+      usersChatsInTalks += dialog -> List(a, b)
+
+      context.watch(dialog)
+
+      def userAddedToChat(user: User): Unit = user match {
+        case u: Human => availableUsers.remove(u)
+        case u: Bot => if (cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
+        case _ =>
+      }
+
+      userAddedToChat(a)
+      userAddedToChat(b)
+
+      dialog ! Dialog.StartDialog
   }
 }
 
@@ -124,7 +88,6 @@ object DialogFather {
   def props(gate: ActorRef, textGenerator: ContextQuestions) = Props(new DialogFather(gate, textGenerator))
 
   private case object AssembleDialogs
-  private case object CleanCooldownList
 
   case class UserAvailable(user: User)
   case class UserLeave(user: User)

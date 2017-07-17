@@ -18,7 +18,8 @@ trait DialogConstructionRules {
 
   def availableDialogs(usersList: Set[User], blackList: Set[User]): Seq[(User, User, String)] = {
     val users = rnd.shuffle(usersList.diff(blackList).toList)
-    users.zip(users.reverse).take(users.size / 2).map { case (a, b) =>
+    users.zip(users.reverse).take(users.size / 2).map { case (u1, u2) =>
+      val (a, b) =  if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1)
       textGenerator.selectRandom.map { txt => (a, b, txt) }
     }.collect {
       case Success(d) => d

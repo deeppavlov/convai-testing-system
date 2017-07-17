@@ -27,13 +27,10 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         case u: Human => Endpoint.DeliverMessageToUser(u, text, Some(self.chatId))
         case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, Some(self.chatId))
       }
-      if (a.id.hashCode < b.id.hashCode) {
-        gate ! firstMessageFor(a, txt)
-        gate ! firstMessageFor(b, txt)
-      } else {
-        gate ! firstMessageFor(b, txt)
-        gate ! firstMessageFor(a, txt)
-      }
+
+      gate ! firstMessageFor(a, txt)
+      gate ! firstMessageFor(b, txt)
+
     case PushMessageToTalk(from, text) =>
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
       gate ! Endpoint.DeliverMessageToUser(oppanent, text, Some(self.chatId))
@@ -42,15 +39,10 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 
     case EndDialog(u) =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.id}")
+      e1 ! EvaluationProcess.StartEvaluation
       val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
+      e2 ! EvaluationProcess.StartEvaluation
       context.become(onEvaluation(e1, e2))
-      if (a.id.hashCode < b.id.hashCode) {
-        e1 ! EvaluationProcess.StartEvaluation
-        e2 ! EvaluationProcess.StartEvaluation
-      } else {
-        e2 ! EvaluationProcess.StartEvaluation
-        e1 ! EvaluationProcess.StartEvaluation
-      }
   }
 
   private var restEvaluations = 2
