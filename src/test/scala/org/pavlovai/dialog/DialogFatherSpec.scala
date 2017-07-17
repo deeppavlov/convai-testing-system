@@ -3,10 +3,9 @@ package org.pavlovai.dialog
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import org.pavlovai.communication.{Endpoint, Human, TelegramChat}
+import org.pavlovai.communication.{Endpoint, Human}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.{Success, Try}
 
@@ -67,7 +66,6 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
     "see own and opponent messages" in pending
 
     "evaluate dialog when other user finish dialog" in {
-
       val gate = TestProbe()
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
@@ -82,8 +80,15 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
       daddy ! DialogFather.UserLeave(Tester(2))
 
-      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Chat is finished, please evaluate the quality"))
-      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Chat is finished, please evaluate the quality"))
+      gate.expectMsgPF(3.seconds) {
+        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the quality") =>
+      }
+
+      gate.expectMsgPF(3.seconds) {
+        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the quality") =>
+      }
 
       t ! Dialog.PushMessageToTalk(Tester(1), "1")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the breadth"))
@@ -97,8 +102,5 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
       gate.expectNoMsg()
     }
-
-    "evaluate dialog when sent /end and then not receive any messages" in pending
   }
-
 }

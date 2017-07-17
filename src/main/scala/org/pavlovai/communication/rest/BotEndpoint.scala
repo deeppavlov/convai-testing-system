@@ -45,7 +45,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       }
 
     case SendMessage(token, chat, m: TalkEvaluationMessage) =>
-      activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.EndDialog(Some(Bot(token))))
+      activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.EndDialog)
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>

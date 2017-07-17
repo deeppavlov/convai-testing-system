@@ -1,7 +1,6 @@
 package org.pavlovai.dialog
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import akka.util.Timeout
 import org.pavlovai.communication._
 
 import scala.collection.mutable
@@ -55,7 +54,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       usersChatsInTalks.foreach {
         case (dialog, users) if users.contains(user) =>
           log.info("user {} leave, dialog {} finished", user, users)
-          dialog ! Dialog.EndDialog(Some(user))
+          dialog ! Dialog.EndDialog
         case _ =>
       }
   }

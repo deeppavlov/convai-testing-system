@@ -17,7 +17,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
   private implicit val ec = context.dispatcher
-  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog(None) }
+  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
 
   private var messagesCount: Int = 0
 
@@ -35,9 +35,9 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
       gate ! Endpoint.DeliverMessageToUser(oppanent, text, Some(self.chatId))
       messagesCount += 1
-      if (messagesCount > maxLen) self ! EndDialog(None)
+      if (messagesCount > maxLen) self ! EndDialog
 
-    case EndDialog(u) =>
+    case EndDialog =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.id}")
       e1 ! EvaluationProcess.StartEvaluation
       val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
@@ -53,7 +53,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       if (restEvaluations == 0)
         self ! PoisonPill
 
-    case EndDialog(u) => log.debug("already engagement")
+    case EndDialog => log.debug("already engagement")
     case m @ PushMessageToTalk(from, _) =>
       (if (from == a) aEvaluation else if (from == b) bEvaluation else throw new IllegalArgumentException(s"$from not in talk")) forward m
   }
@@ -65,7 +65,7 @@ object Dialog {
   case class PushMessageToTalk(from: User, message: String)
 
   case object StartDialog
-  case class EndDialog(sender: Option[User])
+  case object EndDialog
 
   implicit class DialogActorRef(ref: ActorRef) {
     val chatId: Int = ref.hashCode()
