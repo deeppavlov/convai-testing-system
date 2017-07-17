@@ -11,7 +11,7 @@ import scala.util.Try
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions) extends Actor with ActorLogging with DialogConstructionRules {
+class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef) extends Actor with ActorLogging with DialogConstructionRules {
   import DialogFather._
   private implicit val ec = context.dispatcher
 
@@ -34,7 +34,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
         ul.foreach(user => gate ! Endpoint.FinishTalkForUser(user, t))
-        log.info("users {} leave from dialog", ul)
+        log.info("dialog terminated, users {} leave from dialog", ul)
       }
 
     case UserAvailable(user: User) =>
@@ -62,7 +62,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   private def assembleDialog(available: (User, User, String)) = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
-      val dialog = context.actorOf(Dialog.props(a, b, txt, gate), name = s"dialog-${java.util.UUID.randomUUID()}")
+      val dialog = context.actorOf(Dialog.props(a, b, txt, gate, databaseDialogStorage), name = s"dialog-${java.util.UUID.randomUUID()}")
       log.info("start talk between {} and {}", a, b)
       gate ! Endpoint.ActivateTalkForUser(a, dialog)
       gate ! Endpoint.ActivateTalkForUser(b, dialog)
@@ -84,7 +84,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 }
 
 object DialogFather {
-  def props(gate: ActorRef, textGenerator: ContextQuestions) = Props(new DialogFather(gate, textGenerator))
+  def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef) = Props(new DialogFather(gate, textGenerator, databaseDialogStorage))
 
   private case object AssembleDialogs
 

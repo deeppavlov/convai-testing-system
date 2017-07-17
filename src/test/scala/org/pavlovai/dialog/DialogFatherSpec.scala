@@ -38,7 +38,8 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
   "dialog human user" must {
     "see 'Sorry, wait for the opponent' message if no opponent fond" in {
       val gate = TestProbe()
-      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+      val storage = TestProbe()
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
 
       daddy ! DialogFather.UserAvailable(Tester(5))
@@ -48,8 +49,9 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
     "see dialog context if opponent found" in {
       val gate = TestProbe()
+      val storage = TestProbe()
       for (_ <- 1 to 3) {
-        val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+        val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref))
         gate.expectMsg(Endpoint.SetDialogFather(daddy))
         daddy ! DialogFather.UserAvailable(Tester(1))
         gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Please wait for your partner.", None))
@@ -67,16 +69,20 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
     "evaluate dialog when other user finish dialog" in {
       val gate = TestProbe()
-      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator))
+      val storage = TestProbe()
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester(1))
       gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Please wait for your partner.", None))
       daddy ! DialogFather.UserAvailable(Tester(2))
-      val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
-      gate.expectMsg(Endpoint.ActivateTalkForUser(Tester(2), t))
+      val talk: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
+      gate.expectMsg(Endpoint.ActivateTalkForUser(Tester(2), talk))
 
-      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "test", Some(t.hashCode())))
-      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(2), "test", Some(t.hashCode())))
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "test", Some(talk.hashCode())))
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(2), "test", Some(talk.hashCode())))
+
+      talk ! Dialog.PushMessageToTalk(Tester(1), "ololo")
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(2), "ololo", Some(talk.hashCode())))
 
       daddy ! DialogFather.UserLeave(Tester(2))
 
@@ -90,17 +96,33 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
         case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the quality") =>
       }
 
-      t ! Dialog.PushMessageToTalk(Tester(1), "1")
+      talk ! Dialog.PushMessageToTalk(Tester(1), "1")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the breadth"))
-
-      t ! Dialog.PushMessageToTalk(Tester(1), "1")
+      talk ! Dialog.PushMessageToTalk(Tester(1), "2")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the engagement"))
-
-      t ! Dialog.PushMessageToTalk(Tester(1), "1")
-
-      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Thank you!", Some(t.hashCode())))
-
+      talk ! Dialog.PushMessageToTalk(Tester(1), "3")
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(1), "Thank you!", Some(talk.hashCode())))
       gate.expectNoMsg()
+
+      talk ! Dialog.PushMessageToTalk(Tester(2), "4")
+      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the breadth"))
+      talk ! Dialog.PushMessageToTalk(Tester(2), "5")
+      gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the engagement"))
+      talk ! Dialog.PushMessageToTalk(Tester(2), "6")
+      gate.expectMsg(Endpoint.DeliverMessageToUser(Tester(2), "Thank you!", Some(talk.hashCode())))
+
+      gate.expectMsgPF(3.seconds) {
+        case Endpoint.FinishTalkForUser(Tester(1), _) =>
+        case Endpoint.FinishTalkForUser(Tester(2), _) =>
+      }
+      gate.expectMsgPF(3.seconds) {
+        case Endpoint.FinishTalkForUser(Tester(1), _) =>
+        case Endpoint.FinishTalkForUser(Tester(2), _) =>
+      }
+      gate.expectNoMsg()
+
+
+      storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester(1), Tester(2)), "test", Seq(Tester(1) -> "ololo"), Set((Tester(1),(1,2,3)), (Tester(2),(4,5,6)))))
     }
   }
 }

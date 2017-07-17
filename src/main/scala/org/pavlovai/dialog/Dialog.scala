@@ -3,6 +3,8 @@ package org.pavlovai.dialog
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import org.pavlovai.communication._
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -10,7 +12,7 @@ import scala.util.Try
   * @author vadim
   * @since 06.07.17
   */
-class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with ActorLogging {
+class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef) extends Actor with ActorLogging {
   import Dialog._
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
@@ -19,7 +21,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
   private implicit val ec = context.dispatcher
   context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
 
-  private var messagesCount: Int = 0
+  private val history: ArrayBuffer[(User, String)] = new ArrayBuffer[(User, String)](maxLen)
 
   override def receive: Receive = {
     case StartDialog =>
@@ -28,14 +30,14 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
         case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, Some(self.chatId))
       }
 
-      gate ! firstMessageFor(a, txt)
-      gate ! firstMessageFor(b, txt)
+      gate ! firstMessageFor(a, txtContext)
+      gate ! firstMessageFor(b, txtContext)
 
     case PushMessageToTalk(from, text) =>
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
       gate ! Endpoint.DeliverMessageToUser(oppanent, text, Some(self.chatId))
-      messagesCount += 1
-      if (messagesCount > maxLen) self ! EndDialog
+      history.append(from -> text)
+      if (history.size > maxLen) self ! EndDialog
 
     case EndDialog =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.id}")
@@ -45,13 +47,16 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
       context.become(onEvaluation(e1, e2))
   }
 
-  private var restEvaluations = 2
+  private val evaluations: mutable.Set[(User, (Int, Int, Int))] = mutable.Set.empty[(User, (Int, Int, Int))]
+
   def onEvaluation(aEvaluation: ActorRef, bEvaluation: ActorRef): Receive = {
-    case EvaluationProcess.CompleteEvaluation(user, q, b, e) =>
-      log.info("evaluation from {}: quality={}, breadth={}, engagement={}", user, q, b, e)
-      restEvaluations -= 1
-      if (restEvaluations == 0)
+    case EvaluationProcess.CompleteEvaluation(user, q, br, e) =>
+      log.info("evaluation from {}: quality={}, breadth={}, engagement={}", user, q, br, e)
+      evaluations.add(user -> (q, br, e))
+      if (evaluations.size >= 2) {
+        database ! MongoStorage.WriteDialog(self.chatId, Set(a, b), txtContext, history, evaluations.toSet)
         self ! PoisonPill
+      }
 
     case EndDialog => log.debug("already engagement")
     case m @ PushMessageToTalk(from, _) =>
@@ -60,7 +65,7 @@ class Dialog(a: User, b: User, txt: String, gate: ActorRef) extends Actor with A
 }
 
 object Dialog {
-  def props(userA: User, userB: User, context: String, gate: ActorRef) = Props(new Dialog(userA, userB, context, gate))
+  def props(userA: User, userB: User, context: String, gate: ActorRef, database: ActorRef) = Props(new Dialog(userA, userB, context, gate, database))
 
   case class PushMessageToTalk(from: User, message: String)
 
