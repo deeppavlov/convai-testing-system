@@ -67,9 +67,12 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         txt <- textGenerator.selectRandom
         bot = Bot(botId)
         if !usersChatsInTalks.values.flatten.toSet.contains(owner) && availableUsers.contains(bot)
+        _ = log.info("test dialog {}-{}", owner, bot)
         _ = assembleDialog(owner, bot, txt)
       } yield ()).recover {
-        case NonFatal(_) => gate ! Endpoint.ChancelTestDialog(owner, "Can not create a dialog.")
+        case NonFatal(e) =>
+          log.warning("can't create test dialog with bot", e)
+          gate ! Endpoint.ChancelTestDialog(owner, "Can not create a dialog.")
       }
   }
 
