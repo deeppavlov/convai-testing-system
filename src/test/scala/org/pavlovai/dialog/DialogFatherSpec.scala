@@ -3,7 +3,7 @@ package org.pavlovai.dialog
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import org.pavlovai.communication.{Endpoint, Human}
+import org.pavlovai.communication.{Bot, Endpoint, Human, TelegramChat}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -35,7 +35,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
   case class Tester(chatId: Long) extends Human
 
-  "dialog human user" must {
+  "human user after /begin command" must {
     "see 'Sorry, wait for the opponent' message if no opponent fond" in {
       val gate = TestProbe()
       val storage = TestProbe()
@@ -123,6 +123,19 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
 
 
       storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester(1), Tester(2)), "test", Seq(Tester(1) -> "ololo"), Set((Tester(1),(1,2,3)), (Tester(2),(4,5,6)))))
+    }
+  }
+
+  "human user after /test command" must {
+    "see error if arguments is invalid" in {
+      val gate = TestProbe()
+      val storage = TestProbe()
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref))
+      gate.expectMsg(Endpoint.SetDialogFather(daddy))
+      daddy ! DialogFather.UserAvailable(Bot("1"))
+
+      daddy ! DialogFather.CreateTestDialogWithBot(Tester(2), "2")
+      gate.expectMsg(Endpoint.ChancelTestDialog(Tester(2), "Can not create a dialog."))
     }
   }
 }

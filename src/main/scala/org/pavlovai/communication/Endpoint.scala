@@ -54,7 +54,7 @@ class Endpoint extends Actor with ActorLogging with Stash {
       log.info("endpoint actor initialized")
     case m =>
       stash()
-      log.warning("endpoint actor not initialized", m)
+      log.warning("endpoint actor not initialized")
   }
 
   override def receive: Receive = uninitialized

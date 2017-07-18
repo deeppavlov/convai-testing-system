@@ -45,7 +45,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       if (availableUsers.add(user)) {
         val dialRes = availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
         dialRes.foreach(assembleDialog)
-        if (!dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b}.contains(user)) {
+        if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
           gate ! Endpoint.DeliverMessageToUser(user, "Please wait for your partner.", None)
         }
 
