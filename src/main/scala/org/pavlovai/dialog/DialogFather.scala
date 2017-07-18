@@ -63,6 +63,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case CreateTestDialogWithBot(owner, botId) =>
+      log.info("!!!!!!")
       (for {
         txt <- textGenerator.selectRandom
         bot = Bot(botId)
