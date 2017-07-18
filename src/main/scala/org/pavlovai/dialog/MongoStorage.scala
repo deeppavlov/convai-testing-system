@@ -18,6 +18,8 @@ import scala.util.{Failure, Success, Try}
 class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
   import MongoStorage._
 
+  import context.dispatcher
+
   self ! Init
 
   override def receive: Receive = unitialized
