@@ -86,7 +86,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
       //TODO use messageId instead hash
-      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = "5;2333;bot"//Base64.getEncoder.encode((dialogId, message.hashCode, value).toString().getBytes()).mkString
+      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = Base64.getEncoder.encode((dialogId, message.hashCode, value.getOrElse("unknown")).toString().getBytes()).mkString
 
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
