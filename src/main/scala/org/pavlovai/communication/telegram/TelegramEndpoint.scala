@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
+import org.pavlovai.communication.Endpoint.ChancelTestDialog
 import org.pavlovai.communication.{Endpoint, TelegramChat}
 import org.pavlovai.dialog.{Dialog, DialogFather}
 
@@ -38,6 +39,10 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/help") =>
       telegramCall(helpMessage(chat.id))
 
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), cmd) if isNotInDialog(id) && cmd.startsWith("/test") =>
+      daddy ! DialogFather.CreateTestDialogWithBot(TelegramChat(id), cmd.substring("/test".length).trim)
+      activeUsers += TelegramChat(id) -> None
+
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
       activeUsers += TelegramChat(id) -> None
@@ -67,6 +72,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => telegramCall(helpMessage(message.chat.id))
 
+    case ChancelTestDialog(user: TelegramChat, cause) =>
+      activeUsers -= user
+      telegramCall(SendMessage(Left(user.chatId), cause))
 
     case Endpoint.ActivateTalkForUser(user: TelegramChat, talk: ActorRef) => activeUsers += user -> Some(talk)
     case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
@@ -114,4 +122,5 @@ object TelegramEndpoint {
   }
 
   case class SetGateway(gate: RequestHandler)
+
 }

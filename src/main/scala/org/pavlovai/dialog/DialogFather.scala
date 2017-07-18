@@ -2,10 +2,12 @@ package org.pavlovai.dialog
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import org.pavlovai.communication._
+import org.pavlovai.communication.telegram.TelegramEndpoint
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
   * @author vadim
@@ -61,7 +63,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case CreateTestDialogWithBot(owner, botId) =>
-      //if (usersChatsInTalks.values.flatten.toSet.contains(owner) || !availableUsers.contains(Bot(botId)))
+      (for {
+        txt <- textGenerator.selectRandom
+        bot = Bot(botId)
+        if !usersChatsInTalks.values.flatten.toSet.contains(owner) && availableUsers.contains(bot)
+        _ = assembleDialog(owner, bot, txt)
+      } yield ()).recover {
+        case NonFatal(_) => gate ! Endpoint.ChancelTestDialog(owner, "Can not create a dialog.")
+      }
   }
 
   private def assembleDialog(available: (User, User, String)) = available match {

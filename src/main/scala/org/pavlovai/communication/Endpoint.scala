@@ -43,6 +43,8 @@ class Endpoint extends Actor with ActorLogging {
 
     case m: DialogFather.UserAvailable => talkConstructor forward m
     case m: DialogFather.UserLeave => talkConstructor forward m
+
+    case m: ChancelTestDialog => telegramGate forward m
   }
 
   private val uninitialized: Receive = {
@@ -64,5 +66,7 @@ object Endpoint {
   case class FinishTalkForUser(user: User, talk: ActorRef)
 
   case class SetDialogFather(daddy: ActorRef)
+
+  case class ChancelTestDialog(user: Human, cause: String)
 }
 
