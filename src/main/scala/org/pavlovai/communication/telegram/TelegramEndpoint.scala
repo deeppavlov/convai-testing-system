@@ -62,16 +62,19 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, _) =>
       telegramCall(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isInDialog(message.chat.id) =>
       val user = TelegramChat(message.chat.id)
       activeUsers.get(user).foreach {
         case Some(talk) => message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
         case _ =>
       }
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
+    case Update(num, Some(m), _, _, _, _, _, Some(CallbackQuery(_, _, Some(message), _, _, Some(data), _)), _, _) if isInDialog(m.chat.id) =>
+      log.info("received m: {}, d: {}", message, data)
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _) => telegramCall(helpMessage(message.chat.id))
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
+
+    case Update(num, Some(_), _, _, _, _, _, _, _, _) =>
 
     case ChancelTestDialog(user: TelegramChat, cause) =>
       activeUsers -= user
@@ -86,7 +89,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
       //TODO use messageId instead hash
-      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = dialogId + "," + message.hashCode + "," + value.getOrElse("unknown")
+      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = dialogId + "," + value.getOrElse("unknown")
 
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
