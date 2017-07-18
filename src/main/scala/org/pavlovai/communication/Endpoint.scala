@@ -1,6 +1,6 @@
 package org.pavlovai.communication
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
 import org.pavlovai.communication.rest.{BotEndpoint, Routes}
 import org.pavlovai.communication.telegram.{BotWorker, TelegramEndpoint}
@@ -12,7 +12,7 @@ import scala.util.Try
   * @author vadim
   * @since 11.07.17
   */
-class Endpoint extends Actor with ActorLogging {
+class Endpoint extends Actor with ActorLogging with Stash {
   import Endpoint._
 
   private val telegramGate = context.actorOf(TelegramEndpoint.props(self), "telegram-gate")
@@ -48,8 +48,13 @@ class Endpoint extends Actor with ActorLogging {
   }
 
   private val uninitialized: Receive = {
-    case SetDialogFather(daddy) => context.become(initialized(daddy))
-    case m => log.warning("initialize endpoin actor first, ignored {}", m)
+    case SetDialogFather(daddy) =>
+      context.become(initialized(daddy))
+      unstashAll()
+      log.info("endpoint actor initialized")
+    case m =>
+      stash()
+      log.warning("endpoint actor not initialized", m)
   }
 
   override def receive: Receive = uninitialized

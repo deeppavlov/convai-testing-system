@@ -31,7 +31,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
 
   private def dialogEvaluationQuality(u: Human): Receive = {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 10)).isSuccess =>
-      log.info(s"the $u rated the quality by $rate")
+      log.debug(s"the $u rated the quality by $rate")
       q = rate.toInt
       context.become(dialogEvaluationBreadth(u))
       gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the breadth")
@@ -42,7 +42,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
 
   private def dialogEvaluationBreadth(u: Human): Receive = {
       case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
-        log.info(s"the $u rated the breadth by $rate")
+        log.debug(s"the $u rated the breadth by $rate")
         b = rate.toInt
         context.become(dialogEvaluationEngagement(u))
         gate ! Endpoint.AskEvaluationFromHuman(u, s"Please evaluate the engagement")
@@ -52,7 +52,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
 
   private def dialogEvaluationEngagement(u: Human): Receive = {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
-      log.info(s"the $u rated the engagement by $rate")
+      log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
       gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", Some(dialog.chatId))
       dialog ! CompleteEvaluation(u ,q, b, e)
