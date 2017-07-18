@@ -28,8 +28,10 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   override def receive: Receive = {
     case AssembleDialogs =>
       cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
-      availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
-        .foreach(assembleDialog)
+      availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten.filter {
+        case u: Human => true
+        case _ => false
+      }).toSet).foreach(assembleDialog)
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
@@ -57,6 +59,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
           dialog ! Dialog.EndDialog
         case _ =>
       }
+
+    case CreateTestDialogWithBot(owner, botId) =>
+      //if (usersChatsInTalks.values.flatten.toSet.contains(owner) || !availableUsers.contains(Bot(botId)))
   }
 
   private def assembleDialog(available: (User, User, String)) = available match {
@@ -87,6 +92,7 @@ object DialogFather {
   def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef) = Props(new DialogFather(gate, textGenerator, databaseDialogStorage))
 
   private case object AssembleDialogs
+  case class CreateTestDialogWithBot(user: Human, botId: String)
 
   case class UserAvailable(user: User)
   case class UserLeave(user: User)
