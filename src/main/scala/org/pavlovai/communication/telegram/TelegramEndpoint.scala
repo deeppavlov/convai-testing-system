@@ -40,7 +40,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(helpMessage(chat.id))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), cmd) if isNotInDialog(id) && cmd.startsWith("/test") =>
-      println("!!!!!!!!!!!!!!!!!!")
       daddy ! DialogFather.CreateTestDialogWithBot(TelegramChat(id), cmd.substring("/test".length).trim)
       activeUsers += TelegramChat(id) -> None
 

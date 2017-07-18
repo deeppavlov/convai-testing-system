@@ -43,6 +43,7 @@ class Endpoint extends Actor with ActorLogging with Stash {
 
     case m: DialogFather.UserAvailable => talkConstructor forward m
     case m: DialogFather.UserLeave => talkConstructor forward m
+    case m: DialogFather.CreateTestDialogWithBot => talkConstructor forward m
 
     case m: ChancelTestDialog => telegramGate forward m
   }
