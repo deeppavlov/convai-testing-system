@@ -63,24 +63,20 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case CreateTestDialogWithBot(owner, botId) =>
-      class NopStorage extends Actor {
-        override def receive: Receive = {
-          case _ =>
-        }
-      }
-
       (for {
         txt <- textGenerator.selectRandom
         bot = Bot(botId)
         if !usersChatsInTalks.values.flatten.toSet.contains(owner) && availableUsers.contains(bot)
         _ = log.info("test dialog {}-{}", owner, bot)
-        _ = assembleDialog(context.actorOf(Props(new NopStorage), name="nop-storage"))(owner, bot, txt)
+        _ = assembleDialog(nopStorage)(owner, bot, txt)
       } yield ()).recover {
         case NonFatal(e) =>
           log.warning("can't create test dialog with bot: {}", e)
           gate ! Endpoint.ChancelTestDialog(owner, "Can not create a dialog.")
       }
   }
+
+  private val nopStorage = context.actorOf(Props(new NopStorage), name="nop-storage")
 
   private def assembleDialog(storage: ActorRef)(available: (User, User, String)) = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
@@ -114,4 +110,10 @@ object DialogFather {
 
   case class UserAvailable(user: User)
   case class UserLeave(user: User)
+
+  private class NopStorage extends Actor {
+    override def receive: Receive = {
+      case _ =>
+    }
+  }
 }
