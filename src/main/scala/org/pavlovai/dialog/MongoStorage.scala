@@ -9,7 +9,7 @@ import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
   * @author vadim
@@ -25,7 +25,10 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
   private def initialized(database: MongoDatabase): Receive = {
     case dialog: WriteDialog =>
       val dialogs: MongoCollection[MongoStorage.Dialog] = database.getCollection("dialogs")
-      dialogs.insertOne(MongoStorage.Dialog(dialog)).toFuture
+      dialogs.insertOne(MongoStorage.Dialog(dialog)).toFuture.onComplete {
+        case Failure(e) => log.error("dialog NOT saved: {}", e)
+        case Success(v) => log.debug("saved, {}", v.toString())
+      }
   }
 
   private def unitialized: Receive = {
