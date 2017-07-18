@@ -33,7 +33,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten.filter {
         case u: Human => true
         case _ => false
-      }).toSet).foreach(assembleDialog)
+      }).toSet).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
@@ -44,7 +44,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case UserAvailable(user: User) =>
       if (availableUsers.add(user)) {
         val dialRes = availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
-        dialRes.foreach(assembleDialog)
+        dialRes.foreach(assembleDialog(databaseDialogStorage))
         if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
           gate ! Endpoint.DeliverMessageToUser(user, "Please wait for your partner.", None)
         }
@@ -63,12 +63,18 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case CreateTestDialogWithBot(owner, botId) =>
+      class NopStorage extends Actor {
+        override def receive: Receive = {
+          case _ =>
+        }
+      }
+
       (for {
         txt <- textGenerator.selectRandom
         bot = Bot(botId)
         if !usersChatsInTalks.values.flatten.toSet.contains(owner) && availableUsers.contains(bot)
         _ = log.info("test dialog {}-{}", owner, bot)
-        _ = assembleDialog(owner, bot, txt)
+        _ = assembleDialog(context.actorOf(Props[NopStorage], name="nop-storage"))(owner, bot, txt)
       } yield ()).recover {
         case NonFatal(e) =>
           log.warning("can't create test dialog with bot", e)
@@ -76,10 +82,10 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
   }
 
-  private def assembleDialog(available: (User, User, String)) = available match {
+  private def assembleDialog(storage: ActorRef)(available: (User, User, String)) = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
-      val dialog = context.actorOf(Dialog.props(a, b, txt, gate, databaseDialogStorage), name = s"dialog-${java.util.UUID.randomUUID()}")
+      val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage), name = s"dialog-${java.util.UUID.randomUUID()}")
       log.info("start talk between {} and {}", a, b)
       gate ! Endpoint.ActivateTalkForUser(a, dialog)
       gate ! Endpoint.ActivateTalkForUser(b, dialog)
