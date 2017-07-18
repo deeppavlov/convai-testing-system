@@ -41,25 +41,17 @@ object MongoStorage {
 
   private case object Init
 
-  private case class UserSummary(_id: ObjectId, t: String)
-  private object UserSummary {
-    def apply(id: String, t: String): UserSummary = new UserSummary(new ObjectId(id.map(_.toInt.toHexString).mkString), t)
-  }
+  private case class UserSummary(id: String, t: String)
 
-  private case class DialogEvaluation(_id: ObjectId, ownerId: String, quality: Int, breadth: Int, engagement: Int)
-  private object DialogEvaluation {
-    def apply(ownerId: String, quality: Int, breadth: Int, engagement: Int): DialogEvaluation = new DialogEvaluation(new ObjectId(), ownerId, quality, breadth, engagement)
-  }
+  private case class DialogEvaluation(ownerId: String, quality: Int, breadth: Int, engagement: Int)
 
-  private case class DialogThreadItem(_id: ObjectId, userId: String, text: String)
-  private object DialogThreadItem {
-    def apply(userId: String, text: String): DialogThreadItem = new DialogThreadItem(new ObjectId(), userId, text)
-  }
+  private case class DialogThreadItem(userId: String, text: String)
 
-  private case class Dialog(_id: ObjectId, users: Set[UserSummary], context: String, tread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
+  private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummary], context: String, tread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
     def apply(wd: WriteDialog): Dialog =
-      new Dialog(new ObjectId(wd.id.toHexString),
+      new Dialog(new ObjectId(),
+        wd.id,
         wd.users.map(u => UserSummary(u.id, u.getClass.getName)),
         wd.context, wd.tread.map { case (u, t) => DialogThreadItem(u.id, t) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
