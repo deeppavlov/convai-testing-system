@@ -1,5 +1,7 @@
 package org.pavlovai.communication.telegram
 
+import java.util.Base64
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
@@ -83,11 +85,14 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
+      //TODO use messageId instead hash
+      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = Base64.getEncoder.encode((dialogId, message.hashCode, value).toString().getBytes()).mkString
+
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("- 0 -", (dialogId, text, None).toString()),
-          InlineKeyboardButton.callbackData("bot", (dialogId -> text, Some("bot")).toString()),
-          InlineKeyboardButton.callbackData("human", (dialogId -> text, Some("human")).toString())
+          InlineKeyboardButton.callbackData("- 0 -",  encodeCallback(dialogId, text, None)),
+          InlineKeyboardButton.callbackData("bot", encodeCallback(dialogId, text, Some("bot"))),
+          InlineKeyboardButton.callbackData("human", encodeCallback(dialogId, text, Some("human")))
         ))
         ))))
 
