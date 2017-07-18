@@ -36,7 +36,8 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
   private def unitialized: Receive = {
     case Init =>
       Try(context.system.settings.config.getString("talk.logger.connection_string")).foreach { conStr =>
-        context.become(initialized(MongoClient(conStr).getDatabase("heroku_nwjgkngm").withCodecRegistry(codecRegistry)))
+        val dbName = conStr.split("/").last
+        context.become(initialized(MongoClient(conStr).getDatabase(dbName).withCodecRegistry(codecRegistry)))
       }
   }
 }
@@ -46,9 +47,9 @@ object MongoStorage {
 
   private case object Init
 
-  private case class UserSummary(id: String, t: String)
+  private case class UserSummary(id: String, userType: String)
 
-  private case class DialogEvaluation(ownerId: String, quality: Int, breadth: Int, engagement: Int)
+  private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
   private case class DialogThreadItem(userId: String, text: String)
 
