@@ -77,7 +77,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         _ = assembleDialog(context.actorOf(Props[NopStorage], name="nop-storage"))(owner, bot, txt)
       } yield ()).recover {
         case NonFatal(e) =>
-          log.warning("can't create test dialog with bot", e)
+          log.warning("can't create test dialog with bot: {}", e)
           gate ! Endpoint.ChancelTestDialog(owner, "Can not create a dialog.")
       }
   }
