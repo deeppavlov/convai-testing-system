@@ -26,7 +26,7 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
 
   private def initialized(database: MongoDatabase): Receive = {
     case dialog: WriteDialog =>
-      val dialogs: MongoCollection[MongoStorage.Dialog] = database.getCollection("dialogs")
+      val dialogs: MongoCollection[MongoStorage.Dialog] = database.getCollection("heroku_nwjgkngm")
       dialogs.insertOne(MongoStorage.Dialog(dialog)).toFuture.onComplete {
         case Failure(e) => log.error("dialog NOT saved: {}", e)
         case Success(v) => log.debug("saved, {}", v.toString())
