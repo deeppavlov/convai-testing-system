@@ -26,8 +26,8 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
   override def receive: Receive = {
     case StartDialog =>
       def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-        case u: Human => Endpoint.DeliverMessageToUser(u, text, Some(self.chatId))
-        case u: Bot => Endpoint.DeliverMessageToUser(u, "/start " + text, Some(self.chatId))
+        case u: Human => Endpoint.SystemNotificationToUser(u, text)
+        case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId)
       }
 
       gate ! firstMessageFor(a, txtContext)
@@ -35,7 +35,7 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
 
     case PushMessageToTalk(from, text) =>
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
-      gate ! Endpoint.DeliverMessageToUser(oppanent, text, Some(self.chatId))
+      gate ! Endpoint.ChatMessageToUser(oppanent, text, self.chatId)
       history.append(from -> text)
       if (history.size > maxLen) self ! EndDialog
 

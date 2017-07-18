@@ -25,7 +25,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
           gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the quality")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
-          gate ! Endpoint.DeliverMessageToUser(u, "/end", Some(dialog.chatId))
+          gate ! Endpoint.ChatMessageToUser(u, "/end", dialog.chatId)
       }
   }
 
@@ -54,7 +54,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 10)).isSuccess =>
       log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
-      gate ! Endpoint.DeliverMessageToUser(user, "Thank you!", Some(dialog.chatId))
+      gate ! Endpoint.SystemNotificationToUser(user, "Thank you!")
       dialog ! CompleteEvaluation(u ,q, b, e)
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 10""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)

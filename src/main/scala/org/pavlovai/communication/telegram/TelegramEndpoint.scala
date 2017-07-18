@@ -67,8 +67,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         case _ =>
       }
 
-    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) =>
-      telegramCall(helpMessage(message.chat.id))
+    case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => telegramCall(helpMessage(message.chat.id))
 
@@ -80,8 +79,17 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
       activeUsers -= user
 
-    case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
+    case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+
+    case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
+      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
+        InlineKeyboardMarkup(Seq(Seq(
+          InlineKeyboardButton.callbackData("- 0 -", (dialogId, text, None).toString()),
+          InlineKeyboardButton.callbackData("bot", (dialogId -> text, Some("bot")).toString()),
+          InlineKeyboardButton.callbackData("human", (dialogId -> text, Some("human")).toString())
+        ))
+        ))))
 
     case Endpoint.AskEvaluationFromHuman(h, text) =>
       telegramCall(
@@ -89,9 +97,10 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           Left(h.chatId),
           text,
           Some(ParseMode.Markdown),
-          replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(Seq(
-            KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5"), KeyboardButton("6"), KeyboardButton("7"), KeyboardButton("8"), KeyboardButton("9"), KeyboardButton("10")
-          ))))
+          replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+            Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") ),
+            Seq( KeyboardButton("6"), KeyboardButton("7"), KeyboardButton("8"), KeyboardButton("9"), KeyboardButton("10") )
+          )))
         )
       )
   }
