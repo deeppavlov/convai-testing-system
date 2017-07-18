@@ -26,7 +26,7 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
   override def receive: Receive = {
     case StartDialog =>
       def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
-        case u: Human => Endpoint.SystemNotificationToUser(u, text)
+        case u: Human => Endpoint.ChatMessageToUser(u, text, self.chatId) //TODO
         case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId)
       }
 
