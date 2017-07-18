@@ -40,13 +40,14 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
-      engagedUsers.add(id)
+      activeUsers += TelegramChat(id) -> None
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(id) =>
-      daddy ! DialogFather.UserLeave(TelegramChat(id))
+    case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId) =>
+      daddy ! DialogFather.UserLeave(TelegramChat(chatId))
+      if (activeUsers.get(TelegramChat(chatId)).isEmpty) activeUsers.remove(TelegramChat(chatId))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
@@ -56,8 +57,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _) if isInDialog(message.chat.id) =>
       val user = TelegramChat(message.chat.id)
-      activeUsers.get(user).foreach { talk =>
-        message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
+      activeUsers.get(user).foreach {
+        case Some(talk) => message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
+        case _ =>
       }
 
     case Update(num, Some(message), _, _, _, _, _, _, _, _)  if isNotInDialog(message.chat.id) =>
@@ -66,10 +68,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Update(num, Some(message), _, _, _, _, _, _, _, _) => telegramCall(helpMessage(message.chat.id))
 
 
-    case Endpoint.ActivateTalkForUser(user: TelegramChat, talk: ActorRef) => activeUsers += user -> talk
+    case Endpoint.ActivateTalkForUser(user: TelegramChat, talk: ActorRef) => activeUsers += user -> Some(talk)
     case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
       activeUsers -= user
-      engagedUsers.remove(user.chatId)
 
     case Endpoint.DeliverMessageToUser(TelegramChat(id), text, _) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
@@ -87,10 +88,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       )
   }
 
-  private val activeUsers = mutable.Map[TelegramChat, ActorRef]()
-  private val engagedUsers = mutable.Set[Long]()
+  private val activeUsers = mutable.Map[TelegramChat, Option[ActorRef]]()
 
-  private def isInDialog(chatId: Long) = engagedUsers.contains(chatId)
+  private def isInDialog(chatId: Long) = activeUsers.contains(TelegramChat(chatId))
   private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
