@@ -74,7 +74,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         bot = Bot(botId)
         if !usersChatsInTalks.values.flatten.toSet.contains(owner) && availableUsers.contains(bot)
         _ = log.info("test dialog {}-{}", owner, bot)
-        _ = assembleDialog(context.actorOf(Props[NopStorage], name="nop-storage"))(owner, bot, txt)
+        _ = assembleDialog(context.actorOf(Props(new NopStorage), name="nop-storage"))(owner, bot, txt)
       } yield ()).recover {
         case NonFatal(e) =>
           log.warning("can't create test dialog with bot: {}", e)
