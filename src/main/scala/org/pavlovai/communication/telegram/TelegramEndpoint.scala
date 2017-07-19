@@ -106,10 +106,16 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           text,
           Some(ParseMode.Markdown),
           replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
-            Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") )
+            Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3") ),
+            Seq( KeyboardButton("4"), KeyboardButton("5") )
           )))
         )
       )
+
+
+
+
+    case m => log.info(m.toString)
   }
 
   private val activeUsers = mutable.Map[TelegramChat, Option[ActorRef]]()

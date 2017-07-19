@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import info.mukel.telegrambot4s.actors.ActorBroker
+import info.mukel.telegrambot4s.api.declarative.{Callbacks, Commands}
 import info.mukel.telegrambot4s.api.{BotBase, RequestHandler, Webhook}
 import info.mukel.telegrambot4s.clients.AkkaClient
 
@@ -39,5 +40,6 @@ class BotWorker(sys: ActorSystem,
   override val broker: Option[ActorRef] = Some(telegramUserRepo)
 
   telegramUserRepo ! TelegramEndpoint.SetGateway(this.request)
+
 }
 

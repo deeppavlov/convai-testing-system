@@ -4,6 +4,12 @@ version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.12.2"
 
+maintainer := "Vadim Polulyakh <bavadim@gmail.com>"
+
+packageSummary := "The convai and turing hackathon testing system"
+
+packageDescription := """The best of the best tool for nlp dataset collection"""
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.18",
   "info.mukel" %% "telegrambot4s" % "3.0.0",
@@ -15,3 +21,7 @@ libraryDependencies ++= Seq(
 )
 
 enablePlugins(JavaAppPackaging)
+
+enablePlugins(DebianPlugin)
+
+debianPackageDependencies in Debian ++= Seq("java2-runtime", "bash (>= 2.05a-11)")
