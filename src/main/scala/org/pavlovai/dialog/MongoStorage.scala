@@ -51,7 +51,7 @@ object MongoStorage {
 
   private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
-  private case class DialogThreadItem(userId: String, text: String)
+  private case class DialogThreadItem(userId: String, text: String, evaluation: Int)
 
   private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummary], context: String, tread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
@@ -59,7 +59,7 @@ object MongoStorage {
       new Dialog(new ObjectId(),
         wd.id,
         wd.users.map(u => UserSummary(u.id, u.getClass.getName)),
-        wd.context, wd.tread.map { case (u, t) => DialogThreadItem(u.id, t) },
+        wd.context, wd.tread.map { case (u, txt, evaluation) => DialogThreadItem(u.id, txt, evaluation) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
   }
 
@@ -70,6 +70,6 @@ object MongoStorage {
       classOf[MongoStorage.Dialog]), DEFAULT_CODEC_REGISTRY
   )
 
-  case class WriteDialog(id: Int, users: Set[User], context: String, tread: Seq[(User, String)], evaluation: Set[(User, (Int, Int, Int))])
+  case class WriteDialog(id: Int, users: Set[User], context: String, tread: Seq[(User, String, Int)], evaluation: Set[(User, (Int, Int, Int))])
 }
 

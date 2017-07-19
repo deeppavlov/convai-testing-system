@@ -76,14 +76,14 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         case _ =>
       }
 
-    case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
-      log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
-      (data, responseToMessage.text, responseToMessage.chat.id) match {
-        case (value, Some(text), chatId) =>
+    case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), _, _, Some(data),None)), None, None) =>
+      log.debug("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
+      (data.split(",").toList, responseToMessage.text, responseToMessage.chat.id) match {
+        case (messageId :: value :: Nil, Some(text), chatId) if Try(messageId.toInt).isSuccess =>
           val category = if (value == "unlike") 1 else if (value == "like") 2 else 0
           activeUsers.get(TelegramChat(chatId)).map {
             case Some(dialog) =>
-              (dialog ? Dialog.EvaluateMessage(text.hashCode, category)).map {
+              (dialog ? Dialog.EvaluateMessage(messageId.toInt, category)).map {
                 case Dialog.Ok =>
                   telegramCall(AnswerCallbackQuery(cdId, Some("You " + value + "ed \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
                   val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
@@ -97,7 +97,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
                   log.error("error on evaluation item: {}", e)
                   telegramCall(AnswerCallbackQuery(cdId, Some("Internal server error"), Some(true), None, None))
               }
-            case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Sorry, dialog is finished"), Some(true), None, None))
+            case _ =>
+              log.debug("trying rate item in finished dialog")
+              telegramCall(AnswerCallbackQuery(cdId, Some("Sorry, dialog is finished"), Some(true), None, None))
           }
 
 
@@ -119,11 +121,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
-    case Endpoint.ChatMessageToUser(TelegramChat(id), text, _) =>
+    case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("\uD83D\uDC4D", "like"),
-          InlineKeyboardButton.callbackData("\uD83D\uDC4E", "unlike")
+          InlineKeyboardButton.callbackData("\uD83D\uDC4D", s"$mesId,like"),
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", s"$mesId,unlike")
         ))
         ))))
 

@@ -1,8 +1,9 @@
 package org.pavlovai.dialog
 
+import java.time.Clock
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import org.pavlovai.communication._
-import org.pavlovai.communication.telegram.TelegramEndpoint
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -13,7 +14,7 @@ import scala.util.control.NonFatal
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef) extends Actor with ActorLogging with DialogConstructionRules {
+class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clck: Clock) extends Actor with ActorLogging with DialogConstructionRules {
   import DialogFather._
   private implicit val ec = context.dispatcher
 
@@ -81,7 +82,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   private def assembleDialog(storage: ActorRef)(available: (User, User, String)) = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
-      val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage), name = s"dialog-${java.util.UUID.randomUUID()}")
+      val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage, clck), name = s"dialog-${java.util.UUID.randomUUID()}")
       log.info("start talk between {} and {}", a, b)
       gate ! Endpoint.ActivateTalkForUser(a, dialog)
       gate ! Endpoint.ActivateTalkForUser(b, dialog)
@@ -103,7 +104,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 }
 
 object DialogFather {
-  def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef) = Props(new DialogFather(gate, textGenerator, databaseDialogStorage))
+  def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clock: Clock = Clock.systemDefaultZone()) = Props(new DialogFather(gate, textGenerator, databaseDialogStorage, clock))
 
   private case object AssembleDialogs
   case class CreateTestDialogWithBot(user: Human, botId: String)

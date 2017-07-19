@@ -1,5 +1,7 @@
 package org.pavlovai.dialog
 
+import java.time.Instant
+
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import org.pavlovai.communication._
 
@@ -25,7 +27,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
           gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the quality")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
-          gate ! Endpoint.ChatMessageToUser(u, "/end", dialog.chatId)
+          gate ! Endpoint.ChatMessageToUser(u, "/end", dialog.chatId, Instant.now().getNano)
       }
   }
 

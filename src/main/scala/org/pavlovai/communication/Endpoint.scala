@@ -30,8 +30,8 @@ class Endpoint extends Actor with ActorLogging with Stash {
   private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate), routerBotToken, webhook).run()
 
   private def initialized(talkConstructor: ActorRef): Receive = {
-    case message @ ChatMessageToUser(_: TelegramChat, _, _) => telegramGate forward message
-    case message @ ChatMessageToUser(_: Bot, _, _) => botGate forward message
+    case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
+    case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
 
     case m @ ActivateTalkForUser(_: TelegramChat, _) => telegramGate forward m
     case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
@@ -66,7 +66,7 @@ object Endpoint {
   def props: Props = Props(new Endpoint)
 
   sealed trait MessageFromDialog
-  case class ChatMessageToUser(receiver: User, message: String, fromDialogId: Int) extends MessageFromDialog
+  case class ChatMessageToUser(receiver: User, message: String, fromDialogId: Int, id: Int) extends MessageFromDialog
   trait SystemNotification extends MessageFromDialog
   case class AskEvaluationFromHuman(receiver: Human, question: String) extends SystemNotification
   case class SystemNotificationToUser(receiver: User, message: String) extends SystemNotification
