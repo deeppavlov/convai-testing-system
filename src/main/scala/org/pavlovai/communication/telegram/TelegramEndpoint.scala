@@ -88,8 +88,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
                   telegramCall(AnswerCallbackQuery(cdId, Some("You " + value + "ed \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
                   val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
                   telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-                    InlineKeyboardButton.callbackData(labelLike, "like"),
-                    InlineKeyboardButton.callbackData(labelUnlike, "unlike")
+                    InlineKeyboardButton.callbackData(labelLike, encodeCbData(messageId.toInt, "like")),
+                    InlineKeyboardButton.callbackData(labelUnlike, encodeCbData(messageId.toInt, "unlike"))
                   )))
                   )))
               }.recover {
@@ -124,8 +124,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("\uD83D\uDC4D", s"$mesId,like"),
-          InlineKeyboardButton.callbackData("\uD83D\uDC4E", s"$mesId,unlike")
+          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(mesId, "unlike"))
         ))
         ))))
 
@@ -156,6 +156,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |- /help for help
       |
     """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
+
+  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 }
 
 object TelegramEndpoint {
