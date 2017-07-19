@@ -5,7 +5,7 @@ import java.util.Base64
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{EditMessageReplyMarkup, ParseMode, SendMessage}
-import info.mukel.telegrambot4s.models._
+import info.mukel.telegrambot4s.models.{Message, _}
 import org.pavlovai.communication.Endpoint.ChancelTestDialog
 import org.pavlovai.communication.{Endpoint, TelegramChat}
 import org.pavlovai.dialog.{Dialog, DialogFather}
@@ -69,13 +69,13 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         case _ =>
       }
 
-    case Update(num, Some(m), _, _, _, _, _, Some(CallbackQuery(_, _, Some(message), _, _, Some(data), _)), _, _) if isInDialog(m.chat.id) =>
-      log.info("received m: {}, d: {}", message, data)
-      telegramCall(EditMessageReplyMarkup(Some(Left(m.chat.id))))
+    case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
+      log.info("received m: {}, d: {}", responseToMessage, data)
+      //telegramCall(EditMessageReplyMarkup(Some(Left(m.chat.id))))
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
 
-    case Update(num, Some(_), _, _, _, _, _, _, _, _) =>
+    //case Update(num, Some(_), _, _, _, _, _, _, _, _) =>
 
     case ChancelTestDialog(user: TelegramChat, cause) =>
       activeUsers -= user
@@ -111,11 +111,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           )))
         )
       )
-
-
-
-
-    case m => log.info(m.toString)
   }
 
   private val activeUsers = mutable.Map[TelegramChat, Option[ActorRef]]()
