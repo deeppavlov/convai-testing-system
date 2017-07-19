@@ -30,8 +30,8 @@ class BotWorker(sys: ActorSystem,
   override def webhookRoute: Route = externalRoutes ~ super.webhookRoute
 
   override val port: Int = Option(System.getenv("PORT")).fold{
-    logger.warn("PORT env variable not found, use port 8080")
-    8080
+    logger.warn("PORT env variable not found, use port 8433")
+    8433
   } { port =>
     logger.info(s"bind on $port port")
     port.toInt
