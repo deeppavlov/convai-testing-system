@@ -76,9 +76,10 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         case (dialogId :: value :: Nil, Some(text)) if Try(dialogId.toInt).isSuccess =>
           telegramCall(AnswerCallbackQuery(cdId, Some("received an estimate for \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
 
+          val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
           telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-            InlineKeyboardButton.callbackData("\uD83D\uDC4D\u2605", encodeCallback(dialogId.toInt, text, "bot")),
-            InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId.toInt, text, "human"))
+            InlineKeyboardButton.callbackData(labelLike, encodeCallback(dialogId.toInt, text, "like")),
+            InlineKeyboardButton.callbackData(labelUnlike, encodeCallback(dialogId.toInt, text, "unlike"))
           )))
           )))
         case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Error! Bad request"), Some(true), None, None))
@@ -102,8 +103,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCallback(dialogId, text, "bot")),
-          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId, text, "human"))
+          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCallback(dialogId, text, "like")),
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId, text, "unlike"))
         ))
         ))))
 

@@ -108,7 +108,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the breadth"))
       talk ! Dialog.PushMessageToTalk(Tester(2), "5")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the engagement"))
-      talk ! Dialog.PushMessageToTalk(Tester(2), "6")
+      talk ! Dialog.PushMessageToTalk(Tester(2), "1")
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "Thank you!"))
 
       gate.expectMsgPF(3.seconds) {
@@ -122,7 +122,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectNoMsg()
 
 
-      storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester(1), Tester(2)), "test", Seq(Tester(1) -> "ololo"), Set((Tester(1),(1,2,3)), (Tester(2),(4,5,6)))))
+      storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester(1), Tester(2)), "test", Seq(Tester(1) -> "ololo"), Set((Tester(1),(1,2,3)), (Tester(2),(4,5,1)))))
     }
   }
 
