@@ -27,6 +27,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
   private val botsQueues: Map[String, mutable.Queue[Update]] =
     Try(context.system.settings.config.getStringList("bot.registered").asScala).getOrElse(Seq.empty)
       .map { token =>
+        log.info("bot {} registred", token)
         daddy ! UserAvailable(Bot(token))
         token -> mutable.Queue.empty[Update]
       }.toMap
