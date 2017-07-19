@@ -4,7 +4,7 @@ import java.util.Base64
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import info.mukel.telegrambot4s.api._
-import info.mukel.telegrambot4s.methods.{EditMessageReplyMarkup, ParseMode, SendMessage}
+import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models.{Message, _}
 import org.pavlovai.communication.Endpoint.ChancelTestDialog
 import org.pavlovai.communication.{Endpoint, TelegramChat}
@@ -70,7 +70,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       }
 
     case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
-      log.info("received m: {}, d: {}", responseToMessage, data)
+      log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
+      telegramCall(AnswerCallbackQuery(cdId, Some("ololo! " + data), Some(true), None, None))
       //telegramCall(EditMessageReplyMarkup(Some(Left(m.chat.id))))
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
@@ -106,8 +107,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           text,
           Some(ParseMode.Markdown),
           replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
-            Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3") ),
-            Seq( KeyboardButton("4"), KeyboardButton("5") )
+            Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") )
           )))
         )
       )
