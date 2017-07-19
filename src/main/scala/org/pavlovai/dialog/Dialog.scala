@@ -61,7 +61,7 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
 
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
-        sender ! akka.actor.Status.Failure(NotAccepted)
+        sender ! akka.actor.Status.Failure(BadEvaluation)
         log.info("message {} not present in history", messageId)
       } { case (from, text, _) =>
         history.update(messageId, (from, text, category))
@@ -85,7 +85,15 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
     case m @ PushMessageToTalk(from, _) =>
       (if (from == a) aEvaluation else if (from == b) bEvaluation else throw new IllegalArgumentException(s"$from not in talk")) forward m
 
-    case _: EvaluateMessage => sender ! akka.actor.Status.Failure(NotAccepted)
+    case EvaluateMessage(messageId, category) =>
+      history.get(messageId).fold {
+        sender ! akka.actor.Status.Failure(BadEvaluation)
+        log.info("message {} not present in history", messageId)
+      } { case (from, text, _) =>
+        history.update(messageId, (from, text, category))
+        sender ! Ok
+        log.info("rated message {} with {}", messageId, category)
+      }
   }
 }
 
@@ -99,7 +107,7 @@ object Dialog {
 
   case class EvaluateMessage(messageId: Int, category: Int)
   case object Ok
-  case object NotAccepted extends RuntimeException with NoStackTrace
+  case object BadEvaluation extends RuntimeException with NoStackTrace
 
   implicit class DialogActorRef(ref: ActorRef) {
     val chatId: Int = ref.hashCode()

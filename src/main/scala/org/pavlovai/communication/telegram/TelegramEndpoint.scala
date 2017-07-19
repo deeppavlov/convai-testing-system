@@ -1,12 +1,10 @@
 package org.pavlovai.communication.telegram
 
-import java.util.Base64
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.util.Timeout
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
-import info.mukel.telegrambot4s.models.{Message, _}
+import info.mukel.telegrambot4s.models._
 import org.pavlovai.communication.Endpoint.ChancelTestDialog
 import org.pavlovai.communication.{Endpoint, TelegramChat}
 import org.pavlovai.dialog.{Dialog, DialogFather}
@@ -22,7 +20,6 @@ import scala.util.control.NonFatal
   */
 class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
   import TelegramEndpoint._
-
   import context.dispatcher
   private implicit val timeout: Timeout = 5.seconds
 
@@ -93,6 +90,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
                   )))
                   )))
               }.recover {
+                case Dialog.BadEvaluation =>
+                  log.warning("bad evaluation")
+                  telegramCall(AnswerCallbackQuery(cdId, Some("Bad request"), Some(true), None, None))
                 case NonFatal(e) =>
                   log.error("error on evaluation item: {}", e)
                   telegramCall(AnswerCallbackQuery(cdId, Some("Internal server error"), Some(true), None, None))
@@ -103,7 +103,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           }
 
 
-        case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Bad request"), Some(true), None, None))
+        case _ =>
+          log.warning("bad evaluation")
+          telegramCall(AnswerCallbackQuery(cdId, Some("Bad request"), Some(true), None, None))
       }
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
