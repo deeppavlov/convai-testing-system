@@ -3,6 +3,7 @@ package org.pavlovai.communication.telegram
 import java.util.Base64
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.util.Timeout
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models.{Message, _}
@@ -11,14 +12,19 @@ import org.pavlovai.communication.{Endpoint, TelegramChat}
 import org.pavlovai.dialog.{Dialog, DialogFather}
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
   * @author vadim
   * @since 04.07.17
   */
-class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Stash {
+class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
   import TelegramEndpoint._
+
+  import context.dispatcher
+  private implicit val timeout: Timeout = 5.seconds
 
   override def receive: Receive = unititialized
 
@@ -72,17 +78,30 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
       log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
-      (data.split(",").toList, responseToMessage.text) match {
-        case (dialogId :: value :: Nil, Some(text)) if Try(dialogId.toInt).isSuccess =>
-          telegramCall(AnswerCallbackQuery(cdId, Some("received an estimate for \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
+      (data, responseToMessage.text, responseToMessage.chat.id) match {
+        case (value, Some(text), chatId) =>
+          val category = if (value == "unlike") 1 else if (value == "like") 2 else 0
+          activeUsers.get(TelegramChat(chatId)).map {
+            case Some(dialog) =>
+              (dialog ? Dialog.EvaluateMessage(text.hashCode, category)).map {
+                case Dialog.Ok =>
+                  telegramCall(AnswerCallbackQuery(cdId, Some("You " + value + "ed \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
+                  val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
+                  telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
+                    InlineKeyboardButton.callbackData(labelLike, "like"),
+                    InlineKeyboardButton.callbackData(labelUnlike, "unlike")
+                  )))
+                  )))
+              }.recover {
+                case NonFatal(e) =>
+                  log.error("error on evaluation item: {}", e)
+                  telegramCall(AnswerCallbackQuery(cdId, Some("Internal server error"), Some(true), None, None))
+              }
+            case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Sorry, dialog is finished"), Some(true), None, None))
+          }
 
-          val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
-          telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-            InlineKeyboardButton.callbackData(labelLike, encodeCallback(dialogId.toInt, text, "like")),
-            InlineKeyboardButton.callbackData(labelUnlike, encodeCallback(dialogId.toInt, text, "unlike"))
-          )))
-          )))
-        case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Error! Bad request"), Some(true), None, None))
+
+        case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Bad request"), Some(true), None, None))
       }
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
@@ -100,11 +119,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
-    case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
+    case Endpoint.ChatMessageToUser(TelegramChat(id), text, _) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCallback(dialogId, text, "like")),
-          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId, text, "unlike"))
+          InlineKeyboardButton.callbackData("\uD83D\uDC4D", "like"),
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", "unlike")
         ))
         ))))
 
@@ -135,9 +154,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |- /help for help
       |
     """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
-
-  //TODO use messageId instead hash
-  private def encodeCallback(dialogId: Int, message: String, value: String) = dialogId + "," + value
 }
 
 object TelegramEndpoint {

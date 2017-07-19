@@ -7,6 +7,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.Try
+import scala.util.control.NoStackTrace
 
 /**
   * @author vadim
@@ -45,6 +46,10 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
       val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
       e2 ! EvaluationProcess.StartEvaluation
       context.become(onEvaluation(e1, e2))
+
+    case EvaluateMessage(messageHash, category) =>
+      log.info("rated message {} with {}", messageHash, category)
+      sender ! Ok
   }
 
   private val evaluations: mutable.Set[(User, (Int, Int, Int))] = mutable.Set.empty[(User, (Int, Int, Int))]
@@ -61,6 +66,8 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
     case EndDialog => log.debug("already engagement")
     case m @ PushMessageToTalk(from, _) =>
       (if (from == a) aEvaluation else if (from == b) bEvaluation else throw new IllegalArgumentException(s"$from not in talk")) forward m
+
+    case _: EvaluateMessage => sender ! akka.actor.Status.Failure(NotAccepted)
   }
 }
 
@@ -71,6 +78,10 @@ object Dialog {
 
   case object StartDialog
   case object EndDialog
+
+  case class EvaluateMessage(messageHash: Int, category: Int)
+  case object Ok
+  case object NotAccepted extends RuntimeException with NoStackTrace
 
   implicit class DialogActorRef(ref: ActorRef) {
     val chatId: Int = ref.hashCode()
