@@ -74,11 +74,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
       (data.split(",").toList, responseToMessage.text) match {
         case (dialogId :: value :: Nil, Some(text)) if Try(dialogId.toInt).isSuccess =>
-          telegramCall(AnswerCallbackQuery(cdId, Some("received an estimate for " + text.substring(0, Math.min(text.length(), 15)) + (if (text.length() > 15) "..." else "")), Some(true), None, None))
+          telegramCall(AnswerCallbackQuery(cdId, Some("received an estimate for \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
 
           telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-            InlineKeyboardButton.callbackData("\u02B9\uD83D\uDC4D", encodeCallback(dialogId.toInt, text, "bot")),
-            InlineKeyboardButton.callbackData("\u02B9\uD83D\uDC4E", encodeCallback(dialogId.toInt, text, "human"))
+            InlineKeyboardButton.callbackData("\uD83D\uDC4D\u2605", encodeCallback(dialogId.toInt, text, "bot")),
+            InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId.toInt, text, "human"))
           )))
           )))
         case _ => telegramCall(AnswerCallbackQuery(cdId, Some("Error! Bad request"), Some(true), None, None))

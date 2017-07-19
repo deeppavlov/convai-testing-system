@@ -53,7 +53,7 @@ class Endpoint extends Actor with ActorLogging with Stash {
     case SetDialogFather(daddy) =>
       context.become(initialized(daddy))
       unstashAll()
-      log.info("endpoint actor initialized")
+      log.debug("endpoint actor initialized")
     case m =>
       stash()
       log.debug("endpoint actor not initialized")
