@@ -1,8 +1,5 @@
 package org.pavlovai.dialog
 
-import java.security.SecureRandom
-
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -18,7 +15,7 @@ object ContextQuestions extends ContextQuestions {
   private val rnd = scala.util.Random
 
   def selectRandom: Try[String] = {
-    Try(io.Source.fromResource("context.txt").getLines.size).flatMap { size =>
+    Try(io.Source.fromResource("context.txt")(io.Codec.ISO8859).getLines.size).flatMap { size =>
       val dataset = io.Source.fromResource("context.txt")
       def goToIndex(rest: Int, it: Iterator[String]): Try[String] = {
         if (rest <= 1 && it.hasNext) Success(it.next())
