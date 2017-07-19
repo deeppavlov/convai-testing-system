@@ -94,9 +94,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("- 0 -",  encodeCallback(dialogId, text, None)),
+          InlineKeyboardButton.callbackData("\u2754",  encodeCallback(dialogId, text, None)),
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCallback(dialogId, text, Some("bot"))),
-          InlineKeyboardButton.callbackData("human", encodeCallback(dialogId, text, Some("human")))
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCallback(dialogId, text, Some("human")))
         ))
         ))))
 
