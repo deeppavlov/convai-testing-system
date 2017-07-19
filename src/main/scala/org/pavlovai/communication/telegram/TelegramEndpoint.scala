@@ -58,7 +58,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId) =>
       daddy ! DialogFather.UserLeave(TelegramChat(chatId))
-      if (activeUsers.get(TelegramChat(chatId)).isEmpty) activeUsers.remove(TelegramChat(chatId))
+      activeUsers.remove(TelegramChat(chatId))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
@@ -109,8 +109,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       }
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
-
-    //case Update(num, Some(_), _, _, _, _, _, _, _, _) =>
 
     case ChancelTestDialog(user: TelegramChat, cause) =>
       activeUsers -= user
