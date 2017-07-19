@@ -72,7 +72,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
       log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
       telegramCall(AnswerCallbackQuery(cdId, Some("ololo! " + data), Some(true), None, None))
-      //telegramCall(EditMessageReplyMarkup(Some(Left(m.chat.id))))
+      telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
+        InlineKeyboardButton.callbackData("\uD84D\uDC4D", encodeCallback(0, "text", Some("bot"))),
+        InlineKeyboardButton.callbackData("\uD84D\uDC4E", encodeCallback(0, "text", Some("human")))
+      )))
+      )))
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
 
@@ -90,9 +94,6 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, dialogId) =>
-      //TODO use messageId instead hash
-      def encodeCallback(dialogId: Int, message: String, value: Option[String]) = dialogId + "," + value.getOrElse("unknown")
-
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCallback(dialogId, text, Some("bot"))),
@@ -127,6 +128,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |- /help for help
       |
     """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
+
+  //TODO use messageId instead hash
+  private def encodeCallback(dialogId: Int, message: String, value: Option[String]) = dialogId + "," + value.getOrElse("unknown")
 }
 
 object TelegramEndpoint {
