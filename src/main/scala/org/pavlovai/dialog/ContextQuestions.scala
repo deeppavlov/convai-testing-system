@@ -15,7 +15,7 @@ trait ContextQuestions {
 }
 
 object ContextQuestions extends ContextQuestions {
-  private val rnd = scala.util.Random.javaRandomToRandom(new SecureRandom())
+  private val rnd = scala.util.Random
 
   def selectRandom: Try[String] = {
     Try(io.Source.fromResource("context.txt").getLines.size).flatMap { size =>

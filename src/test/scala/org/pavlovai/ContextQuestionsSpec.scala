@@ -11,7 +11,6 @@ import scala.concurrent.duration._
   * @since 05.07.17
   */
 class ContextQuestionsSpec extends WordSpec {
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   "randomLine" must {
     "return random string" in {
