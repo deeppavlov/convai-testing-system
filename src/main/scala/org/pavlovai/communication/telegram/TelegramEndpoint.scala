@@ -72,7 +72,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case  Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, user, Some(responseToMessage), inlineMessageId, _, Some(data),None)), None,None) =>
       log.info("received m: {}, d: {}", responseToMessage.text.map(_.hashCode), data)
       telegramCall(AnswerCallbackQuery(cdId, Some("ololo! " + data), Some(true), None, None))
-      telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
+      telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
         InlineKeyboardButton.callbackData("\uD84D\uDC4D", encodeCallback(0, "text", Some("bot"))),
         InlineKeyboardButton.callbackData("\uD84D\uDC4E", encodeCallback(0, "text", Some("human")))
       )))
