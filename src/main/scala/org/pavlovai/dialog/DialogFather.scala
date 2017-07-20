@@ -25,7 +25,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   gate ! Endpoint.SetDialogFather(self)
 
-  context.system.scheduler.schedule(1.second, 1.second) { self ! AssembleDialogs }
+  context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
 
   override def receive: Receive = {
     case AssembleDialogs =>

@@ -119,7 +119,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       activeUsers -= user
 
     case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
-      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+      telegramCall(SendMessage(Left(id), "**" + text + "**", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
@@ -133,7 +133,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(
         SendMessage(
           Left(h.chatId),
-          text,
+          "**" + text + "**",
           Some(ParseMode.Markdown),
           replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") )
