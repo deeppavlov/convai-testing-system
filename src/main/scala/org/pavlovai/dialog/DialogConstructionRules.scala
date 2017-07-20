@@ -1,17 +1,19 @@
 package org.pavlovai.dialog
 
+import akka.actor.ActorLogging
 import org.pavlovai.communication.{Bot, Human, TelegramChat, User}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Deadline
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Random, Success, Try}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Random, Success, Try}
 
 /**
   * @author vadim
   * @since 13.07.17
   */
-trait DialogConstructionRules {
+trait DialogConstructionRules { self: ActorLogging =>
   protected val textGenerator: ContextQuestions
 
   private val rnd = Random
@@ -21,8 +23,15 @@ trait DialogConstructionRules {
     users.zip(users.reverse).take(users.size / 2).map { case (u1, u2) =>
       val (a, b) =  if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1)
       textGenerator.selectRandom.map { txt => (a, b, txt) }
-    }.collect {
-      case Success(d) => d
     }
+      .map {
+        case f @ Failure(e) =>
+          log.error("error on dialog construction: {}", e)
+          f
+        case m => m
+      }
+      .collect {
+        case Success(d) => d
+      }
   }
 }

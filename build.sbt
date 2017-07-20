@@ -25,3 +25,9 @@ enablePlugins(JavaAppPackaging)
 enablePlugins(DebianPlugin)
 
 debianPackageDependencies in Debian ++= Seq("java2-runtime", "bash (>= 2.05a-11)")
+
+javaOptions in Universal ++= Seq(
+  // -J params will be added as jvm parameters
+  "-J-Xmx256m",
+  "-J-Xms256m"
+)
