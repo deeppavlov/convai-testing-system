@@ -82,7 +82,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
             case Some(dialog) =>
               (dialog ? Dialog.EvaluateMessage(messageId.toInt, category)).map {
                 case Dialog.Ok =>
-                  telegramCall(AnswerCallbackQuery(cdId, Some("You " + value + "ed \"" + text.substring(0, Math.min(text.length(), 15)).trim + (if (text.length() > 15) "... \"" else "\"")), Some(true), None, None))
+                  telegramCall(AnswerCallbackQuery(cdId, None, Some(false), None, None))
                   val (labelLike, labelUnlike) = ("\uD83D\uDC4D" + (if (value == "like") "\u2605" else ""), "\uD83D\uDC4E"  + (if (value == "unlike") "\u2605" else ""))
                   telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
                     InlineKeyboardButton.callbackData(labelLike, encodeCbData(messageId.toInt, "like")),
