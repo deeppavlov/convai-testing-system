@@ -1,5 +1,7 @@
 package org.pavlovai
 
+import java.time.Clock
+
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
@@ -17,10 +19,11 @@ object ConvaiTestingSystem extends App {
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
   private implicit val executionContext = akkaSystem.dispatcher
   private val logger = Logger(getClass)
+  private val rnd = util.Random.javaRandomToRandom(new java.util.Random())
 
   private val gate = akkaSystem.actorOf(Endpoint.props, name = "communication-endpoint")
   private val mongoStorage = akkaSystem.actorOf(MongoStorage.props(), name="dialog-storage")
-  private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, ContextQuestions, mongoStorage), "talk-constructor")
+  private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, ContextQuestions, mongoStorage, rnd, Clock.systemDefaultZone()), "talk-constructor")
 
   private implicit val timeout: Timeout = 5.seconds
 

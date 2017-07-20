@@ -1,6 +1,7 @@
 package org.pavlovai.dialog
 
 import java.time.{Clock, Instant, ZoneId}
+import java.util.Random
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
@@ -47,13 +48,19 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
     def tick(): Unit = ticks += 1
   }
 
+  object FakeRandom extends Random {
+    override protected def next(bits: Int): Int = 0
+  }
+
+  val rnd: util.Random = scala.util.Random.javaRandomToRandom(FakeRandom)
+
   case class Tester(chatId: Long) extends Human
 
   "human user after /begin command" must {
     "see 'Sorry, wait for the opponent' message if no opponent fond" in {
       val gate = TestProbe()
       val storage = TestProbe()
-      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, new FakeClock))
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, new FakeClock))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
 
       daddy ! DialogFather.UserAvailable(Tester(5))
@@ -65,20 +72,19 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val gate = TestProbe()
       val storage = TestProbe()
       val clck = new FakeClock
-      for (i <- 0 to 3) {
-        val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, clck))
-        gate.expectMsg(Endpoint.SetDialogFather(daddy))
-        daddy ! DialogFather.UserAvailable(Tester(1))
-        gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "Please wait for your partner."))
-        daddy ! DialogFather.UserAvailable(Bot("2"))
-        val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
-        gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("2"), t))
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
+      gate.expectMsg(Endpoint.SetDialogFather(daddy))
+      daddy ! DialogFather.UserAvailable(Tester(1))
+      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "Please wait for your partner."))
+      daddy ! DialogFather.UserAvailable(Tester(2))
+      val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
+      gate.expectMsg(Endpoint.ActivateTalkForUser(Tester(2), t))
 
-        gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "test"))
-        gate.expectMsg(Endpoint.ChatMessageToUser(Bot("2"), "/start test", t.hashCode(), i*1000000))
+      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "test"))
+      //gate.expectMsg(Endpoint.ChatMessageToUser(Bot("2"), "/start test", t.hashCode(), 0))
+      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "test"))
 
-        clck.tick()
-      }
+      clck.tick()
       gate.expectNoMsg()
     }
 
@@ -88,7 +94,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val gate = TestProbe()
       val storage = TestProbe()
       val clck = new FakeClock
-      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, clck))
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester(1))
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "Please wait for your partner."))
@@ -151,7 +157,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val gate = TestProbe()
       val storage = TestProbe()
       val clck = new FakeClock
-      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, clck))
+      val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Bot("1"))
 

@@ -7,44 +7,47 @@ import org.pavlovai.communication._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Random, Try}
 import scala.util.control.NonFatal
 
 /**
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clck: Clock) extends Actor with ActorLogging with DialogConstructionRules {
+class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clck: Clock, val rnd: Random) extends Actor with ActorLogging with DialogConstructionRules {
   import DialogFather._
   private implicit val ec = context.dispatcher
 
-  private val cooldownPeriod: FiniteDuration = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.bot.talk_period_min").toNanos)).getOrElse(1.minutes)
+  private val cooldownPeriod: Double = Try(context.system.settings.config.getDouble("talk.bot.human_prob")).getOrElse(0.5)
 
   private val availableUsers: mutable.Set[User] = mutable.Set.empty[User]
-  private val cooldownBots: mutable.Map[Bot, Deadline] = mutable.Map.empty[Bot, Deadline]
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
 
   gate ! Endpoint.SetDialogFather(self)
 
-  context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
+  context.system.scheduler.schedule(1.second, 1.second) { self ! AssembleDialogs }
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
-      availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten.filter {
-        case u: Human => true
-        case _ => false
-      }).toSet).foreach(assembleDialog(databaseDialogStorage))
+      //cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
+      availableDialogs(cooldownPeriod)(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
-        ul.foreach(user => gate ! Endpoint.FinishTalkForUser(user, t))
+        ul.foreach {
+          case user: Human =>
+            gate ! Endpoint.FinishTalkForUser(user, t)
+            log.debug("human {} unavailable now", user)
+          case user: Bot =>
+            self ! UserAvailable(user)
+            log.debug("bot {} returned to pool", user)
+        }
         log.info("dialog terminated, users {} leave from dialog", ul)
       }
 
     case UserAvailable(user: User) =>
       if (availableUsers.add(user)) {
-        val dialRes = availableDialogs(availableUsers.toSet, (cooldownBots.keySet ++ usersChatsInTalks.values.flatten).toSet)
+        val dialRes = availableDialogs(cooldownPeriod)(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet)
         dialRes.foreach(assembleDialog(databaseDialogStorage))
         if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
           gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
@@ -91,21 +94,16 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
       context.watch(dialog)
 
-      def userAddedToChat(user: User): Unit = user match {
-        case u: Human => availableUsers.remove(u)
-        case u: Bot => if (cooldownBots.put(u, cooldownPeriod.fromNow).isEmpty) log.info("bot {} go to sleep on {}", u, cooldownPeriod)
-        case _ =>
-      }
-
-      userAddedToChat(a)
-      userAddedToChat(b)
+      availableUsers.remove(a)
+      availableUsers.remove(b)
 
       dialog ! Dialog.StartDialog
   }
 }
 
 object DialogFather {
-  def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clock: Clock = Clock.systemDefaultZone()) = Props(new DialogFather(gate, textGenerator, databaseDialogStorage, clock))
+  def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, rnd: Random, clock: Clock) =
+    Props(new DialogFather(gate, textGenerator, databaseDialogStorage, clock, rnd))
 
   private case object AssembleDialogs
   case class CreateTestDialogWithBot(user: Human, botId: String)
