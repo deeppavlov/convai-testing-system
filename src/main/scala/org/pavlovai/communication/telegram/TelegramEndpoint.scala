@@ -2,6 +2,7 @@ package org.pavlovai.communication.telegram
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.util.Timeout
+import buildinfo.BuildInfo
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
@@ -52,6 +53,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id))
       activeUsers += TelegramChat(id) -> None
+
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id) =>
+      telegramCall(SendMessage(Left(id), "`(system say):` " + BuildInfo.version, Some(ParseMode.Markdown)))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))

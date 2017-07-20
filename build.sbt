@@ -31,3 +31,9 @@ javaOptions in Universal ++= Seq(
   "-J-Xmx256m",
   "-J-Xms256m"
 )
+
+enablePlugins(BuildInfoPlugin)
+
+buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
+
+buildInfoPackage := "org.pavlovai"
