@@ -40,7 +40,10 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/start") =>
       telegramCall(SendMessage(Left(chat.id),
         """
-          |*Welcome!*
+          |Welcome! You are going to have a conversation with ConvAi bot which is a proxy for dialog systems of ConvAi challenge participants. Please look [instructions](). We glad to see you in Moscow on ConvAi challenge. We glad to thanks sponsors:
+          |
+          |[Facebook](https://deeppavlov.github.io/convai/facebook.png)
+          |[Flint capital](https://deeppavlov.github.io/convai/flint.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Command(chat, "/help") =>
