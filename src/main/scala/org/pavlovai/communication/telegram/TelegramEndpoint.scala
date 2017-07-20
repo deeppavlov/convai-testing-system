@@ -158,9 +158,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     """
       |Use:
       |
-      |- /begin for start talk
-      |- /end for end talk
-      |- /help for help
+      |- /begin to start talk
+      |- /end to end talk
+      |- /help to help
       |
     """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 
