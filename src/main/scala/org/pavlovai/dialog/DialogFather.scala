@@ -32,15 +32,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
-      usersChatsInTalks.remove(t).foreach { ul =>
-        ul.foreach {
-          case user: Human =>
-            gate ! Endpoint.FinishTalkForUser(user, t)
-            log.debug("human {} unavailable now", user)
-          case user: Bot => log.debug("bot {} returned to pool", user)
-        }
-        log.info("dialog terminated, users {} leave from dialog", ul)
-      }
+      usersChatsInTalks.remove(t).foreach { ul => log.info("dialog terminated, users {} leave from dialog", ul) }
 
     case UserAvailable(user: User) =>
       if (availableUsers.add(user)) {

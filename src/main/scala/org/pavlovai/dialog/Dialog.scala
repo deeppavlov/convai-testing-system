@@ -79,6 +79,12 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
     case EvaluationProcess.CompleteEvaluation(user, q, br, e) =>
       log.info("evaluation from {}: quality={}, breadth={}, engagement={}", user, q, br, e)
       evaluations.add(user -> (q, br, e))
+      user match {
+        case user: Human =>
+          gate ! Endpoint.FinishTalkForUser(user, self)
+          log.debug("human {} unavailable now", user)
+        case user: Bot => log.debug("bot {} finished talk", user)
+      }
       if (evaluations.size >= 2) {
         database ! MongoStorage.WriteDialog(self.chatId, Set(a, b), txtContext, history.values.toList, evaluations.toSet)
         self ! PoisonPill
