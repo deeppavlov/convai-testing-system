@@ -54,7 +54,7 @@ object MongoStorage {
 
   private case class DialogThreadItem(userId: String, text: String, evaluation: Int)
 
-  private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummary], context: String, tread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
+  private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummary], context: String, thread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
     def apply(wd: WriteDialog): Dialog =
       new Dialog(new ObjectId(),
