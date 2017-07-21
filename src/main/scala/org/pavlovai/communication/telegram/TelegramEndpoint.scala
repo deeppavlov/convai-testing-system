@@ -37,7 +37,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
   private def initialized(telegramCall: RequestHandler): Receive = {
     case SetGateway(g) => context.become(initialized(g))
 
-    case Command(chat, "/start") =>
+    case Command(chat, "/start") if isNotInDialog(chat.id, chat.username) =>
       telegramCall(SendMessage(Left(chat.id),
         """
           |Welcome!
@@ -58,9 +58,12 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       daddy ! DialogFather.CreateTestDialogWithBot(TelegramChat(id, username), cmd.substring("/test".length).trim)
       activeUsers += TelegramChat(id, username) -> None
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) && username.isDefined =>
       daddy ! DialogFather.UserAvailable(TelegramChat(id, username))
       activeUsers += TelegramChat(id, username) -> None
+
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) && username.isEmpty =>
+      telegramCall(SendMessage(Left(id), "`(system msg):` please set username in your telegram account"))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id, username) =>
       telegramCall(SendMessage(Left(id), "`(system msg):` " + BuildInfo.version, Some(ParseMode.Markdown)))
