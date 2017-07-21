@@ -36,6 +36,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
     case UserAvailable(user: User) =>
       if (availableUsers.add(user)) {
+        val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
+        mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
+
         val dialRes = availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList)
         dialRes.foreach(assembleDialog(databaseDialogStorage))
         if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {

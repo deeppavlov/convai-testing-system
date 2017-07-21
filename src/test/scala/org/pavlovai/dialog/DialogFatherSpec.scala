@@ -128,6 +128,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the engagement"))
       talk ! Dialog.PushMessageToTalk(Tester(1), "3")
       gate.expectMsg(Endpoint.EndHumanDialog(Tester(1), "Thank you! It was great! Please choose /begin to continue evaluation."))
+      gate.expectMsg(Endpoint.FinishTalkForUser(Tester(1), talk))
       gate.expectNoMsg()
 
       talk ! Dialog.PushMessageToTalk(Tester(2), "4")
@@ -136,15 +137,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the engagement"))
       talk ! Dialog.PushMessageToTalk(Tester(2), "1")
       gate.expectMsg(Endpoint.EndHumanDialog(Tester(2), "Thank you! It was great! Please choose /begin to continue evaluation."))
-
-      gate.expectMsgPF(3.seconds) {
-        case Endpoint.FinishTalkForUser(Tester(1), _) =>
-        case Endpoint.FinishTalkForUser(Tester(2), _) =>
-      }
-      gate.expectMsgPF(3.seconds) {
-        case Endpoint.FinishTalkForUser(Tester(1), _) =>
-        case Endpoint.FinishTalkForUser(Tester(2), _) =>
-      }
+      gate.expectMsg(Endpoint.FinishTalkForUser(Tester(2), talk))
       gate.expectNoMsg()
 
 
