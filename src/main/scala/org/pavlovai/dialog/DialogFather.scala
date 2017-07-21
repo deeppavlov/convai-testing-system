@@ -18,7 +18,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   import DialogFather._
   private implicit val ec = context.dispatcher
 
-  private val humanProb: Double = Try(context.system.settings.config.getDouble("talk.bot.human_prob")).getOrElse(0.5)
+  private val humanBotCoef: Double = Try(context.system.settings.config.getDouble("talk.bot.human_bot_coefficient")).getOrElse(0.5)
 
   private val availableUsers: mutable.Set[User] = mutable.Set.empty[User]
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
@@ -29,8 +29,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      //cooldownBots.retain { case (_, deadline) => deadline.hasTimeLeft() }
-      availableDialogs(humanProb)(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet).foreach(assembleDialog(databaseDialogStorage))
+      availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
@@ -38,16 +37,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
           case user: Human =>
             gate ! Endpoint.FinishTalkForUser(user, t)
             log.debug("human {} unavailable now", user)
-          case user: Bot =>
-            self ! UserAvailable(user)
-            log.debug("bot {} returned to pool", user)
+          case user: Bot => log.debug("bot {} returned to pool", user)
         }
         log.info("dialog terminated, users {} leave from dialog", ul)
       }
 
     case UserAvailable(user: User) =>
       if (availableUsers.add(user)) {
-        val dialRes = availableDialogs(humanProb)(availableUsers.toSet, usersChatsInTalks.values.flatten.toSet)
+        val dialRes = availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList)
         dialRes.foreach(assembleDialog(databaseDialogStorage))
         if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
           gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
@@ -94,8 +91,8 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
       context.watch(dialog)
 
-      availableUsers.remove(a)
-      availableUsers.remove(b)
+      if (a.isInstanceOf[Human]) availableUsers.remove(a)
+      if (b.isInstanceOf[Human]) availableUsers.remove(b)
 
       dialog ! Dialog.StartDialog
   }

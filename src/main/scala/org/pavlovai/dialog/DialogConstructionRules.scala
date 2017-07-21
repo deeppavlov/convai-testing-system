@@ -15,36 +15,26 @@ trait DialogConstructionRules {
   val rnd: Random
   def log: LoggingAdapter
 
-  def availableDialogs(humanProb: Double)(usersList: Set[User], blackList: Set[User]): Seq[(User, User, String)] = {
-    def getUsersPairs(users: List[User]): List[(User, User)] = users.zip(users.reverse).take(users.size / 2)
-    def getUserBotPairs(users: Set[User], robots: List[User]): Set[(User, User)] = users.map((_, rnd.shuffle(robots).headOption)).collect {
-      case p@(h, Some(b)) => (h, b)
-    }
-
-    val users = rnd.shuffle(usersList.diff(blackList).toList)
-    val humans = users.filter(_.isInstanceOf[Human])
+  def availableDialogs(humanBotCoef: Double)(users: List[User]): Seq[(User, User, String)] = {
+    val humans = rnd.shuffle(users.filter(_.isInstanceOf[Human]))
     val robots = users.filter(_.isInstanceOf[Bot])
+    val humanProb = 1.0 - 1.0 / (2 * humanBotCoef + 1)
 
-    val users2user = humans.map( (_, rnd.nextDouble() < humanProb) ).collect { case (h, true) => h }
-    val users2bot = humans.toSet.diff(users2user.toSet)
-
-    (getUsersPairs(users2user) ++ getUserBotPairs(users2bot, robots))
-      .map { case (u1, u2) =>
-        val (a, b) =  if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1)
-        textGenerator.selectRandom.map { txt => (a, b, txt) }
+    humans.zip(humans.reverse).take(humans.length / 2)
+      .map { case (u1, u2) => if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1) }
+      .foldRight(List.empty[(User, User)]) { case ((a, b), acc) =>
+        val isHumanPair = rnd.nextDouble() < humanProb
+        def randomRobot = rnd.shuffle(robots).head
+        if (isHumanPair || robots.isEmpty) (a, b) :: acc
+        else (a, randomRobot) :: (b, randomRobot) :: acc
       }
-      .map {
-        case f @ Failure(e) =>
-          log.error("error on dialog construction: {}", e)
-          f
-        case m => m
-      }
-      .collect {
-        case Success(d) => d
-      }
-      .map {
-        case (u1: Bot, u2: Human, txt) => (u2, u1, txt)
-        case other => other
-      }
+      .map { case (a, b) =>
+        textGenerator.selectRandom match {
+          case f @ Failure(e) =>
+            log.error("error on context text generation in dialog construction: {}, pair ({},{}) ignored", e, a, b)
+            (a, b, f)
+          case s => (a, b, s)
+        }
+      }.collect { case (a, b, Success(txt)) => (a, b, txt) }
   }
 }

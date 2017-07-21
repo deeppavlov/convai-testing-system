@@ -24,11 +24,13 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
       }
 
       for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(Set(Tester("1"), Bot("1")), Set())
-        assert(
-          (l == List((Tester("1"), Bot("1"), "test"))) ||
-            (l == List())
-        )
+        val l = constructor.availableDialogs(0.5)(List(Tester("1"), Tester("2")))
+        assert(l === List((Tester("1"), Tester("2"), "test")))
+      }
+
+      for (i <- 1 to 1000) {
+        val l = constructor.availableDialogs(0.5)(List(Tester("1"), Bot("2")))
+        assert(l === List())
       }
     }
 
@@ -43,17 +45,19 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
         override val rnd: Random = scala.util.Random
       }
 
-      for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(Set(Tester("1"), Tester("2"), Bot("3")), Set())
+      var hbDialogs = 0.0
+      var hhDialogs = 0
+      for (i <- 1 to 10000) {
+        val l = constructor.availableDialogs(1)(List(Tester("1"), Tester("2"), Bot("3")))
+        hbDialogs = hbDialogs + (if (l == List((Tester("1"), Bot("3"), "test"), (Tester("2"), Bot("3"), "test"))) 2 else 0)
+        hhDialogs = hhDialogs + (if (l == List((Tester("1"), Tester("2"), "test"))) 1 else 0)
         assert(
-          l == List((Tester("2"), Tester("1"), "test")) ||
             l == List((Tester("1"), Tester("2"), "test")) ||
-            l == List((Tester("1"), Bot("3"), "test")) ||
-            l == List((Tester("2"), Bot("3"), "test")) ||
-            l == List((Tester("2"), Bot("3"), "test"), (Tester("1"), Bot("3"), "test")) ||
             l == List((Tester("1"), Bot("3"), "test"), (Tester("2"), Bot("3"), "test"))
         )
       }
+      val humanBotsCoef = hhDialogs / hbDialogs
+      assert( 0.97 < humanBotsCoef && humanBotsCoef < 1.3)
     }
   }
 
