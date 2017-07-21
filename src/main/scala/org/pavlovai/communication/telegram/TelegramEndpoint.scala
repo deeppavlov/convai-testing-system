@@ -41,12 +41,12 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(chat.id),
         """
           |Welcome!
-          |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at 
+          |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at
           |We are glad to announce our sponsors: Facebook and Flint Capital.
           |
           |Be aware that your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0.
           |
-          |[](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/sponsors_720.png)
+          |
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Command(chat, "/help") =>
@@ -130,6 +130,13 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
       telegramCall(SendMessage(Left(id), "`(system say):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+
+    case Endpoint.EndHumanDialog(TelegramChat(id), text) =>
+      telegramCall(SendMessage(Left(id), "`(system say):` " + text, Some(ParseMode.Markdown),
+        replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+          Seq( KeyboardButton("/begin") )
+        )))
+      ))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
       telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(

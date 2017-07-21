@@ -41,6 +41,7 @@ class Endpoint extends Actor with ActorLogging with Stash {
 
     case m: AskEvaluationFromHuman => telegramGate forward m
     case m: SystemNotificationToUser => telegramGate forward m
+    case m: EndHumanDialog => telegramGate forward m
 
     case m: DialogFather.UserAvailable => talkConstructor forward m
     case m: DialogFather.UserLeave => talkConstructor forward m
@@ -69,6 +70,7 @@ object Endpoint {
   case class ChatMessageToUser(receiver: User, message: String, fromDialogId: Int, id: Int) extends MessageFromDialog
   trait SystemNotification extends MessageFromDialog
   case class AskEvaluationFromHuman(receiver: Human, question: String) extends SystemNotification
+  case class EndHumanDialog(receiver: Human, text: String) extends SystemNotification
   case class SystemNotificationToUser(receiver: User, message: String) extends SystemNotification
 
   case class ActivateTalkForUser(user: User, talk: ActorRef)
