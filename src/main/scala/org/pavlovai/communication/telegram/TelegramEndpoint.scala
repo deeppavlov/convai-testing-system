@@ -61,7 +61,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       activeUsers += TelegramChat(id) -> None
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id) =>
-      telegramCall(SendMessage(Left(id), "`(system say):` " + BuildInfo.version, Some(ParseMode.Markdown)))
+      telegramCall(SendMessage(Left(id), "`(system msg):` " + BuildInfo.version, Some(ParseMode.Markdown)))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
@@ -70,7 +70,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       daddy ! DialogFather.UserLeave(TelegramChat(chatId))
       if (activeUsers.get(TelegramChat(chatId)).flatten.isEmpty) {
         activeUsers.remove(TelegramChat(chatId))
-        telegramCall(SendMessage(Left(chatId),"""`(system say):` exit""", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+        telegramCall(SendMessage(Left(chatId),"""`(system msg):` exit""", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("/begin") )
           )))
         ))
@@ -135,17 +135,17 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       activeUsers -= user
 
     case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
-      telegramCall(SendMessage(Left(id), "`(system say):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+      telegramCall(SendMessage(Left(id), "`(system msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Endpoint.EndHumanDialog(TelegramChat(id), text) =>
-      telegramCall(SendMessage(Left(id), "`(system say):` " + text, Some(ParseMode.Markdown),
+      telegramCall(SendMessage(Left(id), "`(system msg):` " + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") )
         )))
       ))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
-      telegramCall(SendMessage(Left(id), "`(partner say):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(
+      telegramCall(SendMessage(Left(id), "`(partner msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(mesId, "unlike"))
@@ -156,7 +156,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(
         SendMessage(
           Left(h.chatId),
-          "`(system say):` " + text,
+          "`(system msg):` " + text,
           Some(ParseMode.Markdown),
           replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") )

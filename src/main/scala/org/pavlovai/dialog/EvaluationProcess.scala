@@ -24,7 +24,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
       user match {
         case user: Human =>
           context.become(dialogEvaluationQuality(user))
-          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the quality")
+          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           gate ! Endpoint.ChatMessageToUser(u, "/end", dialog.chatId, Instant.now().getNano)
@@ -56,7 +56,7 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 5)).isSuccess =>
       log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
-      gate ! Endpoint.EndHumanDialog(u, "Thank you!")
+      gate ! Endpoint.EndHumanDialog(u, "'Thank you! It was great! Please choose /begin to continue evaluation.")
       dialog ! CompleteEvaluation(u ,q, b, e)
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 5""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)
