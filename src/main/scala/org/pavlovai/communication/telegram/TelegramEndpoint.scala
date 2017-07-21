@@ -43,7 +43,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           |Welcome!
           |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at Volunteer’s Instruction: LINK
           |We are glad to announce our sponsors: Facebook and Flint Capital.
-          |[](https://deeppavlov.github.io/convai/flint.png)
+          |[](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/sponsors_720.png)
           |
           |Be aware that your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0.
           |
