@@ -42,7 +42,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         """
           |Welcome!
           |You’re going to participate in ConvAI Challenge as volunteer. Please use command /help for instruction.
-          |We are glad to announce our sponsors: Facebook and Flint Capital. [](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_720.png)
+          |We are glad to announce our sponsors: Facebook and Flint Capital. [!](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_720.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") ),
           Seq( KeyboardButton("/help") )
@@ -145,7 +145,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       ))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
-      telegramCall(SendMessage(Left(id), text, Some(ParseMode.Markdown), replyMarkup = Some(
+      telegramCall(SendMessage(Left(id), "`(partner say):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(mesId, "unlike"))
