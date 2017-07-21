@@ -2,7 +2,7 @@ package org.pavlovai.dialog
 
 import java.time.Instant
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import org.pavlovai.communication._
 
 import scala.util.Try

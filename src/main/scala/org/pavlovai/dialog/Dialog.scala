@@ -2,7 +2,7 @@ package org.pavlovai.dialog
 
 import java.time.{Clock, Instant}
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Stash}
 import org.pavlovai.communication._
 
 import scala.annotation.tailrec
@@ -16,7 +16,7 @@ import scala.util.control.NoStackTrace
   * @author vadim
   * @since 06.07.17
   */
-class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging {
+class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Stash {
   import Dialog._
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
@@ -58,6 +58,7 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
       val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
       e2 ! EvaluationProcess.StartEvaluation
       context.become(onEvaluation(e1, e2))
+      unstashAll()
 
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
@@ -68,6 +69,8 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
         sender ! Ok
         log.info("rated message {} with {}", messageId, category)
       }
+
+    case EvaluationProcess.CompleteEvaluation(user, q, br, e) => stash()
   }
 
   private val evaluations: mutable.Set[(User, (Int, Int, Int))] = mutable.Set.empty[(User, (Int, Int, Int))]
