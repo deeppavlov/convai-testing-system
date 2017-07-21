@@ -185,7 +185,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       | * engagement - was it interesting to participate in this conversation?
       |8. If your peer ends the dialog before you, you will also receive a scoring request from @ConvaiBot.
       |9. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-    """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
+    """.stripMargin, None, replyMarkup = Some(ReplyKeyboardRemove()))
 
   private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 }
