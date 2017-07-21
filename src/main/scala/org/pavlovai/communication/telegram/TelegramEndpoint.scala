@@ -47,7 +47,10 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           |Be aware that your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0.
           |
           |
-        """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+        """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+          Seq( KeyboardButton("/begin") )
+        )))
+      ))
 
     case Command(chat, "/help") =>
       telegramCall(helpMessage(chat.id))
