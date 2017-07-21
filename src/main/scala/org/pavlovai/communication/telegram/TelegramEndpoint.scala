@@ -41,12 +41,11 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(chat.id),
         """
           |Welcome!
-          |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at
+          |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at [Volunteer’s Instruction](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/volunteers-Instruction.pdf).
           |We are glad to announce our sponsors: Facebook and Flint Capital.
           |
           |Be aware that your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0.
-          |
-          |
+          |[](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/sponsors_720.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") )
         )))
@@ -71,7 +70,13 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
     case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId) =>
       daddy ! DialogFather.UserLeave(TelegramChat(chatId))
-      if (activeUsers.get(TelegramChat(chatId)).flatten.isEmpty) activeUsers.remove(TelegramChat(chatId))
+      if (activeUsers.get(TelegramChat(chatId)).flatten.isEmpty) {
+        activeUsers.remove(TelegramChat(chatId))
+        telegramCall(SendMessage(Left(chatId),"""`(system say):` exit""", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+            Seq( KeyboardButton("/begin") )
+          )))
+        ))
+      }
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
