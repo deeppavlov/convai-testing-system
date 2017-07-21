@@ -180,12 +180,15 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       |6. Please score every utterance of your peer with a 'thumb UP' button if you like it, and 'thumb DOWN' button in the opposite case.
       |To finish the conversation type or choose a command ```/end```.
       |7. When the conversation is finished, you will receive a request from @ConvaiBot to score the overall quality of the dialog along three dimensions:
-      | * quality - how much are you satisfied with the whole conversation?
-      | * breadth - in your opinion was a topic discussed thoroughly or just from one side?
-      | * engagement - was it interesting to participate in this conversation?
+      | - quality - how much are you satisfied with the whole conversation?
+      | - breadth - in your opinion was a topic discussed thoroughly or just from one side?
+      | - engagement - was it interesting to participate in this conversation?
       |8. If your peer ends the dialog before you, you will also receive a scoring request from @ConvaiBot.
       |9. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-    """.stripMargin, None, replyMarkup = Some(ReplyKeyboardRemove()))
+    """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+      Seq( KeyboardButton("/begin") )
+    )))
+  )
 
   private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 }
