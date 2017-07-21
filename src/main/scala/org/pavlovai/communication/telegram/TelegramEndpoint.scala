@@ -63,7 +63,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       activeUsers += TelegramChat(id, username) -> None
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) && username.isEmpty =>
-      telegramCall(SendMessage(Left(id), "`(system msg):` please set username in your telegram account"))
+      telegramCall(SendMessage(Left(id), "`(system msg):` please set username in your telegram account", Some(ParseMode.Markdown)))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id, username) =>
       telegramCall(SendMessage(Left(id), "`(system msg):` " + BuildInfo.version, Some(ParseMode.Markdown)))
