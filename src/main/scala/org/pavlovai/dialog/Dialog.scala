@@ -97,6 +97,8 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
         sender ! Ok
         log.info("rated message {} with {}", messageId, category)
       }
+
+    case m => log.debug("message ignored {}", m)
   }
 }
 
