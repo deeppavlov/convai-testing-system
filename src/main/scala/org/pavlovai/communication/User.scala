@@ -16,4 +16,12 @@ trait Human extends User {
   val chatId: Long
   val id: String = chatId.toString
 }
-case class TelegramChat(chatId: Long) extends Human
+case class TelegramChat(chatId: Long, username: Option[String]) extends Human {
+  override def canEqual(a: Any): Boolean = a.isInstanceOf[TelegramChat]
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: TelegramChat => that.canEqual(this) && that.chatId == chatId
+      case _ => false
+    }
+  override def hashCode: Int = { chatId.hashCode() }
+}

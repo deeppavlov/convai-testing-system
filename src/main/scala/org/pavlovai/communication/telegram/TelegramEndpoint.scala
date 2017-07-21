@@ -41,7 +41,9 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       telegramCall(SendMessage(Left(chat.id),
         """
           |Welcome!
-          |You’re going to participate in ConvAI Challenge as volunteer. Please use command /help for instruction.
+          |You’re going to participate in The Conversational Intelligence Challenge as a volunteer.
+          |Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0. Please use command /help for instruction.
+          |
           |We are glad to announce our sponsors: Facebook and Flint Capital[.](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_720.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") ),
@@ -52,38 +54,38 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/help") =>
       telegramCall(helpMessage(chat.id))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), cmd) if isNotInDialog(id) && cmd.startsWith("/test") =>
-      daddy ! DialogFather.CreateTestDialogWithBot(TelegramChat(id), cmd.substring("/test".length).trim)
-      activeUsers += TelegramChat(id) -> None
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), cmd) if isNotInDialog(id, username) && cmd.startsWith("/test") =>
+      daddy ! DialogFather.CreateTestDialogWithBot(TelegramChat(id, username), cmd.substring("/test".length).trim)
+      activeUsers += TelegramChat(id, username) -> None
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id) =>
-      daddy ! DialogFather.UserAvailable(TelegramChat(id))
-      activeUsers += TelegramChat(id) -> None
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isNotInDialog(id, username) =>
+      daddy ! DialogFather.UserAvailable(TelegramChat(id, username))
+      activeUsers += TelegramChat(id, username) -> None
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/version") if isNotInDialog(id, username) =>
       telegramCall(SendMessage(Left(id), "`(system msg):` " + BuildInfo.version, Some(ParseMode.Markdown)))
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id, username) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId) =>
-      daddy ! DialogFather.UserLeave(TelegramChat(chatId))
-      if (activeUsers.get(TelegramChat(chatId)).flatten.isEmpty) {
-        activeUsers.remove(TelegramChat(chatId))
+    case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId, username) =>
+      daddy ! DialogFather.UserLeave(TelegramChat(chatId, username))
+      if (activeUsers.get(TelegramChat(chatId, username)).flatten.isEmpty) {
+        activeUsers.remove(TelegramChat(chatId, username))
         telegramCall(SendMessage(Left(chatId),"""`(system msg):` exit""", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("/begin") )
           )))
         ))
       }
 
-    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id) =>
+    case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id, username) =>
       telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
     case Command(chat, _) =>
       telegramCall(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
 
-    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isInDialog(message.chat.id) =>
-      val user = TelegramChat(message.chat.id)
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isInDialog(message.chat.id, message.chat.username) =>
+      val user = TelegramChat(message.chat.id, message.chat.username)
       activeUsers.get(user).foreach {
         case Some(talk) => message.text.foreach(talk ! Dialog.PushMessageToTalk(user, _))
         case _ =>
@@ -94,7 +96,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       (data.split(",").toList, responseToMessage.text, responseToMessage.chat.id) match {
         case (messageId :: value :: Nil, Some(text), chatId) if Try(messageId.toInt).isSuccess =>
           val category = if (value == "unlike") 1 else if (value == "like") 2 else 0
-          activeUsers.get(TelegramChat(chatId)).map {
+          activeUsers.get(TelegramChat(chatId, user.username)).map {
             case Some(dialog) =>
               (dialog ? Dialog.EvaluateMessage(messageId.toInt, category)).map {
                 case Dialog.Ok =>
@@ -124,7 +126,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
           telegramCall(AnswerCallbackQuery(cdId, Some("Bad request"), Some(true), None, None))
       }
 
-    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id) => telegramCall(helpMessage(message.chat.id))
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if isNotInDialog(message.chat.id, message.chat.username) => telegramCall(helpMessage(message.chat.id))
 
     case ChancelTestDialog(user: TelegramChat, cause) =>
       activeUsers -= user
@@ -134,17 +136,17 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Endpoint.FinishTalkForUser(user: TelegramChat, _) =>
       activeUsers -= user
 
-    case Endpoint.SystemNotificationToUser(TelegramChat(id), text) =>
+    case Endpoint.SystemNotificationToUser(TelegramChat(id, _), text) =>
       telegramCall(SendMessage(Left(id), "`(system msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
-    case Endpoint.EndHumanDialog(TelegramChat(id), text) =>
+    case Endpoint.EndHumanDialog(TelegramChat(id, _), text) =>
       telegramCall(SendMessage(Left(id), "`(system msg):` " + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") )
         )))
       ))
 
-    case Endpoint.ChatMessageToUser(TelegramChat(id), text, _, mesId) =>
+    case Endpoint.ChatMessageToUser(TelegramChat(id, _), text, _, mesId) =>
       telegramCall(SendMessage(Left(id), "`(partner msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
@@ -167,8 +169,8 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
   private val activeUsers = mutable.Map[TelegramChat, Option[ActorRef]]()
 
-  private def isInDialog(chatId: Long) = activeUsers.contains(TelegramChat(chatId))
-  private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
+  private def isInDialog(chatId: Long, username: Option[String]) = activeUsers.contains(TelegramChat(chatId, username))
+  private def isNotInDialog(chatId: Long, username: Option[String]) = !isInDialog(chatId, username)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
     """

@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import org.mongodb.scala._
 import org.mongodb.scala.ObservableImplicits
 import org.mongodb.scala.bson.ObjectId
-import org.pavlovai.communication.User
+import org.pavlovai.communication.{Bot, TelegramChat, User}
 import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -48,7 +48,7 @@ object MongoStorage {
 
   private case object Init
 
-  private case class UserSummary(id: String, userType: String)
+  private case class UserSummary(id: String, userType: String, username: Option[String])
 
   private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
@@ -59,7 +59,10 @@ object MongoStorage {
     def apply(wd: WriteDialog): Dialog =
       new Dialog(new ObjectId(),
         wd.id,
-        wd.users.map(u => UserSummary(u.id, u.getClass.getName)),
+        wd.users.map {
+          case u: Bot => UserSummary(u.id, u.getClass.getName, Some(u.id))
+          case u: TelegramChat => UserSummary(u.id, u.getClass.getName, u.username)
+        },
         wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.id, txt, evaluation) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
   }

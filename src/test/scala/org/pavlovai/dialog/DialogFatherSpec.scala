@@ -113,13 +113,13 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       daddy ! DialogFather.UserLeave(Tester(2))
 
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the quality") =>
-        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the overall quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the overall quality") =>
       }
 
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the quality") =>
-        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(2), "Chat is finished, please evaluate the overall quality") =>
+        case Endpoint.AskEvaluationFromHuman(Tester(1), "Chat is finished, please evaluate the overall quality") =>
       }
 
       talk ! Dialog.PushMessageToTalk(Tester(1), "1")
@@ -127,7 +127,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       talk ! Dialog.PushMessageToTalk(Tester(1), "2")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(1), s"Please evaluate the engagement"))
       talk ! Dialog.PushMessageToTalk(Tester(1), "3")
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "Thank you!"))
+      gate.expectMsg(Endpoint.EndHumanDialog(Tester(1), "Thank you! It was great! Please choose /begin to continue evaluation."))
       gate.expectNoMsg()
 
       talk ! Dialog.PushMessageToTalk(Tester(2), "4")
@@ -135,7 +135,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       talk ! Dialog.PushMessageToTalk(Tester(2), "5")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester(2), s"Please evaluate the engagement"))
       talk ! Dialog.PushMessageToTalk(Tester(2), "1")
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "Thank you!"))
+      gate.expectMsg(Endpoint.EndHumanDialog(Tester(2), "Thank you! It was great! Please choose /begin to continue evaluation."))
 
       gate.expectMsgPF(3.seconds) {
         case Endpoint.FinishTalkForUser(Tester(1), _) =>
