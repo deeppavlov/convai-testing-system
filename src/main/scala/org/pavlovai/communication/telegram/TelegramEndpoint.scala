@@ -40,13 +40,13 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
     case Command(chat, "/start") =>
       telegramCall(SendMessage(Left(chat.id),
         """
-          |[](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/sponsors_720.png)
           |Welcome!
           |You’re going to participate in ConvAI Challenge as volunteer. Please take a look at (Volunteer’s Instruction)[https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/volunteers-Instruction.pdf].
           |We are glad to announce our sponsors: Facebook and Flint Capital.
           |
           |Be aware that your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0.
           |
+          |[](https://github.com/deepmipt/nips_router_bot/raw/master/src/main/resources/sponsors_720.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Command(chat, "/help") =>
