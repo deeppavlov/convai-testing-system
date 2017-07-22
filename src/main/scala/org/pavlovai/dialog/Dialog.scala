@@ -23,7 +23,12 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
   private implicit val ec = context.dispatcher
-  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
+  private val canceble = context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
+
+  override def postStop(): Unit = {
+    canceble.cancel()
+    super.postStop()
+  }
 
   private val history: mutable.LinkedHashMap[Int, (User, String, Int)] = mutable.LinkedHashMap.empty[Int, (User, String, Int)]
 
