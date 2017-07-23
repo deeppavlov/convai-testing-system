@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-log4j12" % "1.7.25",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.8",
   "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.4.18",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.18" % Test,
   "org.scalatest" %% "scalatest" % "3.0.3" % Test
 )
