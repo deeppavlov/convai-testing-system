@@ -42,9 +42,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
         """
           |Welcome!
           |You’re going to participate in The Conversational Intelligence Challenge as a volunteer.
-          |Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0. Please use command /help for instruction.
-          |
-          |We are glad to announce our sponsors: Facebook and Flint Capital[.](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_480.png)
+          |Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0. Please use command /help for instruction[.](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_480.png)
         """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") ),
           Seq( KeyboardButton("/help") )
@@ -150,7 +148,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       ))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id, _), text, _, mesId) =>
-      telegramCall(SendMessage(Left(id), "<pre>(partner msg):</pre>" + text, Some(ParseMode.HTML), replyMarkup = Some(
+      telegramCall(SendMessage(Left(id), "<pre>(peer msg):</pre>" + text, Some(ParseMode.HTML), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(mesId, "unlike"))
