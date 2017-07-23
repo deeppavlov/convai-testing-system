@@ -150,7 +150,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
       ))
 
     case Endpoint.ChatMessageToUser(TelegramChat(id, _), text, _, mesId) =>
-      telegramCall(SendMessage(Left(id), "`(partner msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(
+      telegramCall(SendMessage(Left(id), "<pre>(partner msg):</pre>" + text, Some(ParseMode.HTML), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(mesId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(mesId, "unlike"))
