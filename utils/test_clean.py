@@ -5,6 +5,7 @@ import json
 lines = sys.stdin.readlines()
 for line in lines:
     d = json.loads(line)
+    d.pop('_id')
     d.pop('evaluation')
     d['users'][0].pop('username')
     d['users'][1].pop('username')
