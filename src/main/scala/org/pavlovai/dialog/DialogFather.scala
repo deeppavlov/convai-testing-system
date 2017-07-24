@@ -29,7 +29,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList).foreach(assembleDialog(databaseDialogStorage))
+      availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.filter(_.isInstanceOf[Human]).toSet).toList).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul => log.info("dialog terminated, users {} leave from dialog", ul) }
@@ -39,7 +39,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
         mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
 
-        val dialRes = availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.toSet).toList)
+        val dialRes = availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.filter(_.isInstanceOf[Human]).toSet).toList)
         dialRes.foreach(assembleDialog(databaseDialogStorage))
         if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
           gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
