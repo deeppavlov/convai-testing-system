@@ -40,7 +40,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val waitedMessages = mutable.Set.empty[(ActorRef, Dialog.PushMessageToTalk, Deadline)]
 
-  //context.system.scheduler.schedule(1.second, 1.second) { self ! SendMessages }
+  context.system.scheduler.schedule(1.second, 1.second) { self ! SendMessages }
 
   override def receive: Receive = {
     case GetMessages(token) =>
@@ -58,8 +58,8 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
-      activeChats.get(Bot(token) -> chat).foreach{ to =>
-        val typeTime = (0 to m.text.length).foldLeft(0.0) { case (_, acc) => acc + (-1 * Math.log(rnd.nextDouble())) }
+      activeChats.get(Bot(token) -> chat).foreach { to =>
+        val typeTime = -1.0 / m.text.length * Math.log(rnd.nextDouble())
         log.debug("slowdown message delivery from bot on {} seconds", typeTime)
         waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTime.seconds))
       }
