@@ -60,7 +60,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
     case SendMessage(token, chat, m: BotMessage) =>
       activeChats.get(Bot(token) -> chat).foreach { to =>
         val typeTime = (-1.0 * Math.log(util.Random.nextDouble())) * m.text.length
-        val typeTimeTrunc = if (typeTime > 60) 60 else if (typeTime < 5) 5 else typeTimeTrunc
+        val typeTimeTrunc = if (typeTime > 60) 60 else if (typeTime < 5) 5 else typeTime
         log.debug("slowdown message delivery from bot on {} seconds", typeTimeTrunc)
         waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTimeTrunc.seconds))
       }
