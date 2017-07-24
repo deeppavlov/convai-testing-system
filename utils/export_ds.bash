@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-host=${1}
-shift
+#host=${1}
+#shift
 db=${1}
 shift
 #user=${1}
