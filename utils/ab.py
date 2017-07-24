@@ -10,4 +10,4 @@ for line in lines:
         t['userId'] = "Alice" if t['userId'] == d['users'][a_index]['id'] else "Bob"
     d['users'][a_index]['id'] = "Alice"
     d['users'][b_index]['id'] = "Bob"
-    print(json.dump(d))
+    print(json.dumps(d))
