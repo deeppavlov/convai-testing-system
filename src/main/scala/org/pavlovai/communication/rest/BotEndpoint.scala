@@ -61,7 +61,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       activeChats.get(Bot(token) -> chat).foreach{ to =>
         val typeTime = rnd.nextGaussian() * 5 + m.text.length
         log.debug("slowdown message delivery from bot on {} seconds", typeTime)
-        waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline(typeTime.seconds)))
+        waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTime.seconds))
       }
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
