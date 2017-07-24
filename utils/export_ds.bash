@@ -11,4 +11,4 @@ shift
 days=${1}
 shift
 
-mongoexport --host ${host} --db ${db} --collection dialogs --fields 'dialogId,users,context,evaluation,thread' --query "$(./oid.py ${days})" -u ${user} -p ${password}
+mongoexport --host ${host} --db ${db} --collection dialogs --fields 'dialogId,users,context,evaluation,thread' --query "$(./oid.py ${days})" --sort "{_id: 1}" -u ${user} -p ${password}
