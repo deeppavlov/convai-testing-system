@@ -8,7 +8,8 @@ for line in lines:
     d.pop('evaluation')
     d['users'][0].pop('username')
     d['users'][1].pop('username')
+    # d['users'][0].pop('userType')
+    # d['users'][1].pop('userType')
     for t in d['thread']:
         t.pop('evaluation')
     print(json.dumps(d))
-
