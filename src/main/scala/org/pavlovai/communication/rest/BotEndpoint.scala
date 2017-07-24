@@ -59,22 +59,19 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
     case SendMessage(token, chat, m: BotMessage) =>
       activeChats.get(Bot(token) -> chat).foreach{ to =>
-        //val typeTime = rnd.nextGaussian() * 5 + m.text.length / 2
-        //val typeTimeTrunc = if (typeTime > 60) 60 else if (typeTime < 5) 5 else typeTime
-        //log.debug("slowdown message delivery from bot on {} seconds", typeTimeTrunc)
-        //waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTimeTrunc.seconds))
-
-        to ! Dialog.PushMessageToTalk(Bot(token), m.text)
+        val typeTime = (0 to m.text.length).foldLeft(0.0) { case (_, acc) => acc + (-1 * Math.log(rnd.nextDouble())) }
+        log.debug("slowdown message delivery from bot on {} seconds", typeTime)
+        waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTime.seconds))
       }
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
-    /*case SendMessages =>
+    case SendMessages =>
       waitedMessages.retain {
         case (to, message, timeout) if timeout.isOverdue() =>
           to ! message
           false
         case _ => true
-      }*/
+      }
 
     case Endpoint.ChatMessageToUser(Bot(token), text, dialogId, _) =>
       botsQueues.get(token).fold[Any] {
@@ -125,5 +122,5 @@ object BotEndpoint extends SprayJsonSupport with DefaultJsonProtocol  {
 
   implicit val sendMessageFormat: JsonFormat[SendMessage] = jsonFormat3(SendMessage)
 
-  //private case object SendMessages
+  private case object SendMessages
 }
