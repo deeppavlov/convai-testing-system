@@ -12,6 +12,8 @@ import spray.json._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.concurrent.duration.Deadline
+import scala.concurrent.duration._
 import scala.util.{Random, Try}
 
 /**
@@ -34,6 +36,10 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val activeChats: mutable.Map[(Bot, Long), ActorRef] = mutable.Map.empty[(Bot, Long), ActorRef]
 
+  private val waitedMessages = mutable.Set.empty[(ActorRef, Dialog.PushMessageToTalk, Deadline)]
+
+  context.system.scheduler.schedule(1.second, 1.second) { self ! SendMessages }
+
   override def receive: Receive = {
     case GetMessages(token) =>
       sender ! botsQueues.get(token).fold[Any] {
@@ -50,9 +56,19 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
-      //TODO slowdown robots
-      activeChats.get(Bot(token) -> chat).foreach(_ ! Dialog.PushMessageToTalk(Bot(token), m.text))
+      activeChats.get(Bot(token) -> chat).foreach{ to =>
+        val typeTime = rnd.nextGaussian() * 10 + m.text.length
+        waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline(typeTime.seconds)))
+      }
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
+
+    case SendMessages =>
+      waitedMessages.retain {
+        case (to, message, timeout) if timeout.isOverdue() =>
+          to ! message
+          false
+        case _ => true
+      }
 
     case Endpoint.ChatMessageToUser(Bot(token), text, dialogId, _) =>
       botsQueues.get(token).fold[Any] {
@@ -102,4 +118,6 @@ object BotEndpoint extends SprayJsonSupport with DefaultJsonProtocol  {
   }
 
   implicit val sendMessageFormat: JsonFormat[SendMessage] = jsonFormat3(SendMessage)
+
+  private case object SendMessages
 }
