@@ -6,7 +6,9 @@ lines = sys.stdin.readlines()
 for line in lines:
     d = json.loads(line)
     d.pop('_id')
-    d.pop('evaluation')
+    for e in d['evaluation']:
+        e.pop('breadth')
+        e.pop('engagement')
     for u in d['users']:
         u.pop('username')
         if u['userType'] == 'org.pavlovai.communication.Bot':
