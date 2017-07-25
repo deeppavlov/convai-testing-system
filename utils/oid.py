@@ -11,9 +11,13 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 now = datetime.datetime.now(tzlocal())
-yesterday = now - datetime.timedelta(days=int(sys.argv[1]))
+days = int(sys.argv[1])
+yesterday = now - datetime.timedelta(days=days)
 start_date = datetime.datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, 0, tzlocal())
-end_date = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second, now.microsecond, tzlocal())
+if days == 0:
+    end_date = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, 999, tzlocal())
+else:
+    end_date = datetime.datetime(now.year, now.month, now.day, 0, 0, 0, 0, tzlocal())
 oid_start = ObjectId.from_datetime(start_date.astimezone(tzutc()))
 oid_stop = ObjectId.from_datetime(end_date.astimezone(tzutc()))
  
