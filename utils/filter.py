@@ -5,7 +5,7 @@ import json
 import random
 
 if len(sys.argv) != 2:
-    print("Example: filter_by_len.py <min number of replies>", file=sys.stderr)
+    print("Example: filter.py <min number of replies>", file=sys.stderr)
     sys.exit(1)
 
 lines = sys.stdin.readlines()
