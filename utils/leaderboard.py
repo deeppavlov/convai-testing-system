@@ -32,7 +32,7 @@ with open(sys.argv[1], 'r') as csvfile:
             users_bot_fact_labaels.append(users_bot_flags[dialog][1])
             users_bot_predicted_probs.append(int(row[2]))
         else:
-            print("dialog " + dialog + " not in dataset", file=sys.stderr)
+            print("dialog %s not in dataset" % dialog, file=sys.stderr)
 
 print(sys.argv[1], ": ", spearmanr(users_bot_fact_labaels, users_bot_predicted_probs).correlation)
 
