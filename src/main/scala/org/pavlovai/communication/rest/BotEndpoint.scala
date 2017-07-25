@@ -26,15 +26,21 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val rnd: Random = Random
 
+  private val delay_mean_k: Double = Try(context.system.settings.config.getDouble("talk.bot.delay.mean_k")).getOrElse(0.5)
+  private val delay_variance: Double = Try(context.system.settings.config.getDouble("talk.bot.delay.variance")).getOrElse(5)
+
   import context.dispatcher
 
   private val botsQueues: Map[String, mutable.Queue[Update]] =
-    Try(context.system.settings.config.getStringList("bot.registered").asScala).getOrElse(Seq.empty)
-      .map { token =>
+    Try(context.system.settings.config.getConfigList("bot.registered").asScala).getOrElse(Seq.empty)
+      .map { botCfg =>
+        (Option(botCfg.getString("token")), Option(botCfg.getInt("max_connections")))
+      }.collect {
+      case (Some(token), Some(connections)) =>
         log.info("bot {} registred", token)
-        daddy ! UserAvailable(Bot(token))
+        daddy ! UserAvailable(Bot(token), connections)
         token -> mutable.Queue.empty[Update]
-      }.toMap
+    }.toMap
 
   private val activeChats: mutable.Map[(Bot, Long), ActorRef] = mutable.Map.empty[(Bot, Long), ActorRef]
 
@@ -58,12 +64,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
-      activeChats.get(Bot(token) -> chat).foreach { to =>
-        val typeTime = Math.abs(util.Random.nextGaussian() * 5) + m.text.length / 2
-        val typeTimeTrunc = if (typeTime > 40) 40 else if (typeTime < 5) 5 else typeTime
-        log.debug("slowdown message delivery from bot on {} seconds", typeTimeTrunc)
-        waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), Deadline.now + typeTimeTrunc.seconds))
-      }
+      activeChats.get(Bot(token) -> chat).foreach { to => waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), messageDeadline(m.text))) }
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
     case SendMessages =>
@@ -83,6 +84,13 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
     case Endpoint.ActivateTalkForUser(user: Bot, talk) => activeChats.put(user -> talk.chatId, talk)
 
     case Endpoint.FinishTalkForUser(user: Bot, talk) => activeChats.remove(user -> talk.chatId)
+  }
+
+  private def messageDeadline(m: String): Deadline = {
+    val typeTime = Math.abs(util.Random.nextGaussian() * delay_variance) + m.length * delay_mean_k
+    val typeTimeTrunc = if (typeTime > 40) 40 else if (typeTime < 5) 5 else typeTime
+    log.debug("slowdown message delivery from bot on {} seconds", typeTimeTrunc)
+    Deadline.now + typeTimeTrunc.seconds
   }
 }
 
