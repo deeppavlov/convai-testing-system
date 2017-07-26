@@ -3,7 +3,7 @@
 import sys
 import json
 
-from .common import bot_names, dialog_min_len
+from common import bot_names, dialog_min_len
 
 
 def calc_score(q):
