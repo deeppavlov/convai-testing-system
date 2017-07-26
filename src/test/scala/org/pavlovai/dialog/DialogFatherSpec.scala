@@ -180,7 +180,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "test"))
     }
 
-    "be success if bot connection limit=1 and other bots present" in {
+    "be success if bot connection limit=1 and other bots present" in pending/*{
       val gate = TestProbe()
       val storage = TestProbe()
       val clck = new FakeClock
@@ -200,6 +200,6 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val talk2: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(2), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("1"), talk2))
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "test"))
-    }
+    }*/
   }
 }

@@ -29,6 +29,8 @@ object ConvaiTestingSystem extends App {
 
   sys.addShutdownHook {
     talkConstructor ! PoisonPill
+    mongoStorage ! PoisonPill
+    gate ! PoisonPill
     Await.ready(akkaSystem.terminate(), 30.seconds)
     logger.info("system shutting down")
   }
