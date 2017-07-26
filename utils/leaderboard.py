@@ -27,10 +27,10 @@ with open(sys.argv[1], 'r') as csvfile:
         dialog = int(row[0])
         if dialog in users_bot_flags:
             users_bot_fact_labaels.append(users_bot_flags[dialog][0])
-            users_bot_predicted_probs.append(int(row[1]))
+            users_bot_predicted_probs.append(float(row[1]))
 
             users_bot_fact_labaels.append(users_bot_flags[dialog][1])
-            users_bot_predicted_probs.append(int(row[2]))
+            users_bot_predicted_probs.append(float(row[2]))
         else:
             print("dialog %s not in dataset" % dialog, file=sys.stderr)
 
