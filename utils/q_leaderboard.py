@@ -10,7 +10,7 @@ def dialog_min_len(thread):
         if t['userId'] not in dialog:
             dialog[t['userId']] = 0
         dialog[t['userId']] += 1
-    return 0 if len(dialog.values()) else min(dialog.values())
+    return 0 if len(dialog.values()) == 0 else min(dialog.values())
 
 
 def calc_score(q):
