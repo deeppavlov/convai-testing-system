@@ -27,6 +27,6 @@ for line in lines:
 print("Total dialogs: %s" % sum(dialogs.values()))
 for d in dialogs:
     name = d if d not in bot_names else "Bot %s" % bot_names[d]
-    print("%s :" % name)
+    print("%s : %s" % (name, dialogs[d]))
 
 
