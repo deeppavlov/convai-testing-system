@@ -10,7 +10,7 @@ def dialog_min_len(thread):
         if t['userId'] not in dialog:
             dialog[t['userId']] = 0
         dialog[t['userId']] += 1
-    return min(dialog.values())
+    return 0 if len(dialog.values()) else min(dialog.values())
 
 
 def calc_score(q):
@@ -20,8 +20,8 @@ def calc_score(q):
         return 0
 
 
-users = dict()
-usernames = dict()
+user_evaluations = dict()
+user_names = dict()
 user_bots = dict()
 team_users = ['Ignecadus', 'locky_kid', 'IFLED', 'justgecko', 'AlexFridman', 'necnec', 'YallenGusev', 'fartuk1',
               'mryab', 'akiiino', 'vostrjakov', 'chernovsergey', 'latentbot', 'SkifMax', 'VictorPo', 'zhukov94',
@@ -38,8 +38,8 @@ for line in lines:
         bot_id = d['users'][0]['id']
         user_id = d['users'][1]['id']
         username = d['users'][1]['username']
-        usernames[bot_id] = bot_id
-        usernames[user_id] = username
+        user_names[bot_id] = bot_id
+        user_names[user_id] = username
         if username not in user_bots:
             user_bots[username] = 0
         if dialog_min_len(d['thread']) > 2:
@@ -49,50 +49,48 @@ for line in lines:
         bot_id = d['users'][1]['id']
         user_id = d['users'][0]['id']
         username = d['users'][0]['username']
-        usernames[bot_id] = bot_id
-        usernames[user_id] = username
+        user_names[bot_id] = bot_id
+        user_names[user_id] = username
         if username not in user_bots:
             user_bots[username] = 0
         if dialog_min_len(d['thread']) > 2:
             user_bots[username] += 1
     else:
         bot_id = None
-        usernames[d['users'][0]['id']] = d['users'][0]['username']
-        usernames[d['users'][1]['id']] = d['users'][1]['username']
+        user_names[d['users'][0]['id']] = d['users'][0]['username']
+        user_names[d['users'][1]['id']] = d['users'][1]['username']
 
     user0 = d['users'][0]['id']
     user1 = d['users'][1]['id']
 
-    if user0 not in users:
-        users[user0] = []
+    if user0 not in user_evaluations:
+        user_evaluations[user0] = []
 
-    if user1 not in users:
-        users[user1] = []
+    if user1 not in user_evaluations:
+        user_evaluations[user1] = []
 
     for e in d['evaluation']:
         if e['userId'] != bot_id:
             if e['userId'] == user0:
-                users[user1].append(e['quality'])
+                user_evaluations[user1].append(e['quality'])
             elif e['userId'] == user1:
-                users[user0].append(e['quality'])
+                user_evaluations[user0].append(e['quality'])
         else:
             continue
 
 max_user_score = 0
-for u in users:
-    if usernames[u].lower() in team_users_lower:
-        max_user_score = max(max_user_score, calc_score(users[u]))
+for u_id in user_evaluations:
+    if user_names[u_id].lower() in team_users_lower:
+        max_user_score = max(max_user_score, calc_score(user_evaluations[u_id]))
 
 max_user_bots = 0
-for u in user_bots:
-    if u.lower() in team_users_lower:
-        max_user_bots = max(user_bots[u], max_user_bots)
+for u_name in user_bots:
+    if u_name.lower() in team_users_lower:
+        max_user_bots = max(user_bots[u_name], max_user_bots)
 
-for u in users:
-    print("Score user %s % usernames[u]")
-    if usernames[u].lower() in team_users_lower:
-        score = 0.5 * (user_bots[usernames[u]] / max_user_bots + calc_score(users[u])/ max_user_score)
-        print("%s,%s" % (usernames[u], score))
-    else:
-        print("User not a member of any team")
-
+for u_id in user_evaluations:
+    user_bot = 0 if user_names[u_id] not in user_bots else user_bots[user_names[u_id]]
+    user_score = calc_score(user_evaluations[u_id])
+    if user_names[u_id].lower() in team_users_lower:
+        score = 0.5 * (user_bot / max_user_bots + user_score/max_user_score)
+        print("%s,%s,%s,%s,%s,%s" % (user_names[u_id], score, user_bot, max_user_bots, user_score, max_user_score))
