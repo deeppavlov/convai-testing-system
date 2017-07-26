@@ -9,16 +9,6 @@ usernames = dict()
 user_bots = dict()
 
 
-team_users = ['Ignecadus', 'locky_kid', 'IFLED', 'justgecko', 'AlexFridman', 'necnec', 'YallenGusev', 'fartuk1',
-                  'mryab', 'akiiino', 'vostrjakov', 'chernovsergey', 'latentbot', 'SkifMax', 'VictorPo', 'zhukov94',
-                  'Username11235', 'IlyaValyaev', 'lextal', 'MacJIeHok', 'olgalind', 'roosh_roosh', 'davkhech',
-                  'mambreyan', 'ashmat98', 'ffuuugor', 'artyomka', 'p_gladkov', 'not_there', 'ad3002', 'gtamazian',
-                  'artkorenev', 'sudakovoleg', 'sin_mike', 'ilya_shenbin', 'Vladislavprh', 'AntonAlexeyev',
-                  'bekerov', 'EvKosheleva', 'sw1sh', 'SDrapak', 'izmailov', 'dlunin', 'Xsardas', 'sparik'
-                  ]
-team_users_lower = tl = [t.lower() for t in team_users]
-
-
 def dialog_min_len(thread):
     dialog = dict()
     for t in thread:
@@ -36,6 +26,15 @@ def calc_score(q):
 
 
 def main():
+    team_users = ['Ignecadus', 'locky_kid', 'IFLED', 'justgecko', 'AlexFridman', 'necnec', 'YallenGusev', 'fartuk1',
+                  'mryab', 'akiiino', 'vostrjakov', 'chernovsergey', 'latentbot', 'SkifMax', 'VictorPo', 'zhukov94',
+                  'Username11235', 'IlyaValyaev', 'lextal', 'MacJIeHok', 'olgalind', 'roosh_roosh', 'davkhech',
+                  'mambreyan', 'ashmat98', 'ffuuugor', 'artyomka', 'p_gladkov', 'not_there', 'ad3002', 'gtamazian',
+                  'artkorenev', 'sudakovoleg', 'sin_mike', 'ilya_shenbin', 'Vladislavprh', 'AntonAlexeyev',
+                  'bekerov', 'EvKosheleva', 'sw1sh', 'SDrapak', 'izmailov', 'dlunin', 'Xsardas', 'sparik'
+                  ]
+    team_users_lower = tl = [t.lower() for t in team_users]
+
     for line in lines:
         d = json.loads(line)
         if d['users'][0]['userType'] == 'org.pavlovai.communication.Bot':
@@ -93,7 +92,6 @@ def main():
             max_user_bots = max(user_bots[u], max_user_bots)
 
     for u in users:
-        global team_users_lower
         if usernames[u].lower() in team_users_lower:
             score = 0.5 * (user_bots[usernames[u]] / max_user_bots + calc_score(users[u])/ max_user_score)
             print("%s,%s" % (usernames[u], score))
