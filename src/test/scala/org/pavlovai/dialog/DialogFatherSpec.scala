@@ -196,6 +196,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val talk1: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(1), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("2"), talk1))
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(1), "test"))
+      //gate.expectMsg(Endpoint.ChatMessageToUser(Bot("2"), "/start test", talk1.hashCode(), 0))
       val talk2: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester(2), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("1"), talk2))
       gate.expectMsg(Endpoint.SystemNotificationToUser(Tester(2), "test"))
