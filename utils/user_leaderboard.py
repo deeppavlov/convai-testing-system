@@ -3,14 +3,7 @@
 import sys
 import json
 
-
-def dialog_min_len(thread):
-    dialog = dict()
-    for t in thread:
-        if t['userId'] not in dialog:
-            dialog[t['userId']] = 0
-        dialog[t['userId']] += 1
-    return 0 if len(dialog.values()) == 0 else min(dialog.values())
+from .common import team_users_lower, dialog_min_len
 
 
 def calc_score(q):
@@ -19,18 +12,10 @@ def calc_score(q):
     else:
         return 0
 
-
 user_evaluations = dict()
 user_names = dict()
 user_bots = dict()
-team_users = ['Ignecadus', 'locky_kid', 'IFLED', 'justgecko', 'AlexFridman', 'necnec', 'YallenGusev', 'fartuk1',
-              'mryab', 'akiiino', 'vostrjakov', 'chernovsergey', 'latentbot', 'SkifMax', 'VictorPo', 'zhukov94',
-              'Username11235', 'IlyaValyaev', 'lextal', 'MacJIeHok', 'olgalind', 'roosh_roosh', 'davkhech',
-              'mambreyan', 'ashmat98', 'ffuuugor', 'artyomka', 'p_gladkov', 'not_there', 'ad3002', 'gtamazian',
-              'artkorenev', 'sudakovoleg', 'sin_mike', 'ilya_shenbin', 'Vladislavprh', 'AntonAlexeyev',
-              'bekerov', 'EvKosheleva', 'sw1sh', 'SDrapak', 'izmailov', 'dlunin', 'Xsardas', 'sparik'
-              ]
-team_users_lower = [t.lower() for t in team_users]
+
 lines = sys.stdin.readlines()
 for line in lines:
     d = json.loads(line)
