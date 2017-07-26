@@ -18,7 +18,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 class BotEndpointSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFactory.parseString(
   """
     |bot {
-    |  registered = ["0", "1", "2"]
+    |  registered = [ { token: "0", max_connections: 1000 }, { token: "1", max_connections: 1000 }, { token: "2", max_connections: 1000 }]
     |  talk_period_min = 1 second
     |}
   """.stripMargin))) with ImplicitSender
@@ -40,9 +40,9 @@ class BotEndpointSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFacto
     "send UserAvailable to dialog constructor for each bots" in {
       val daddy = TestProbe()
       system.actorOf(BotEndpoint.props(daddy.ref, BrokenClock))
-      daddy.expectMsg(UserAvailable(Bot("0")))
-      daddy.expectMsg(UserAvailable(Bot("1")))
-      daddy.expectMsg(UserAvailable(Bot("2")))
+      daddy.expectMsg(UserAvailable(Bot("0"), 1000))
+      daddy.expectMsg(UserAvailable(Bot("1"), 1000))
+      daddy.expectMsg(UserAvailable(Bot("2"), 1000))
     }
   }
 

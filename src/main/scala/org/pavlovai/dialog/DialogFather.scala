@@ -18,9 +18,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
   import DialogFather._
   private implicit val ec = context.dispatcher
 
-  private val humanBotCoef: Double = Try(context.system.settings.config.getDouble("talk.bot.human_bot_coefficient")).getOrElse(0.5)
+  private val humanBotCoef: Double = Try(context.system.settings.config.getDouble("talk.bot.human_bot_coefficient")).getOrElse(1)
 
-  private val availableUsers: mutable.Set[User] = mutable.Set.empty[User]
+  private val availableUsers: mutable.Map[User, (Int, Int)] = mutable.Map.empty[User, (Int, Int)]
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
 
   gate ! Endpoint.SetDialogFather(self)
@@ -29,27 +29,31 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.filter(_.isInstanceOf[Human]).toSet).toList).foreach(assembleDialog(databaseDialogStorage))
+      availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>
-      usersChatsInTalks.remove(t).foreach { ul => log.info("dialog terminated, users {} leave from dialog", ul) }
-
-    case UserAvailable(user: User) =>
-      if (availableUsers.add(user)) {
-        val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
-        mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
-
-        val dialRes = availableDialogs(humanBotCoef)(availableUsers.toSet.diff(usersChatsInTalks.values.flatten.filter(_.isInstanceOf[Human]).toSet).toList)
-        dialRes.foreach(assembleDialog(databaseDialogStorage))
-        if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
-          gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
+      usersChatsInTalks.remove(t).foreach { ul =>
+        log.info("dialog terminated, users {} leave from dialog", ul)
+        ul.foreach { u =>
+          availableUsers.get(u).map { case (max, current) => availableUsers += u -> (max, current - 1)}
         }
-
-        log.debug("new user available: {}", user)
       }
 
+    case UserAvailable(user: User, maxConnections) =>
+      if (!availableUsers.contains(user)) { availableUsers.put(user, (maxConnections, 0)) }
+
+      val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
+      mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
+
+      val dialRes = availableDialogs(humanBotCoef)(availableUsersList)
+      dialRes.foreach(assembleDialog(databaseDialogStorage))
+      if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
+        gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
+      }
+
+      log.debug("new user available: {}", user)
     case UserLeave(user: User) =>
-      if(availableUsers.remove(user)) log.info("user leave: {}", user)
+      if(availableUsers.remove(user).isDefined) log.info("user leave: {}", user)
 
       usersChatsInTalks.foreach {
         case (dialog, users) if users.contains(user) =>
@@ -86,11 +90,18 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
       context.watch(dialog)
 
+      availableUsers.get(a).map { case (max, current) => availableUsers += a -> (max, current + 1)}
+      availableUsers.get(b).map { case (max, current) => availableUsers += b -> (max, current + 1)}
+
+      //TODO
       if (a.isInstanceOf[Human]) availableUsers.remove(a)
       if (b.isInstanceOf[Human]) availableUsers.remove(b)
 
       dialog ! Dialog.StartDialog
   }
+
+  private def availableUsersList: List[(User, Int)] = availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList
+
 }
 
 object DialogFather {
@@ -100,7 +111,7 @@ object DialogFather {
   private case object AssembleDialogs
   case class CreateTestDialogWithBot(user: Human, botId: String)
 
-  case class UserAvailable(user: User)
+  case class UserAvailable(user: User, maxConnections: Int)
   case class UserLeave(user: User)
 
   private class NopStorage extends Actor {

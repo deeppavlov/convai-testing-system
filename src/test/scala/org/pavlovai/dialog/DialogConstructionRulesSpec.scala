@@ -24,12 +24,12 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
       }
 
       for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List(Tester("1"), Tester("2")))
+        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1), (Tester("2"), 1)))
         assert(l === List((Tester("1"), Tester("2"), "test")))
       }
 
       for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List(Tester("1"), Bot("2")))
+        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1), (Bot("2"), 1)))
         assert(l === List())
       }
     }
@@ -48,7 +48,7 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
       var hbDialogs = 0.0
       var hhDialogs = 0
       for (i <- 1 to 10000) {
-        val l = constructor.availableDialogs(0.2)(List(Tester("1"), Tester("2"), Bot("3")))
+        val l = constructor.availableDialogs(0.2)(List((Tester("1"), 1), (Tester("2"), 1), (Bot("3"), 100)))
         hbDialogs = hbDialogs + (if (l == List((Tester("1"), Bot("3"), "test"), (Tester("2"), Bot("3"), "test"))) 2 else 0)
         hhDialogs = hhDialogs + (if (l == List((Tester("1"), Tester("2"), "test"))) 1 else 0)
         assert(
@@ -57,7 +57,7 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
         )
       }
       val humanBotsCoef = hhDialogs / hbDialogs
-      assert( 0.19 < humanBotsCoef && humanBotsCoef < 0.21)
+      assert( 0.18 < humanBotsCoef && humanBotsCoef < 0.22)
     }
   }
 
