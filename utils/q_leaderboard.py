@@ -94,4 +94,4 @@ for u_id in user_evaluations:
     if user_names[u_id].lower() in team_users_lower:
         score = 0.5 * (user_bot / max_user_bots + user_score/max_user_score)
         # print("%s,%s,%s,%s,%s,%s" % (user_names[u_id], score, user_bot, max_user_bots, user_score, max_user_score))
-        print("%s,%s,%s,%s,%s,%s" % (user_names[u_id], score))
+        print("%s,%s" % (user_names[u_id], score))
