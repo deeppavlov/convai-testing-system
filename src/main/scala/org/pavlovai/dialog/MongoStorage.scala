@@ -1,5 +1,7 @@
 package org.pavlovai.dialog
 
+import java.time.Instant
+
 import akka.actor.{Actor, ActorLogging, Props}
 import org.mongodb.scala._
 import org.mongodb.scala.ObservableImplicits
@@ -52,7 +54,7 @@ object MongoStorage {
 
   private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
-  private case class DialogThreadItem(userId: String, text: String, evaluation: Int)
+  private case class DialogThreadItem(userId: String, text: String, time: Int, evaluation: Int)
 
   private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummary], context: String, thread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
@@ -63,7 +65,7 @@ object MongoStorage {
           case u: Bot => UserSummary(u.id, u.getClass.getName, Some(u.id))
           case u: TelegramChat => UserSummary(u.id, u.getClass.getName, u.username)
         },
-        wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.id, txt, evaluation) },
+        wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.id, txt, Instant.now().getNano, evaluation) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
   }
 

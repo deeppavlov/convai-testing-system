@@ -22,6 +22,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private val availableUsers: mutable.Map[User, (Int, Int)] = mutable.Map.empty[User, (Int, Int)]
   private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
+  private val usersDedline: mutable.Map[User, Deadline] = mutable.Map[User, Deadline]()
 
   gate ! Endpoint.SetDialogFather(self)
 
@@ -40,7 +41,10 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case UserAvailable(user: User, maxConnections) =>
-      if (!availableUsers.contains(user)) { availableUsers.put(user, (maxConnections, 0)) }
+      if (!availableUsers.contains(user)) {
+        availableUsers.put(user, (maxConnections, 0))
+        if (user.isInstanceOf[Human]) usersDedline.put(user, Deadline.now + 10.seconds)
+      }
 
       val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
       mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
@@ -94,21 +98,18 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       availableUsers.get(b).map { case (max, current) => availableUsers += b -> (max, current + 1)}
 
       //TODO
+      usersDedline.remove(a)
+      usersDedline.remove(b)
       if (a.isInstanceOf[Human]) availableUsers.remove(a)
       if (b.isInstanceOf[Human]) availableUsers.remove(b)
 
       dialog ! Dialog.StartDialog
   }
 
-  private def availableUsersList: List[(User, Int, Deadline)] = {
-    val humanDeadline = Deadline.now + 10.seconds
-    val botDeadline = Deadline.now + 60.minutes
-    availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map {
-      case (user: Human, (maxConn, currentConn)) => (user, maxConn - currentConn, humanDeadline)
-      case (user, (maxConn, currentConn)) => (user, maxConn - currentConn, botDeadline)
-    }.toList
-  }
-
+  private def availableUsersList: List[(User, Int, Deadline)] =
+    availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList.map { t =>
+      (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 1.hour))
+    }
 }
 
 object DialogFather {
