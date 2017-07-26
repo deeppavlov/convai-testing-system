@@ -33,7 +33,7 @@ def main():
                   'artkorenev', 'sudakovoleg', 'sin_mike', 'ilya_shenbin', 'Vladislavprh', 'AntonAlexeyev',
                   'bekerov', 'EvKosheleva', 'sw1sh', 'SDrapak', 'izmailov', 'dlunin', 'Xsardas', 'sparik'
                   ]
-    team_users_lower = tl = [t.lower() for t in team_users]
+    team_users_lower = [t.lower() for t in team_users]
 
     for line in lines:
         d = json.loads(line)
@@ -92,9 +92,12 @@ def main():
             max_user_bots = max(user_bots[u], max_user_bots)
 
     for u in users:
+        print("Score user %s % usernames[u]")
         if usernames[u].lower() in team_users_lower:
             score = 0.5 * (user_bots[usernames[u]] / max_user_bots + calc_score(users[u])/ max_user_score)
             print("%s,%s" % (usernames[u], score))
+        else:
+            print("User not a member of any team")
 
 
 if __name__ == '__init__':
