@@ -4,6 +4,7 @@ import akka.event.LoggingAdapter
 import org.pavlovai.communication.{Bot, Human}
 import org.scalatest.{Matchers, WordSpecLike}
 
+import scala.concurrent.duration._
 import scala.util.{Random, Success, Try}
 
 /**
@@ -11,6 +12,8 @@ import scala.util.{Random, Success, Try}
   * @since 07.07.17
   */
 class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
+  private val deadline10sec = Deadline.now + 10.seconds
+
   "A DialogConstructionRules availableDialogs" must {
     "return only correct pairs for user list with even length" in {
       val constructor = new DialogConstructionRules {
@@ -24,12 +27,12 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
       }
 
       for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1), (Tester("2"), 1)))
+        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Tester("2"), 1, deadline10sec)))
         assert(l === List((Tester("1"), Tester("2"), "test")))
       }
 
       for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1), (Bot("2"), 1)))
+        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Bot("2"), 1, deadline10sec)))
         assert(l === List())
       }
     }
@@ -48,7 +51,7 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
       var hbDialogs = 0.0
       var hhDialogs = 0
       for (i <- 1 to 10000) {
-        val l = constructor.availableDialogs(0.2)(List((Tester("1"), 1), (Tester("2"), 1), (Bot("3"), 100)))
+        val l = constructor.availableDialogs(0.2)(List((Tester("1"), 1, deadline10sec), (Tester("2"), 1, deadline10sec), (Bot("3"), 100, deadline10sec)))
         hbDialogs = hbDialogs + (if (l == List((Tester("1"), Bot("3"), "test"), (Tester("2"), Bot("3"), "test"))) 2 else 0)
         hhDialogs = hhDialogs + (if (l == List((Tester("1"), Tester("2"), "test"))) 1 else 0)
         assert(

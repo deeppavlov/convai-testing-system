@@ -100,7 +100,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       dialog ! Dialog.StartDialog
   }
 
-  private def availableUsersList: List[(User, Int)] = availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList
+  private def availableUsersList: List[(User, Int, Deadline)] = {
+    val humanDeadline = Deadline.now + 10.seconds
+    val botDeadline = Deadline.now + 60.minutes
+    availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map {
+      case (user: Human, (maxConn, currentConn)) => (user, maxConn - currentConn, humanDeadline)
+      case (user, (maxConn, currentConn)) => (user, maxConn - currentConn, botDeadline)
+    }.toList
+  }
 
 }
 

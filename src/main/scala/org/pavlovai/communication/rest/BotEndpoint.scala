@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.duration.Deadline
 import scala.concurrent.duration._
-import scala.util.{Random, Try}
+import scala.util.{Random, Success, Try}
 
 /**
   * @author vadim
@@ -31,14 +31,17 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   import context.dispatcher
 
+  private val delayOn: mutable.Set[String] = mutable.Set.empty[String]
+
   private val botsQueues: Map[String, mutable.Queue[Update]] =
     Try(context.system.settings.config.getConfigList("bot.registered").asScala).getOrElse(Seq.empty)
       .map { botCfg =>
-        (Option(botCfg.getString("token")), Option(botCfg.getInt("max_connections")))
+        (Try(botCfg.getString("token")), Try(botCfg.getInt("max_connections")), Try(botCfg.getBoolean("delayOn")).getOrElse(false))
       }.collect {
-      case (Some(token), Some(connections)) =>
+      case (Success(token), Success(connections), dln) =>
         log.info("bot {} registred", token)
         daddy ! UserAvailable(Bot(token), connections)
+        if (dln) delayOn.add(token)
         token -> mutable.Queue.empty[Update]
     }.toMap
 
@@ -64,7 +67,12 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(talkEvaluationFormat).toString))
 
     case SendMessage(token, chat, m: BotMessage) =>
-      activeChats.get(Bot(token) -> chat).foreach { to => waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), messageDeadline(m.text))) }
+      activeChats.get(Bot(token) -> chat).foreach { to =>
+        if (delayOn.contains(token))
+          waitedMessages.add((to, Dialog.PushMessageToTalk(Bot(token), m.text), messageDeadline(m.text)))
+        else
+          to ! Dialog.PushMessageToTalk(Bot(token), m.text)
+      }
       sender ! Message(rnd.nextInt(), None, Instant.now(clock).getNano, Chat(chat, ChatType.Private), text = Some(m.toJson(botMessageFormat).toString))
 
     case SendMessages =>
