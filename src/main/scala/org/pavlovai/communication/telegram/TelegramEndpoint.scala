@@ -38,23 +38,23 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
     case SetGateway(g) => context.become(initialized(g))
 
     //TODO
-    case Command(chat, "/Elementary") if isNotInDialog(chat.id, chat.username) =>
+    case Command(chat, "/Elementary") =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 1)
       telegramCall(SendMessage(Left(chat.id), """`(system msg):` Thank you!""", Some(ParseMode.Markdown)))
 
-    case Command(chat, "/Beginner") if isNotInDialog(chat.id, chat.username) =>
+    case Command(chat, "/Beginner") =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 2)
       telegramCall(SendMessage(Left(chat.id), """`(system msg):` Thank you!""", Some(ParseMode.Markdown)))
 
-    case Command(chat, "/Intermediate") if isNotInDialog(chat.id, chat.username) =>
+    case Command(chat, "/Intermediate") =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 3)
       telegramCall(SendMessage(Left(chat.id), """`(system msg):` Thank you!""", Some(ParseMode.Markdown)))
 
-    case Command(chat, "/Fluent") if isNotInDialog(chat.id, chat.username) =>
+    case Command(chat, "/Fluent") =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 4)
       telegramCall(SendMessage(Left(chat.id), """`(system msg):` Thank you!""", Some(ParseMode.Markdown)))
 
-    case Command(chat, "/Native") if isNotInDialog(chat.id, chat.username) =>
+    case Command(chat, "/Native") =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 5)
       telegramCall(SendMessage(Left(chat.id), """`(system msg):` Thank you!""", Some(ParseMode.Markdown)))
     //
