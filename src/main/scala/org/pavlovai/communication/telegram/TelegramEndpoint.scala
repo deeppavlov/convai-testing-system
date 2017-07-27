@@ -40,18 +40,24 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
     //TODO
     case Command(chat, "/Elementary") if isNotInDialog(chat.id, chat.username) =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 1)
+      telegramCall("`(system msg):` Thank you!")
 
     case Command(chat, "/Beginner") if isNotInDialog(chat.id, chat.username) =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 2)
+      telegramCall("`(system msg):` Thank you!")
 
     case Command(chat, "/Intermediate") if isNotInDialog(chat.id, chat.username) =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 3)
+      telegramCall("`(system msg):` Thank you!")
 
     case Command(chat, "/Fluent") if isNotInDialog(chat.id, chat.username) =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 4)
+      telegramCall("`(system msg):` Thank you!")
 
     case Command(chat, "/Native") if isNotInDialog(chat.id, chat.username) =>
       storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 5)
+      telegramCall("`(system msg):` Thank you!")
+    //
 
 
     case Command(chat, "/start") if isNotInDialog(chat.id, chat.username) =>
