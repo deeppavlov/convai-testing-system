@@ -23,5 +23,6 @@ for chat_id in lines:
         try:
             bot.send_message(chat_id, "`(system msg):` What is your English language proficiency?", reply_markup=markup, parse_mode='MARKDOWN')
             break
-        except Exception:
+        except Exception as e:
+            print("error on message sending: " + str(e), file=sys.stderr)
             pass
