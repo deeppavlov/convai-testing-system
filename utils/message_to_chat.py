@@ -19,4 +19,9 @@ markup.row(itembtn4, itembtn5)
 
 lines = sys.stdin.readlines()
 for chat_id in lines:
-    bot.send_message(chat_id, "`(system msg):` What is your English language proficiency?", reply_markup=markup, parse_mode='MARKDOWN')
+    while True:
+        try:
+            bot.send_message(chat_id, "`(system msg):` What is your English language proficiency?", reply_markup=markup, parse_mode='MARKDOWN')
+            break
+        except Exception:
+            pass
