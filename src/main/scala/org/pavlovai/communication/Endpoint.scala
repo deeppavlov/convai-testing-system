@@ -12,10 +12,10 @@ import scala.util.Try
   * @author vadim
   * @since 11.07.17
   */
-class Endpoint extends Actor with ActorLogging with Stash {
+class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   import Endpoint._
 
-  private val telegramGate = context.actorOf(TelegramEndpoint.props(self), "telegram-gate")
+  private val telegramGate = context.actorOf(TelegramEndpoint.props(self, storage), "telegram-gate")
   private val botGate = context.actorOf(BotEndpoint.props(self), "bot-gate")
 
   //TODO
@@ -64,7 +64,7 @@ class Endpoint extends Actor with ActorLogging with Stash {
 }
 
 object Endpoint {
-  def props: Props = Props(new Endpoint)
+  def props(storage: ActorRef): Props = Props(new Endpoint(storage))
 
   sealed trait MessageFromDialog
   case class ChatMessageToUser(receiver: User, message: String, fromDialogId: Int, id: Int) extends MessageFromDialog

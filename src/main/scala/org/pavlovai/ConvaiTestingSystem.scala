@@ -21,8 +21,8 @@ object ConvaiTestingSystem extends App {
   private val logger = Logger(getClass)
   private val rnd = util.Random.javaRandomToRandom(new java.util.Random())
 
-  private val gate = akkaSystem.actorOf(Endpoint.props, name = "communication-endpoint")
   private val mongoStorage = akkaSystem.actorOf(MongoStorage.props(), name="dialog-storage")
+  private val gate = akkaSystem.actorOf(Endpoint.props(mongoStorage), name = "communication-endpoint")
   private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, ContextQuestions, mongoStorage, rnd, Clock.systemDefaultZone()), "talk-constructor")
 
   private implicit val timeout: Timeout = 5.seconds

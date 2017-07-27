@@ -8,7 +8,7 @@ import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMa
 import info.mukel.telegrambot4s.models._
 import org.pavlovai.communication.Endpoint.ChancelTestDialog
 import org.pavlovai.communication.{Endpoint, TelegramChat}
-import org.pavlovai.dialog.{Dialog, DialogFather}
+import org.pavlovai.dialog.{Dialog, DialogFather, MongoStorage}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ import scala.util.control.NonFatal
   * @author vadim
   * @since 04.07.17
   */
-class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
+class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
   import TelegramEndpoint._
   import context.dispatcher
   private implicit val timeout: Timeout = 5.seconds
@@ -36,6 +36,23 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 
   private def initialized(telegramCall: RequestHandler): Receive = {
     case SetGateway(g) => context.become(initialized(g))
+
+    //TODO
+    case Command(chat, "/Elementary") if isNotInDialog(chat.id, chat.username) =>
+      storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 1)
+
+    case Command(chat, "/Beginner") if isNotInDialog(chat.id, chat.username) =>
+      storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 2)
+
+    case Command(chat, "/Intermediate") if isNotInDialog(chat.id, chat.username) =>
+      storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 3)
+
+    case Command(chat, "/Fluent") if isNotInDialog(chat.id, chat.username) =>
+      storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 4)
+
+    case Command(chat, "/Native") if isNotInDialog(chat.id, chat.username) =>
+      storage ! MongoStorage.WriteLanguageAssessment(chat.username, chat.id, 5)
+
 
     case Command(chat, "/start") if isNotInDialog(chat.id, chat.username) =>
       telegramCall(SendMessage(Left(chat.id),
@@ -203,7 +220,7 @@ class TelegramEndpoint(daddy: ActorRef) extends Actor with ActorLogging with Sta
 }
 
 object TelegramEndpoint {
-  def props(talkConstructor: ActorRef): Props = Props(new TelegramEndpoint(talkConstructor))
+  def props(talkConstructor: ActorRef, storage: ActorRef): Props = Props(new TelegramEndpoint(talkConstructor, storage))
 
   private case object Command {
     def unapply(message: Update): Option[(Chat, String)] = {

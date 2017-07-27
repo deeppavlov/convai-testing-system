@@ -34,6 +34,13 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
         case Failure(e) => log.error("dialog NOT saved: {}", e)
         case Success(v) => log.debug("saved, {}", v.toString())
       }
+
+    case a: WriteLanguageAssessment =>
+      val assessments: MongoCollection[MongoStorage.WriteLanguageAssessmentDTO] = database.getCollection("assessments")
+      assessments.insertOne(WriteLanguageAssessmentDTO(a)).toFuture.onComplete {
+        case Failure(e) => log.error("assessment NOT saved: {}", e)
+        case Success(v) => log.debug("assessments saved, {}", v.toString())
+      }
   }
 
   private def unitialized: Receive = {
@@ -73,9 +80,18 @@ object MongoStorage {
     fromProviders(classOf[MongoStorage.UserSummary],
     classOf[MongoStorage.DialogThreadItem],
       classOf[MongoStorage.DialogEvaluation],
-      classOf[MongoStorage.Dialog]), DEFAULT_CODEC_REGISTRY
+      classOf[MongoStorage.Dialog],
+      classOf[MongoStorage.WriteLanguageAssessmentDTO]
+    ), DEFAULT_CODEC_REGISTRY
   )
 
   case class WriteDialog(id: Int, users: Set[User], context: String, thread: Seq[(User, String, Int)], evaluation: Set[(User, (Int, Int, Int))])
+
+  private case class WriteLanguageAssessmentDTO(_id: ObjectId, login: Option[String], chatId: Long, level: Int)
+  private object WriteLanguageAssessmentDTO {
+    def apply(a: WriteLanguageAssessment): WriteLanguageAssessmentDTO = WriteLanguageAssessmentDTO(new ObjectId(), a.login, a.chatId, a.level)
+  }
+
+  case class WriteLanguageAssessment(login: Option[String], chatId: Long, level: Int)
 }
 
