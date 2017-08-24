@@ -7,7 +7,7 @@ import sys
 from dateutil.tz import tzutc, tzlocal
  
 deadlines = [
-    (datetime.datetime(2017, 7, 24, 0, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 30, 22, 0, 0, 0, tzlocal())),
+    (datetime.datetime(2017, 7, 24, 0, 0, 0, 0, tzlocal()), datetime.datetime(2020, 1, 1, 0, 0, 0, 0, tzlocal())),
     (datetime.datetime(2017, 7, 24, 0, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 24, 22, 0, 0, 0, tzlocal())),
     (datetime.datetime(2017, 7, 24, 22, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 25, 22, 0, 0, 0, tzlocal())),
     (datetime.datetime(2017, 7, 25, 22, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 26, 22, 0, 0, 0, tzlocal())),
