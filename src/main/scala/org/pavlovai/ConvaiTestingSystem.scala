@@ -8,10 +8,11 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import org.pavlovai.communication.Endpoint
-import org.pavlovai.dialog.{ContextQuestions, DialogFather, MongoStorage}
+import org.pavlovai.dialog.{DialogFather, MongoStorage, SqadQuestions, WikiNewsQuestions}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.Try
 
 object ConvaiTestingSystem extends App {
   private val conf = ConfigFactory.load()
@@ -23,7 +24,13 @@ object ConvaiTestingSystem extends App {
 
   private val mongoStorage = akkaSystem.actorOf(MongoStorage.props(), name="dialog-storage")
   private val gate = akkaSystem.actorOf(Endpoint.props(mongoStorage), name = "communication-endpoint")
-  private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, ContextQuestions, mongoStorage, rnd, Clock.systemDefaultZone()), "talk-constructor")
+
+  private val contextDataset = Try(conf.getString("talk.context.type")).getOrElse("sqad") match {
+    case "wikinews" => WikiNewsQuestions
+    case _ => SqadQuestions
+  }
+
+  private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, contextDataset, mongoStorage, rnd, Clock.systemDefaultZone()), "talk-constructor")
 
   private implicit val timeout: Timeout = 5.seconds
 

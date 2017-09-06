@@ -1,10 +1,7 @@
 package org.pavlovai
 
-import org.pavlovai.dialog.ContextQuestions
+import org.pavlovai.dialog.{SqadQuestions, WikiNewsQuestions}
 import org.scalatest.WordSpec
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 /**
   * @author vadim
@@ -12,10 +9,21 @@ import scala.concurrent.duration._
   */
 class ContextQuestionsSpec extends WordSpec {
 
-  "randomLine" must {
+  "SqadQuestions selectRandom" must {
     "return random string" in {
-      val l1 = ContextQuestions.selectRandom
-      val l2 = ContextQuestions.selectRandom
+      val l1 = SqadQuestions.selectRandom
+      val l2 = SqadQuestions.selectRandom
+
+      assert(l1.isSuccess)
+      assert(l2.isSuccess)
+      assert(l1 !== l2)
+    }
+  }
+
+  "ContextQuestions selectRandom" must {
+    "return random string" in {
+      val l1 = WikiNewsQuestions.selectRandom
+      val l2 = WikiNewsQuestions.selectRandom
 
       assert(l1.isSuccess)
       assert(l2.isSuccess)
