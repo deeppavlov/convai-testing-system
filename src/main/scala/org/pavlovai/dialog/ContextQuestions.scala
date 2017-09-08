@@ -1,11 +1,10 @@
 package org.pavlovai.dialog
 
-import java.io.File
-
-import scala.util.{Failure, Success, Try}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
+
+import scala.util.{Failure, Success, Try}
 
 /**
   * @author vadim

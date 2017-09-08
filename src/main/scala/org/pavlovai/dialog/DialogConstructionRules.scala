@@ -27,17 +27,17 @@ trait DialogConstructionRules {
     val robots = mutable.Map(commonUsers.filter { case (user, _) => user.isInstanceOf[Bot] }: _*)
     val P0 = 1.0 - 1.0 / (2 * humanBotCoef + 1)
 
-    def randomRobot() = {
-      val (r, count) = rnd.shuffle(robots.filter(_._2 > 0)).head
-      robots.update(r, count - 1)
-      r
-    }
+    def randomRobot(): Option[User] =
+      rnd.shuffle(robots.filter(_._2 > 0)).headOption.map { case (r, count) =>
+        robots.update(r, count - 1)
+        r
+      }
 
     val overdueUsers = dedlinedUsers.filter(d => d._2 > 0).foldRight(List.empty[(User, User)]) { case ((user, capacity), acc) =>
       if (!robots.exists(_._2 > 0) || capacity < 1) acc
-      else {
+      else randomRobot().fold[List[(User, User)]](acc) { r =>
         urgentlyDistributedK += 1
-        (user, randomRobot()) :: acc
+        (user, r) :: acc
       }
     }
 
@@ -48,8 +48,15 @@ trait DialogConstructionRules {
       .foldRight(List.empty[(User, User)]) { case ((a, b), acc) =>
         val isHumanPair = rnd.nextDouble() < humanProb
 
-        if (isHumanPair || !robots.exists(_._2 > 0) || (robots.size == 1 && robots.forall(_._2 == 1))) (a, b) :: acc
-        else (a, randomRobot()) :: (b, randomRobot()) :: acc
+        if (isHumanPair) (a, b) :: acc
+        else {
+          (randomRobot(), randomRobot()) match {
+            case (Some(r1), Some(r2)) => (a, r1) :: (b, r2) :: acc
+            case (Some(r1), None) => (a, r1) :: acc
+            case (None, Some(r1)) => (a, r1) :: acc
+            case (None, None) => acc
+          }
+        }
       } ++ overdueUsers)
       .map { case (a, b) =>
         textGenerator.selectRandom match {

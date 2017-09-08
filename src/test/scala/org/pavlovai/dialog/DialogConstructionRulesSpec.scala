@@ -15,39 +15,25 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
   private val deadline10sec = Deadline.now + 10.seconds
 
   "A DialogConstructionRules availableDialogs" must {
-    "return only correct pairs for user list with even length" in {
-      val constructor = new DialogConstructionRules {
-        override protected val textGenerator: ContextQuestions = new ContextQuestions {
-          override def selectRandom: Try[String] = Success("test")
-        }
-
-        override val rnd: Random = scala.util.Random
-
-        override def log: LoggingAdapter = ???
+    val constructor = new DialogConstructionRules {
+      override protected val textGenerator: ContextQuestions = new ContextQuestions {
+        override def selectRandom: Try[String] = Success("test")
       }
 
-      for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Tester("2"), 1, deadline10sec)))
-        assert(l === List((Tester("1"), Tester("2"), "test")))
-      }
+      override val rnd: Random = scala.util.Random
 
-      for (i <- 1 to 1000) {
-        val l = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Bot("2"), 1, deadline10sec)))
-        assert(l === List())
-      }
+      override def log: LoggingAdapter = ???
+    }
+
+    "return empty list if minimum 2 users and one bot not available" in {
+      val l1 = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Tester("2"), 1, deadline10sec)))
+      assert(l1 === List())
+
+      val l2 = constructor.availableDialogs(0.5)(List((Tester("1"), 1, deadline10sec), (Bot("1"), 1, deadline10sec)))
+      assert(l2 === List())
     }
 
     "return only correct pairs for user list with not even length" in {
-      val constructor = new DialogConstructionRules {
-        override protected val textGenerator: ContextQuestions = new ContextQuestions {
-          override def selectRandom: Try[String] = Success("test")
-        }
-
-        override def log: LoggingAdapter = ???
-
-        override val rnd: Random = scala.util.Random
-      }
-
       var hbDialogs = 0.0
       var hhDialogs = 0
       for (i <- 1 to 10000) {
