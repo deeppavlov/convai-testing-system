@@ -47,8 +47,9 @@ trait DialogConstructionRules {
       .map { case (u1, u2) => if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1) }
       .foldRight(List.empty[(User, User)]) { case ((a, b), acc) =>
         val isHumanPair = rnd.nextDouble() < humanProb
+        val robot = rnd.shuffle(robots.filter(_._2 > 0)).headOption
 
-        if (isHumanPair) (a, b) :: acc
+        if (isHumanPair && robot.isDefined) (a, b) :: acc
         else {
           (randomRobot(), randomRobot()) match {
             case (Some(r1), Some(r2)) => (a, r1) :: (b, r2) :: acc
