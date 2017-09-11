@@ -42,6 +42,4 @@ buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 
 buildInfoPackage := "org.pavlovai"
 
-publishTo := Some("Snapshots Nexus" at "http://share.ipavlov.mipt.ru:8080/repository/ai.ipavlov/")
 
-credentials += Credentials("Snapshots Nexus", "ai.ipavlov", "admin", "admin123")
