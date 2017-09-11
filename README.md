@@ -21,10 +21,12 @@ The variables represented in such way `${?VARIABLE}` could be set as environment
 ### Config blocks
 #### Telegram
 
-`telegram {
+```
+telegram {
   token = ${?TOKEN}
   webhook = ${?WEBHOOK}
-}`
+}
+```
 
 Here you should place a token and a URL for webhook to connect to Telegram server. These values could be obtained [here](https://core.telegram.org/bots).
 
