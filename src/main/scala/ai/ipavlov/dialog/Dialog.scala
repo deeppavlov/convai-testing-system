@@ -1,13 +1,13 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
 import java.time.{Clock, Instant}
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Stash}
-import org.pavlovai.communication._
+import ai.ipavlov.Implicits
+import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.Try
 import scala.util.control.NoStackTrace
@@ -16,7 +16,7 @@ import scala.util.control.NoStackTrace
   * @author vadim
   * @since 06.07.17
   */
-class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging {
+class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Implicits {
   import Dialog._
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
@@ -122,8 +122,4 @@ object Dialog {
   case class EvaluateMessage(messageId: Int, category: Int)
   case object Ok
   case object BadEvaluation extends RuntimeException with NoStackTrace
-
-  implicit class DialogActorRef(ref: ActorRef) {
-    val chatId: Int = ref.hashCode()
-  }
 }

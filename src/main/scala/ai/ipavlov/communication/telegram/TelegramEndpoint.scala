@@ -1,14 +1,14 @@
-package org.pavlovai.communication.telegram
+package ai.ipavlov.communication.telegram
 
+import ai.ipavlov.communication.Endpoint.ChancelTestDialog
+import ai.ipavlov.communication.{Endpoint, TelegramChat}
+import ai.ipavlov.dialog.{Dialog, DialogFather, MongoStorage}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.util.Timeout
 import buildinfo.BuildInfo
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
-import org.pavlovai.communication.Endpoint.ChancelTestDialog
-import org.pavlovai.communication.{Endpoint, TelegramChat}
-import org.pavlovai.dialog.{Dialog, DialogFather, MongoStorage}
 
 import scala.collection.mutable
 import scala.concurrent.duration._

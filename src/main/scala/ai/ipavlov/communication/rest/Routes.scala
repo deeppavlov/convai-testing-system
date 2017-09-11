@@ -1,4 +1,4 @@
-package org.pavlovai.communication.rest
+package ai.ipavlov.communication.rest
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport

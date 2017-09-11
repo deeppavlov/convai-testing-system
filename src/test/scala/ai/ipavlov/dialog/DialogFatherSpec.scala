@@ -1,12 +1,12 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
 import java.time.{Clock, Instant, ZoneId}
 import java.util.Random
 
+import ai.ipavlov.communication.{Bot, Endpoint, Human}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import org.pavlovai.communication.{Bot, Endpoint, Human}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._

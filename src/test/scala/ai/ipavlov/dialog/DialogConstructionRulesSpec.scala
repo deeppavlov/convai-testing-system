@@ -1,7 +1,7 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
+import ai.ipavlov.communication.{Bot, Human}
 import akka.event.LoggingAdapter
-import org.pavlovai.communication.{Bot, Human}
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._

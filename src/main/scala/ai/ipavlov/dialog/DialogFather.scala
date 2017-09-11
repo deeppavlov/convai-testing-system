@@ -1,14 +1,14 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
 import java.time.Clock
 
+import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import org.pavlovai.communication._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.util.{Random, Try}
 import scala.util.control.NonFatal
+import scala.util.{Random, Try}
 
 /**
   * @author vadim

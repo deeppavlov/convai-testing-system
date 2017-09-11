@@ -1,10 +1,10 @@
-package org.pavlovai.communication
+package ai.ipavlov.communication
 
+import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
+import ai.ipavlov.communication.telegram.{BotWorker, TelegramEndpoint}
+import ai.ipavlov.dialog.DialogFather
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
-import org.pavlovai.communication.rest.{BotEndpoint, Routes}
-import org.pavlovai.communication.telegram.{BotWorker, TelegramEndpoint}
-import org.pavlovai.dialog.DialogFather
 
 import scala.util.Try
 

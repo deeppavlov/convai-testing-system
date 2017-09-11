@@ -1,28 +1,26 @@
-package org.pavlovai.communication.rest
+package ai.ipavlov.communication.rest
 
 import java.time.{Clock, Instant}
 
+import ai.ipavlov.communication.{Bot, Endpoint}
+import ai.ipavlov.dialog.Dialog
+import ai.ipavlov.dialog.DialogFather.UserAvailable
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
-import org.pavlovai.dialog.Dialog
-import org.pavlovai.dialog.DialogFather.UserAvailable
-import org.pavlovai.communication.{Bot, Endpoint}
 import spray.json._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.duration.Deadline
-import scala.concurrent.duration._
+import scala.concurrent.duration.{Deadline, _}
 import scala.util.{Random, Success, Try}
 
 /**
   * @author vadim
   * @since 10.07.17
   */
-class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging {
+class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging with ai.ipavlov.Implicits {
   import BotEndpoint._
-  import Dialog._
 
   private val rnd: Random = Random
 

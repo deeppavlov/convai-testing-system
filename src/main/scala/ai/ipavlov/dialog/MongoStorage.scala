@@ -1,15 +1,14 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
 import java.time.Instant
 
+import ai.ipavlov.communication.{Bot, TelegramChat, User}
 import akka.actor.{Actor, ActorLogging, Props}
-import org.mongodb.scala._
-import org.mongodb.scala.ObservableImplicits
-import org.mongodb.scala.bson.ObjectId
-import org.pavlovai.communication.{Bot, TelegramChat, User}
-import org.mongodb.scala.bson.codecs.Macros._
-import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.{ObservableImplicits, _}
+import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
+import org.mongodb.scala.bson.codecs.Macros._
 
 import scala.util.{Failure, Success, Try}
 
@@ -19,7 +18,6 @@ import scala.util.{Failure, Success, Try}
   */
 class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
   import MongoStorage._
-
   import context.dispatcher
 
   self ! Init

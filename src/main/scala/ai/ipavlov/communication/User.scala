@@ -1,4 +1,4 @@
-package org.pavlovai.communication
+package ai.ipavlov.communication
 
 /**
   * @author vadim

@@ -1,9 +1,10 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
 import java.time.Instant
 
+import ai.ipavlov.Implicits
+import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import org.pavlovai.communication._
 
 import scala.util.Try
 
@@ -11,7 +12,7 @@ import scala.util.Try
   * @author vadim
   * @since 13.07.17
   */
-class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Actor with ActorLogging {
+class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Actor with ActorLogging with Implicits {
   import Dialog._
   import EvaluationProcess._
 

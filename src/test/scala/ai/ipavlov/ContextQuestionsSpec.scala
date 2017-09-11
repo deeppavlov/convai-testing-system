@@ -1,6 +1,6 @@
-package org.pavlovai
+package ai.ipavlov
 
-import org.pavlovai.dialog.{SqadQuestions, WikiNewsQuestions}
+import ai.ipavlov.dialog.{SqadQuestions, WikiNewsQuestions}
 import org.scalatest.WordSpec
 
 /**

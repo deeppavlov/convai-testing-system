@@ -1,14 +1,14 @@
-package org.pavlovai.communication.rest
+package ai.ipavlov.communication.rest
 
 import java.time.{Clock, Instant, ZoneId}
 
+import ai.ipavlov.communication.rest.BotEndpoint.GetMessages
+import ai.ipavlov.communication.{Bot, Endpoint}
+import ai.ipavlov.dialog.DialogFather.UserAvailable
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
-import org.pavlovai.communication.rest.BotEndpoint.GetMessages
-import org.pavlovai.communication.{Bot, Endpoint}
-import org.pavlovai.dialog.DialogFather.UserAvailable
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 /**

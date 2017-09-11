@@ -1,4 +1,4 @@
-package org.pavlovai.communication.telegram
+package ai.ipavlov.communication.telegram
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Directives._

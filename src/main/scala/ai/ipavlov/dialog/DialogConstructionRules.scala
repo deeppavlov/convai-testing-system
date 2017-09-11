@@ -1,7 +1,7 @@
-package org.pavlovai.dialog
+package ai.ipavlov.dialog
 
+import ai.ipavlov.communication.{Bot, Human, User}
 import akka.event.LoggingAdapter
-import org.pavlovai.communication.{Bot, Human, User}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Deadline

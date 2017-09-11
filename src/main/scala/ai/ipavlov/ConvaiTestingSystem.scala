@@ -1,14 +1,14 @@
-package org.pavlovai
+package ai.ipavlov
 
 import java.time.Clock
 
+import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.dialog.{DialogFather, MongoStorage, SqadQuestions, WikiNewsQuestions}
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
-import org.pavlovai.communication.Endpoint
-import org.pavlovai.dialog.{DialogFather, MongoStorage, SqadQuestions, WikiNewsQuestions}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

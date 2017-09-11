@@ -1,13 +1,13 @@
-package org.pavlovai
+package ai.ipavlov
 
 import java.time.Clock
 
+import ai.ipavlov.communication.{Bot, Endpoint, Human, TelegramChat}
+import ai.ipavlov.communication.rest.BotEndpoint
+import ai.ipavlov.dialog.{DialogFather, SqadQuestions}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
-import org.pavlovai.communication.{Bot, Endpoint, Human, TelegramChat}
-import org.pavlovai.communication.rest.BotEndpoint
-import org.pavlovai.dialog.{DialogFather, SqadQuestions}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.collection.mutable
