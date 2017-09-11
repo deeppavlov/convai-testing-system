@@ -2,7 +2,7 @@ name := """convai-testing-system"""
 
 version := "0.1-SNAPSHOT"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
 maintainer := "Vadim Polulyakh <bavadim@gmail.com>"
 
