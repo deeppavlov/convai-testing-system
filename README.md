@@ -95,9 +95,6 @@ For now we have only one option - parsed SQuAD dataset, which is included in the
 ## Creating a package of your own
 
 You could create a package by yourself if you want. You will need [sbt](http://www.scala-sbt.org/) first. After that, run in root folder of the project:
- ```sbt debian:packageBin```
- 
-## Conclusion
-Sorry for formatting config in one line, GitHub does not allow multi-line code samples for some reason.
+ `sbt debian:packageBin`
 
 
