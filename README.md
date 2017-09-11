@@ -66,6 +66,7 @@ Here you should place a token and a URL for webhook to connect to Telegram serve
 `logger {
     connection_string = ${?MONGODB_URI}
   }`
+  
 `MONGODB_URI` - mongo DB URI used to store logs.
 
 #### Context (or seed text)
