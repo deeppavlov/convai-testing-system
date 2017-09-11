@@ -1,4 +1,4 @@
-nipt_router_bot
+convai-testing-system
 =========================
 
 This software is proposed to serve as host for some specific kind of Turing test.
