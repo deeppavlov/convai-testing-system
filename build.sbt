@@ -1,8 +1,10 @@
+import com.typesafe.sbt.packager.SettingsHelper
+
 name := """convai-testing-system"""
 
 organization := "ai.ipavlov"
 
-version := "0.1-SNAPSHOT"
+version := "0.1-" + sys.props.getOrElse("BUILD_NUMBER", "SNAPSHOT")
 
 scalaVersion := "2.12.3"
 
@@ -42,4 +44,25 @@ buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 
 buildInfoPackage := "org.pavlovai"
 
+resolvers += Resolver.jcenterRepo
 
+licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
+
+publish := {
+  import sys.process._
+  val stdout = new StringBuilder
+  val accessToken = sys.env.get("github_access_token")
+  val fname = s"${name.value + "_" + version.value}_all.deb"
+
+  val json = s"""{"tag_name":"${version.value}","target_commitish":"master","name":"$fname","body":"${packageSummary.value}","draft":true,"prerelease":false}"""
+  Process("curl" :: "-H" :: "Content-Type: application/json" :: "-XPOST"
+    :: s"https://api.github.com/repos/deepmipt/convai-testing-system/releases?access_token=$accessToken"
+    :: "-d" :: json :: Nil, baseDirectory.value) #|
+    Process("jq" :: ".upload_url" :: Nil, baseDirectory.value) #|
+    Process("sed" :: """s/{?name,label}//g;s/"//g""" :: Nil, baseDirectory.value) ! ProcessLogger(stdout append _, (_) => ())
+
+  val uploadUrl = stdout.append(s"?name=$fname&access_token=$accessToken").toString()
+
+
+  s"/usr/bin/curl -F upload=@target/convai-testing-system_0.1-SNAPSHOT_all.deb $uploadUrl" !
+}
