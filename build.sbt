@@ -51,7 +51,7 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 publish := {
   import sys.process._
   val stdout = new StringBuilder
-  val accessToken = sys.env.get("github_access_token").getOrElse("")
+  val accessToken = sys.env.getOrElse("github_access_token", "")
   val fname = s"${name.value + "_" + version.value}_all.deb"
 
   val json = s"""{"tag_name":"${version.value}","target_commitish":"master","name":"$fname","body":"${packageSummary.value}","draft":true,"prerelease":false}"""
