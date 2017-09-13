@@ -63,5 +63,5 @@ publish := {
 
   val uploadUrl = stdout.append(s"?name=$fname&access_token=$accessToken").toString()
 
-  s"/usr/bin/curl -F upload=@target/convai-testing-system_0.1-SNAPSHOT_all.deb $uploadUrl" !
+  s"/usr/bin/curl -F upload=@target/$fname $uploadUrl" !
 }
