@@ -51,13 +51,13 @@ licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 publish := {
   import sys.process._
   val stdout = new StringBuilder
-  val accessToken = sys.env.get("github_access_token")
+  val accessToken = sys.env.get("github_access_token").getOrElse("")
   val fname = s"${name.value + "_" + version.value}_all.deb"
 
   val json = s"""{"tag_name":"${version.value}","target_commitish":"master","name":"$fname","body":"${packageSummary.value}","draft":true,"prerelease":false}"""
-  Process("curl" :: "-H" :: "Content-Type: application/json" :: "-XPOST"
-    :: s"https://api.github.com/repos/deepmipt/convai-testing-system/releases?access_token=$accessToken"
-    :: "-d" :: json :: Nil, baseDirectory.value) #|
+  val releaseUrl = s"https://api.github.com/repos/deepmipt/convai-testing-system/releases?access_token=$accessToken"
+
+  Process("curl" :: "-X" :: "POST" :: releaseUrl :: "-d" :: json :: Nil, baseDirectory.value) #|
     Process("jq" :: ".upload_url" :: Nil, baseDirectory.value) #|
     Process("sed" :: "s/{?name,label}//g;s/\"//g" :: Nil, baseDirectory.value) ! ProcessLogger(stdout append _, (_) => ())
 
