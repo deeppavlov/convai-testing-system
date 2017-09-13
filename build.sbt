@@ -4,7 +4,7 @@ name := """convai-testing-system"""
 
 organization := "ai.ipavlov"
 
-version := "0.1-" + sys.props.getOrElse("BUILD_NUMBER", "SNAPSHOT")
+version := "0.1-" + sys.env.getOrElse("BUILD_NUMBER", "SNAPSHOT")
 
 scalaVersion := "2.12.3"
 
