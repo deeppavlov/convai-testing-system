@@ -36,7 +36,7 @@ javaOptions in Universal ++= Seq(
   // -J params will be added as jvm parameters
   "-J-Xmx512m",
   "-J-Xms512m",
-  "-Dconfig.file=/etc/reference.conf"
+  s"-Dconfig.file=/etc/${name.value}/reference.conf"
 )
 
 enablePlugins(BuildInfoPlugin)
