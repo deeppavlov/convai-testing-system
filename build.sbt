@@ -59,10 +59,9 @@ publish := {
     :: s"https://api.github.com/repos/deepmipt/convai-testing-system/releases?access_token=$accessToken"
     :: "-d" :: json :: Nil, baseDirectory.value) #|
     Process("jq" :: ".upload_url" :: Nil, baseDirectory.value) #|
-    Process("sed" :: """s/{?name,label}//g;s/"//g""" :: Nil, baseDirectory.value) ! ProcessLogger(stdout append _, (_) => ())
+    Process("sed" :: "s/{?name,label}//g;s/\"//g" :: Nil, baseDirectory.value) ! ProcessLogger(stdout append _, (_) => ())
 
   val uploadUrl = stdout.append(s"?name=$fname&access_token=$accessToken").toString()
-
 
   s"/usr/bin/curl -F upload=@target/convai-testing-system_0.1-SNAPSHOT_all.deb $uploadUrl" !
 }
