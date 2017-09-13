@@ -35,7 +35,8 @@ debianPackageDependencies in Debian ++= Seq("java2-runtime", "bash (>= 2.05a-11)
 javaOptions in Universal ++= Seq(
   // -J params will be added as jvm parameters
   "-J-Xmx512m",
-  "-J-Xms512m"
+  "-J-Xms512m",
+  "-Dconfig.file=/etc/reference.conf"
 )
 
 enablePlugins(BuildInfoPlugin)
@@ -64,4 +65,12 @@ publish := {
   val uploadUrl = stdout.append(s"?name=$fname&access_token=$accessToken").toString()
 
   s"/usr/bin/curl -F upload=@target/$fname $uploadUrl" !
+}
+
+mappings in Universal <+= (packageBin in Compile, sourceDirectory ) map {
+  (_, src) =>
+    // we are using the reference.conf as default application.conf
+    // the user can override settings here
+    val conf = src / "main" / "resources" / "reference.conf"
+    conf -> "conf/reference.conf"
 }

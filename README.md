@@ -12,10 +12,10 @@ The system has following components:
 
 ## Installation
 To install this system you should execute following command:
-```dpkg -i nips_router_bot.deb```
+```dpkg -i convai-testing-system.deb```
 
 ## Configuration
-The default config is placed at `/etc/nipt_router_bot/reference.conf`. You could see the sample config [here](./src/main/resources/reference.conf).
+The default config is placed at `/etc/convai-testing-system/reference.conf`. You could see the sample config [here](./src/main/resources/reference.conf).
 
 The variables represented in such way `${?VARIABLE}` could be set as environment variable, e.g. by `export $VARIABLE` command in command line.
 ### Config blocks
