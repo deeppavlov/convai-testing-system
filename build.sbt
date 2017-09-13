@@ -1,4 +1,4 @@
-import com.typesafe.sbt.packager.SettingsHelper
+import com.typesafe.sbt.packager._
 
 name := """convai-testing-system"""
 
@@ -26,9 +26,11 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.3" % Test
 )
 
-enablePlugins(JavaAppPackaging)
+enablePlugins(JavaServerAppPackaging)
 
 enablePlugins(DebianPlugin)
+
+enablePlugins(SystemVPlugin)
 
 debianPackageDependencies in Debian ++= Seq("java2-runtime", "bash (>= 2.05a-11)")
 
@@ -72,3 +74,6 @@ mappings in Universal <+= (packageBin in Compile, sourceDirectory ) map {
     val conf = src / "main" / "resources" / "reference.conf"
     conf -> "conf/reference.conf"
 }
+
+
+
