@@ -1,5 +1,3 @@
-import com.typesafe.sbt.packager._
-
 name := """convai-testing-system"""
 
 organization := "ai.ipavlov"
