@@ -78,7 +78,7 @@ talk {
   }
 ```
   
-`MONGODB_URI` - mongo DB URI used to store logs.
+`MONGODB_URI` - mongo DB URI used to store logs. The dialogs should be in collection `dialogs` inside MongoDB, the assessments will be inside `assessments`.
 
 #### Context (or seed text)
 
