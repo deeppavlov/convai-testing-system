@@ -22,31 +22,41 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
 
   self ! Init
 
-  override def receive: Receive = unitialized
+  override def receive: Receive = {
+    log.info("initializing storage")
+    unitialized
+  }
 
   private def initialized(database: MongoDatabase): Receive = {
     case dialog: WriteDialog =>
       log.debug("saving dialog {}", dialog)
       val dialogs: MongoCollection[MongoStorage.Dialog] = database.getCollection("dialogs")
       dialogs.insertOne(MongoStorage.Dialog(dialog)).toFuture.onComplete {
-        case Failure(e) => log.error("dialog NOT saved: {}", e)
+        case Failure(e) => log.error("dialog didn't save: {}", e)
         case Success(v) => log.debug("saved, {}", v.toString())
       }
 
     case a: WriteLanguageAssessment =>
       val assessments: MongoCollection[MongoStorage.WriteLanguageAssessmentDTO] = database.getCollection("assessments")
       assessments.insertOne(WriteLanguageAssessmentDTO(a)).toFuture.onComplete {
-        case Failure(e) => log.error("assessment NOT saved: {}", e)
+        case Failure(e) => log.error("assessment didn't save: {}", e)
         case Success(v) => log.debug("assessments saved, {}", v.toString())
       }
   }
 
   private def unitialized: Receive = {
     case Init =>
-      Try(context.system.settings.config.getString("talk.logger.connection_string")).foreach { conStr =>
-        val dbName = conStr.split("/").last
-        context.become(initialized(MongoClient(conStr).getDatabase(dbName).withCodecRegistry(codecRegistry)))
-      }
+      Try(context.system.settings.config.getString("talk.logger.connection_string"))
+        .recoverWith {
+          case e =>
+            log.error("storage didn't initialized: {}", e)
+            Failure(e)
+        }
+        .foreach { conStr =>
+          val dbName = conStr.split("/").last
+          context.become(initialized(MongoClient(conStr).getDatabase(dbName).withCodecRegistry(codecRegistry)))
+          log.info("storage was initialized")
+        }
   }
 }
 
