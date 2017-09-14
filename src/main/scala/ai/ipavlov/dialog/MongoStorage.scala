@@ -49,13 +49,13 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
       Try(context.system.settings.config.getString("talk.logger.connection_string"))
         .recoverWith {
           case e =>
-            log.error("storage didn't initialized: {}", e)
+            log.error("storage didn't initialize: {}", e)
             Failure(e)
         }
         .foreach { conStr =>
           val dbName = conStr.split("/").last
           context.become(initialized(MongoClient(conStr).getDatabase(dbName).withCodecRegistry(codecRegistry)))
-          log.info("storage was initialized")
+          log.info("storage was initialize")
         }
   }
 }
