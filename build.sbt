@@ -47,7 +47,7 @@ buildInfoPackage := "org.pavlovai"
 
 resolvers += Resolver.jcenterRepo
 
-licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
+licenses += ("MIT", url("https://www.apache.org/licenses/LICENSE-2.0"))
 
 publish := {
   import sys.process._
@@ -68,9 +68,7 @@ publish := {
 }
 
 mappings in Universal <+= (packageBin in Compile, sourceDirectory ) map {
-  (_, src) =>
-    val conf = src / "main" / "resources" / "reference.conf"
-    conf -> "conf/reference.conf"
+  (_, src) => src / "main" / "resources" / "reference.conf" -> "conf/reference.conf"
 }
 
 
