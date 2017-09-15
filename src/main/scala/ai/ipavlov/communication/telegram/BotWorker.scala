@@ -11,6 +11,7 @@ import info.mukel.telegrambot4s.api.{BotBase, RequestHandler, Webhook}
 import info.mukel.telegrambot4s.clients.AkkaClient
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
   * @author vadim
@@ -29,7 +30,7 @@ class BotWorker(sys: ActorSystem,
 
   override def webhookRoute: Route = externalRoutes ~ super.webhookRoute
 
-  override val port: Int = Option(System.getenv("PORT")).fold{
+  override val port: Int =  Try(system.settings.config.getString("https.port")).toOption.fold{
     logger.warn("PORT env variable not found, use port 8433")
     8433
   } { port =>
