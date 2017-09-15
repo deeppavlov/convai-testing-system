@@ -31,7 +31,7 @@ class BotWorker(sys: ActorSystem,
   override def webhookRoute: Route = externalRoutes ~ super.webhookRoute
 
   override val port: Int =  Try(system.settings.config.getString("https.port")).toOption.fold{
-    logger.warn("PORT env variable not found, use port 8433")
+    logger.warn("https.port not found, use port 8433")
     8433
   } { port =>
     logger.info(s"bind on $port port")
