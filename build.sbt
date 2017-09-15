@@ -36,7 +36,8 @@ javaOptions in Universal ++= Seq(
   // -J params will be added as jvm parameters
   "-J-Xmx512m",
   "-J-Xms512m",
-  s"-Dconfig.file=/etc/${name.value}/reference.conf"
+  s"-Dconfig.file=/etc/${name.value}/reference.conf",
+  s"-Dlog4j.configuration=/etc/${name.value}/log4j.properties"
 )
 
 enablePlugins(BuildInfoPlugin)
@@ -67,9 +68,11 @@ publish := {
   s"/usr/bin/curl -F upload=@target/$fname $uploadUrl" !
 }
 
-mappings in Universal <+= (packageBin in Compile, sourceDirectory ) map {
-  (_, src) => src / "main" / "resources" / "reference.conf" -> "conf/reference.conf"
-}
+linuxPackageMappings ++= Seq(
+  packageMapping(sourceDirectory.value / "main" / "resources" / "reference.conf" -> "conf/reference.conf"),
+  packageMapping(sourceDirectory.value / "main" / "resources" / "log4j.properties" -> "conf/log4j.properties")
+)
+
 
 
 
