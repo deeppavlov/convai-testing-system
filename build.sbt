@@ -68,11 +68,8 @@ publish := {
   s"/usr/bin/curl -F upload=@target/$fname $uploadUrl" !
 }
 
-linuxPackageMappings ++= Seq(
-  packageMapping(sourceDirectory.value / "main" / "resources" / "reference.conf" -> "conf/reference.conf"),
-  packageMapping(sourceDirectory.value / "main" / "resources" / "log4j.properties" -> "conf/log4j.properties")
+mappings in Universal ++= Seq(
+  sourceDirectory.value  / "main" / "resources" / "reference.conf" -> "conf/reference.conf",
+  sourceDirectory.value  / "main" / "resources" / "log4j.properties" -> "conf/log4j.properties"
 )
-
-
-
 
