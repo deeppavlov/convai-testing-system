@@ -13,9 +13,11 @@ packageSummary := "The convai and turing hackathon testing system"
 packageDescription := """The best of the best tool for nlp dataset collection"""
 
 libraryDependencies ++= Seq(
+  "commons-codec" % "commons-codec" % "1.10",
   "com.typesafe.akka" %% "akka-actor" % "2.4.18",
   "info.mukel" %% "telegrambot4s" % "3.0.0",
   "org.slf4j" % "slf4j-log4j12" % "1.7.25",
+  "com.typesafe.akka" %% "akka-http" % "10.0.10",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.8",
   "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0",
   "com.typesafe.akka" %% "akka-slf4j" % "2.4.18",

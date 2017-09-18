@@ -6,6 +6,7 @@ import ai.ipavlov.dialog.DialogFather
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
 
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 /**
@@ -27,7 +28,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate), routerBotToken, webhook).run()
+  private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate)(mat, context.dispatcher, context.system), routerBotToken, webhook).run()
 
   private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message

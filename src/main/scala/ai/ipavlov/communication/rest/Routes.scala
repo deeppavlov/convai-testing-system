@@ -1,29 +1,34 @@
 package ai.ipavlov.communication.rest
 
-import akka.actor.ActorRef
+import ai.ipavlov.communication.fbmessager.{FBMessageEventOut, FBPObject, FBService, RouteSupport}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import com.typesafe.scalalogging.LazyLogging
 import info.mukel.telegrambot4s.models.{Message, Update}
-import spray.json.{JsValue, _}
+import spray.json._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 /**
   * @author vadim
   * @since 10.07.17
   */
-object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport {
+object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport with LazyLogging with RouteSupport {
 
   import BotEndpoint._
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   implicit val timeout: Timeout = 5.seconds
 
-  def route(botService: ActorRef)(implicit materializer: ActorMaterializer): Route =
+  private val fbService = FBService
+
+  def route(botService: ActorRef)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
 
     path(""".+""".r / "sendMessage") { token =>
       post {
@@ -37,20 +42,37 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         }
       }
     } ~ get {
-    pathPrefix(""".+""".r / "getUpdates") { token =>
-      val lO = (botService ? BotEndpoint.GetMessages(token)).mapTo[Seq[Update]]
-      onComplete(lO) {
-        case util.Success(l) =>
-          import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
-          complete(toJson(l))
-        case util.Failure(ex) =>
-          //log.warn("erroe while getUpdates processing: " + ex.toString)
-          complete(StatusCodes.BadRequest)
+      pathPrefix(""".+""".r / "getUpdates") { token =>
+        val lO = (botService ? BotEndpoint.GetMessages(token)).mapTo[Seq[Update]]
+        onComplete(lO) {
+          case util.Success(l) =>
+            import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
+            complete(toJson(l))
+          case util.Failure(ex) =>
+            //log.warn("erroe while getUpdates processing: " + ex.toString)
+            complete(StatusCodes.BadRequest)
+        }
+      }
+    } ~ get {
+      path("webhook") {
+        parameters("hub.verify_token", "hub.mode", "hub.challenge") {
+          (token, mode, challenge) => complete { fbService.verifyToken(token, mode, challenge) }
+        }
+      }
+    } ~ post {
+      verifyPayload(request)(materializer, ec) {
+        path("webhook") {
+          entity(as[FBPObject]) { fbObject =>
+            complete {
+              fbService.handleMessage(fbObject)
+            }
+          }
+        }
       }
     }
   }
 
-  implicit val sendMesFormat = new RootJsonFormat[SendMes] {
+  private implicit val sendMesFormat: RootJsonFormat[SendMes] = new RootJsonFormat[SendMes] {
     override def write(obj: SendMes): JsValue = obj match {
       case SendMes(chat_id, message) =>
         val messageStr = message.toJson.toString()
@@ -63,6 +85,6 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     }
   }
 
-  case class SendMes(chat_id: Int, message: BotMessage)
+  private case class SendMes(chat_id: Int, message: BotMessage)
 }
 
