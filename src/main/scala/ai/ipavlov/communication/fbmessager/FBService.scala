@@ -15,15 +15,14 @@ import scala.concurrent.{ExecutionContext, Future}
 object FBService extends LazyLogging  {
 
   //TODO
-  private val t = "qwerty"
   private val responseUri = ""
   private val pageAccessToken = ""
 
-  def verifyToken(token: String, mode: String, challenge: String)
+  def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
                  (implicit ec: ExecutionContext):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
 
-    if(mode == "subscribe" && token == t){
+    if(mode == "subscribe" && token == originalToken){
       logger.info(s"Verify webhook token: $token, mode $mode")
       (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
     }

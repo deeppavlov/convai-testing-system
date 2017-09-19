@@ -20,9 +20,7 @@ import scala.language.postfixOps
   */
 trait RouteSupport extends LazyLogging with Directives {
 
-  private val appSecret = "870ccd5fd6280af604f51909af86a7b2"
-
-  def verifyPayload(req: HttpRequest)
+  def verifyPayload(req: HttpRequest, appSecret: String)
                    (implicit materializer: Materializer, ec: ExecutionContext): Directive0 = {
 
     def isValid(payload: Array[Byte], secret: String, expected: String): Boolean = {

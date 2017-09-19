@@ -1,6 +1,6 @@
 package ai.ipavlov.communication.rest
 
-import ai.ipavlov.communication.fbmessager.{FBMessageEventOut, FBPObject, FBService, RouteSupport}
+import ai.ipavlov.communication.fbmessager.{FBPObject, FBService, RouteSupport}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
@@ -28,10 +28,10 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
 
   private val fbService = FBService
 
-  def route(botService: ActorRef)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
+  def route(botService: ActorRef, fbSecret: String, callbackToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
 
-    path(""".+""".r / "sendMessage") { token =>
-      post {
+    post {
+      path(""".+""".r / "sendMessage") { token =>
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
           val r = (botService ? BotEndpoint.SendMessage(token, to, mes)).mapTo[Message]
@@ -56,11 +56,11 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     } ~ get {
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
-          (token, mode, challenge) => complete { fbService.verifyToken(token, mode, challenge) }
+          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken) }
         }
       }
     } ~ post {
-      verifyPayload(request)(materializer, ec) {
+      verifyPayload(request, fbSecret)(materializer, ec) {
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
