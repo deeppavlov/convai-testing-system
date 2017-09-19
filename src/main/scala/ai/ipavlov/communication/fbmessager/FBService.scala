@@ -14,7 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 object FBService extends LazyLogging  {
 
-  private val t = ""
+  //TODO
+  private val t = "qwerty"
   private val responseUri = ""
   private val pageAccessToken = ""
 

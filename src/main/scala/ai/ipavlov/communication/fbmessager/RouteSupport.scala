@@ -20,7 +20,7 @@ import scala.language.postfixOps
   */
 trait RouteSupport extends LazyLogging with Directives {
 
-  private val appSecret = ""
+  private val appSecret = "870ccd5fd6280af604f51909af86a7b2"
 
   def verifyPayload(req: HttpRequest)
                    (implicit materializer: Materializer, ec: ExecutionContext): Directive0 = {
@@ -56,7 +56,5 @@ trait RouteSupport extends LazyLogging with Directives {
         logger.error(s"X-Hub-Signature is not defined")
         complete(StatusCodes.Forbidden)
     }
-
   }
-
 }
