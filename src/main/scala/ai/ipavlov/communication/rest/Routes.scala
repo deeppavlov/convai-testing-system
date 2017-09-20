@@ -28,7 +28,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
 
   private val fbService = FBService
 
-  def route(botService: ActorRef, fbSecret: String, callbackToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
+  def route(botService: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
 
     post {
       path(""".+""".r / "sendMessage") { token =>
@@ -56,7 +56,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     } ~ get {
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
-          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken) }
+          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken, pageAccessToken) }
         }
       }
     } ~ post {

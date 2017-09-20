@@ -17,9 +17,8 @@ object FBService extends LazyLogging  {
 
   //TODO
   private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
-  private val pageAccessToken = ""
 
-  def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
+  def verifyToken(token: String, mode: String, challenge: String, originalToken: String, pageAccessToken: String)
                  (implicit ec: ExecutionContext):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
 

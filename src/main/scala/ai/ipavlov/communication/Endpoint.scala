@@ -21,6 +21,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   private val telegramToken = Try(context.system.settings.config.getString("telegram.token")).getOrElse("unknown")
   private val facebookSecret = Try(context.system.settings.config.getString("fbmessager.secret")).getOrElse("unknown")
   private val facebookToken = Try(context.system.settings.config.getString("fbmessager.token")).getOrElse("unknown")
+  private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessager.pageAccessToken")).getOrElse("unknown")
   private val telegramWebhook = Try(context.system.settings.config.getString("telegram.webhook")).getOrElse {
     log.error("telegram.webhook not set!")
     "https://localhost"
@@ -28,7 +29,9 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val bot = new BotWorker(context.system, telegramGate, Routes.route(botGate, facebookSecret, facebookToken)(mat, context.dispatcher, context.system), telegramToken, telegramWebhook).run()
+  private val bot = new BotWorker(context.system, telegramGate,
+    Routes.route(botGate, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
+    telegramToken, telegramWebhook).run()
 
   private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
