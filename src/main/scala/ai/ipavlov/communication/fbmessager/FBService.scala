@@ -49,11 +49,14 @@ object FBService extends LazyLogging  {
                 message = FBMessage(
                   text = Some(s"Scala messenger bot: $text"),
                   metadata = Some("DEVELOPER_DEFINED_METADATA"))
-              ).toJson.toString().getBytes
+              ).toJson.toString()
 
               val responseFuture: Future[HttpResponse] =
-                Http().singleRequest(HttpRequest(HttpMethods.POST, uri = s"$responseUri?access_token=$pageAccessToken",
-                  entity = HttpEntity(fbMessage))).andThen {
+                Http().singleRequest(HttpRequest(
+                  HttpMethods.POST,
+                  uri = s"$responseUri?access_token=$pageAccessToken",
+                  entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+                ).andThen {
                   case Failure(err) => logger.info("can't send response", err)
                 }
             case None =>
