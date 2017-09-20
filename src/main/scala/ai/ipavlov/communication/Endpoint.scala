@@ -6,7 +6,6 @@ import ai.ipavlov.dialog.DialogFather
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
 
-import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 /**

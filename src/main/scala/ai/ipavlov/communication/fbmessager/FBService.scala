@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 /**
   * @author vadim
@@ -15,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object FBService extends LazyLogging  {
 
   //TODO
-  private val responseUri = ""
+  private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
   private val pageAccessToken = ""
 
   def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
@@ -39,9 +40,8 @@ object FBService extends LazyLogging  {
     import spray.json._
 
     logger.info(s"Receive fbObject: $fbObject")
-    fbObject.entry.foreach{
-      entry =>
-        entry.messaging.foreach{ me =>
+    fbObject.entry.foreach { entry =>
+        entry.messaging.foreach { me =>
           val senderId = me.sender.id
           val message = me.message
           message.text match {
@@ -54,7 +54,9 @@ object FBService extends LazyLogging  {
 
               val responseFuture: Future[HttpResponse] =
                 Http().singleRequest(HttpRequest(HttpMethods.POST, uri = s"$responseUri?access_token=$pageAccessToken",
-                  entity = HttpEntity(fbMessage)))
+                  entity = HttpEntity(fbMessage))).andThen {
+                  case Failure(err) => logger.info("can't send response", err)
+                }
             case None =>
               logger.info("Receive image")
               Future.successful(())
