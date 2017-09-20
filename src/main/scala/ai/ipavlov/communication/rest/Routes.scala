@@ -56,7 +56,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     } ~ get {
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
-          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken, pageAccessToken) }
+          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken) }
         }
       }
     } ~ post {
@@ -64,7 +64,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
-              fbService.handleMessage(fbObject)
+              fbService.handleMessage(fbObject, pageAccessToken)
             }
           }
         }
