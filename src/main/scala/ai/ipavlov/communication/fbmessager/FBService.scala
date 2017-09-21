@@ -48,7 +48,10 @@ object FBService extends LazyLogging  {
               val fbMessage = FBMessageEventOut(recipient = FBRecipient(senderId),
                 message = FBMessage(
                   text = Some(s"Scala messenger bot: $text"),
-                  metadata = Some("DEVELOPER_DEFINED_METADATA"))
+                  metadata = Some("DEVELOPER_DEFINED_METADATA"),
+                  attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
+                    FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))
+                )
               ).toJson.toString()
 
               val responseFuture: Future[HttpResponse] =
