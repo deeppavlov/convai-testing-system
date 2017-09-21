@@ -2,7 +2,7 @@ package ai.ipavlov.communication.fbmessager
 
 import ai.ipavlov.communication.rest.BotEndpoint.BotMessage
 import ai.ipavlov.communication.rest.Routes.SendMes
-import spray.json.{DefaultJsonProtocol, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, serializationError}
+import spray.json.{DefaultJsonProtocol, JsArray, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError, serializationError}
 
 /**
   * @author vadim
@@ -59,10 +59,6 @@ object FBMessage extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBMessage] = jsonFormat5(FBMessage(_, _, _, _, _))
 }
 
-object FBAttachment extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBAttachment] = jsonFormat2(FBAttachment(_, _))
-}
-
 object FBSender extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBSender] = jsonFormat1(FBSender(_))
 }
@@ -71,13 +67,17 @@ object FBRecipient extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBRecipient] = jsonFormat1(FBRecipient(_))
 }
 
-object FBPayload extends DefaultJsonProtocol {
-  import spray.json._
+object FBButton extends DefaultJsonProtocol {
+  implicit val format: RootJsonFormat[FBButton] = jsonFormat3(FBButton(_, _, _))
+}
 
-  private implicit val sendMesFormat: RootJsonFormat[FBPayload] = new RootJsonFormat[FBPayload] {
+object FBAttachment extends DefaultJsonProtocol {
+  implicit val formatT: RootJsonFormat[FBPayload] = new RootJsonFormat[FBPayload] {
+    import spray.json._
     override def write(obj: FBPayload): JsValue = obj match {
       case FBButtonsPayload(text, buttons) =>
         JsObject("template_type" -> "button".toJson, "text" -> text.toJson, "buttons" -> buttons.toJson)
+      case _ => deserializationError(s"unsupported format")
     }
 
     override def read(json: JsValue): FBPayload = json.asJsObject.getFields("chat_id", "text") match {
@@ -85,9 +85,6 @@ object FBPayload extends DefaultJsonProtocol {
       case _ => serializationError(s"Invalid json format: $json")
     }
   }
-}
 
-
-object FBButton extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBButton] = jsonFormat3(FBButton(_, _, _))
+  implicit val format: RootJsonFormat[FBAttachment] = jsonFormat2(FBAttachment(_, _))
 }
