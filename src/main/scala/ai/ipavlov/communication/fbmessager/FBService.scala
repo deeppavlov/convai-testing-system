@@ -47,12 +47,12 @@ object FBService extends LazyLogging  {
             case Some(text) =>
               val fbMessage = FBMessageEventOut(
                 recipient = FBRecipient(senderId),
-                message = FBQuickReplyMessages(/*FBMessage(
+                message = FBMessage(
                   text = None,//Some(s"Scala messenger bot: $text"),
                   metadata = Some("DEVELOPER_DEFINED_METADATA"),
+                  quick_replies = Some(List(FBQuickReply("",""))),
                   attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
-                    FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))*/
-                  quick_replies = List(FBQuickReply("",""))
+                    FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))
                 )
               ).toJson.toString()
 

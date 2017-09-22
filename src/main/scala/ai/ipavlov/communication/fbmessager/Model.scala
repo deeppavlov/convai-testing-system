@@ -1,8 +1,6 @@
 package ai.ipavlov.communication.fbmessager
 
-import ai.ipavlov.communication.rest.BotEndpoint.BotMessage
-import ai.ipavlov.communication.rest.Routes.SendMes
-import spray.json.{DefaultJsonProtocol, JsArray, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError, serializationError}
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 /**
   * @author vadim
@@ -20,13 +18,11 @@ case class FBMessage(mid: Option[String] = None,
                      seq: Option[Long] = None,
                      text: Option[String] = None,
                      metadata: Option[String] = None,
-                     attachment: Option[FBAttachment] = None)
+                     attachment: Option[FBAttachment] = None,
+                     quick_replies: Option[List[FBQuickReply]] = None
+                    )
 
 case class FBQuickReply(title: String, payload: String)
-
-case class FBQuickReplyMessages(mid: Option[String] = None,
-                     seq: Option[Long] = None,
-                     quick_replies: List[FBQuickReply])
 
 case class FBSender(id: String)
 
@@ -37,7 +33,7 @@ case class FBMessageEventIn(sender: FBSender,
                             timestamp: Long,
                             message: FBMessage)
 
-case class FBMessageEventOut(recipient: FBRecipient, message: FBQuickReplyMessages)
+case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
 
 case class FBEntry(id: String,
                    time: Long, messaging:
@@ -62,7 +58,7 @@ object FBEntry extends DefaultJsonProtocol {
 }
 
 object FBMessage extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBMessage] = jsonFormat5(FBMessage(_, _, _, _, _))
+  implicit val format: RootJsonFormat[FBMessage] = jsonFormat6(FBMessage(_, _, _, _, _, _))
 }
 
 object FBQuickReply extends DefaultJsonProtocol {
@@ -78,10 +74,6 @@ object FBQuickReply extends DefaultJsonProtocol {
       case _ => serializationError(s"Invalid json format: $json")
     }
   }
-}
-
-object FBQuickReplyMessages extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBQuickReplyMessages] = jsonFormat3(FBQuickReplyMessages(_, _, _))
 }
 
 object FBSender extends DefaultJsonProtocol {
