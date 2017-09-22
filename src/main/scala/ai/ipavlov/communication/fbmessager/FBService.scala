@@ -32,6 +32,55 @@ object FBService extends LazyLogging  {
     }
   }
 
+  private def sendDialogMessage(text: String, senderId: String, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
+                                                                                         materializer :ActorMaterializer) {
+    import spray.json._
+
+    val fbMessage = FBMessageEventOut(
+      recipient = FBRecipient(senderId),
+      message = FBMessage(
+        text = Some(text),
+        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        quick_replies = Some(List(
+          FBQuickReply("\uD83D\uDC4D","like"),
+          FBQuickReply("\uD83D\uDC4E","ulike")
+        ))
+      )
+    ).toJson.toString()
+
+    Http().singleRequest(HttpRequest(
+      HttpMethods.POST,
+      uri = s"$responseUri?access_token=$pageAccessToken",
+      entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+    ).andThen {
+      case Failure(err) => logger.info("can't send response", err)
+    }
+  }
+
+  private def sendEvaluationMessage(text: String, senderId: String, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
+                                                                                             materializer :ActorMaterializer) {
+    import spray.json._
+
+    val fbMessage = FBMessageEventOut(
+      recipient = FBRecipient(senderId),
+      message = FBMessage(
+        text = Some(text),
+        metadata = Some("DEVELOPER_DEFINED_METADATA")/*,
+        attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
+          FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))*/
+      )
+    ).toJson.toString()
+
+    val responseFuture: Future[HttpResponse] =
+      Http().singleRequest(HttpRequest(
+        HttpMethods.POST,
+        uri = s"$responseUri?access_token=$pageAccessToken",
+        entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+      ).andThen {
+        case Failure(err) => logger.info("can't send response", err)
+      }
+  }
+
   def handleMessage(fbObject: FBPObject, pageAccessToken: String)
                    (implicit ec: ExecutionContext, system: ActorSystem,
                     materializer :ActorMaterializer):
@@ -45,25 +94,7 @@ object FBService extends LazyLogging  {
           val message = me.message
           message.text match {
             case Some(text) =>
-              val fbMessage = FBMessageEventOut(
-                recipient = FBRecipient(senderId),
-                message = FBMessage(
-                  text = None,//Some(s"Scala messenger bot: $text"),
-                  metadata = Some("DEVELOPER_DEFINED_METADATA"),
-                  quick_replies = Some(List(FBQuickReply("ololo?","stub"))),
-                  attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
-                    FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))
-                )
-              ).toJson.toString()
-
-              val responseFuture: Future[HttpResponse] =
-                Http().singleRequest(HttpRequest(
-                  HttpMethods.POST,
-                  uri = s"$responseUri?access_token=$pageAccessToken",
-                  entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-                ).andThen {
-                  case Failure(err) => logger.info("can't send response", err)
-                }
+              sendDialogMessage(text, me.sender.id, pageAccessToken)
             case None =>
               logger.info("Receive image")
               Future.successful(())
