@@ -50,7 +50,7 @@ object FBService extends LazyLogging  {
                 message = FBMessage(
                   text = None,//Some(s"Scala messenger bot: $text"),
                   metadata = Some("DEVELOPER_DEFINED_METADATA"),
-                  quick_replies = Some(List(FBQuickReply("",""))),
+                  quick_replies = Some(List(FBQuickReply("ololo?","stub"))),
                   attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
                     FBButton("postback", "1", "?1"), FBButton("postback", "2", "?2"), FBButton("postback", "3", "?3")))))
                 )
