@@ -22,6 +22,12 @@ case class FBMessage(mid: Option[String] = None,
                      metadata: Option[String] = None,
                      attachment: Option[FBAttachment] = None)
 
+case class FBQuickReply(title: String, payload: String)
+
+case class FBQuickReplyMessages(mid: Option[String] = None,
+                     seq: Option[Long] = None,
+                     quick_replies: List[FBQuickReply])
+
 case class FBSender(id: String)
 
 case class FBRecipient(id: String)
@@ -31,7 +37,7 @@ case class FBMessageEventIn(sender: FBSender,
                             timestamp: Long,
                             message: FBMessage)
 
-case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
+case class FBMessageEventOut(recipient: FBRecipient, message: FBQuickReplyMessages)
 
 case class FBEntry(id: String,
                    time: Long, messaging:
@@ -57,6 +63,25 @@ object FBEntry extends DefaultJsonProtocol {
 
 object FBMessage extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBMessage] = jsonFormat5(FBMessage(_, _, _, _, _))
+}
+
+object FBQuickReply extends DefaultJsonProtocol {
+  implicit val formatT: RootJsonFormat[FBQuickReply] = new RootJsonFormat[FBQuickReply] {
+    import spray.json._
+    override def write(obj: FBQuickReply): JsValue = obj match {
+      case FBQuickReply(title, payload) =>
+        JsObject("title" -> title.toJson, "payload" -> payload.toJson, "content_type" -> "text".toJson)
+      case _ => deserializationError(s"unsupported format")
+    }
+
+    override def read(json: JsValue): FBQuickReply = json.asJsObject.getFields("chat_id", "text") match {
+      case _ => serializationError(s"Invalid json format: $json")
+    }
+  }
+}
+
+object FBQuickReplyMessages extends DefaultJsonProtocol {
+  implicit val format: RootJsonFormat[FBQuickReplyMessages] = jsonFormat3(FBQuickReplyMessages(_, _, _))
 }
 
 object FBSender extends DefaultJsonProtocol {
