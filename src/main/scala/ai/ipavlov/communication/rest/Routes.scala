@@ -15,6 +15,8 @@ import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
   * @author vadim
@@ -84,7 +86,11 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         val message = me.message
         message.text match {
           case Some(text) =>
-            Option(senderId.toLong).fold(logger.error("can't parse to long from " + senderId))(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+            Try(senderId.toLong)
+              .map(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+              .recover {
+                case NonFatal(e) => logger.error("can't parse to long from " + senderId, e)
+              }
           case None =>
             logger.info("Receive image")
             Future.successful(())
