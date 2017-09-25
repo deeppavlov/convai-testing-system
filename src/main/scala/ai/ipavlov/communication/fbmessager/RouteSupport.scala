@@ -75,16 +75,15 @@ trait RouteSupport extends LazyLogging with Directives {
         val senderId = me.sender.id
         val message = me.message
         message.text match {
-          case Some(text) =>
+          case Some(text) if senderId != "1676239152448347" =>
             Try(senderId.toLong)
-              .filter(_ != 1676239152448347L)
               .map(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
               .recover {
                 case NonFatal(e) => logger.error("can't parse to long from " + senderId, e)
               }
+          case Some(_) =>
           case None =>
             logger.info("Receive image")
-            Future.successful(())
         }
       }
     }
