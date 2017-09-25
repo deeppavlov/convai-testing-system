@@ -78,7 +78,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
     private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
 
     private def splitText(txt: String): Seq[String] = {
-      txt.split(" ").foldLeft(List.empty[String]) { case (acc, c) =>
+      txt.split(" ").foldLeft(List("")) { case (acc, c) =>
         if (acc.head.length <= 600) (acc.head + c) :: acc.tail
         else c :: acc
       }.reverse
