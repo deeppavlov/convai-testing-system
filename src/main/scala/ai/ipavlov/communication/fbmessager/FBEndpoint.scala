@@ -75,34 +75,41 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
   private def isNotInDialog(chatId: Long) = !isInDialog(chatId)
 
   private case class FBService(ca: ActorRef) extends LazyLogging {
-
-    //TODO
     private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
+
+    private def splitText(txt: String): Seq[String] = {
+      txt.foldLeft(List(List.empty[Char])) { case (acc, c) =>
+        if (acc.length <= 640) (c :: acc.head) :: acc.tail
+        else List(c) :: acc
+      }.map(_.reverse.mkString("")).reverse
+    }
 
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                           materializer :ActorMaterializer) {
       import spray.json._
 
-      logger.info("send chat message " + text)
+      splitText(text).foreach { txt =>
+        logger.info("send chat message " + txt)
 
-      val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId.toString),
-        message = FBMessage(
-          text = Some(text),
-          metadata = Some("DEVELOPER_DEFINED_METADATA"),
-          quick_replies = Some(List(
-            FBQuickReply("\uD83D\uDC4D","like"),
-            FBQuickReply("\uD83D\uDC4E","ulike")
-          ))
-        )
-      ).toJson.toString()
+        val fbMessage = FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = FBMessage(
+            text = Some(txt),
+            metadata = Some("DEVELOPER_DEFINED_METADATA"),
+            quick_replies = Some(List(
+              FBQuickReply("\uD83D\uDC4D", "like"),
+              FBQuickReply("\uD83D\uDC4E", "ulike")
+            ))
+          )
+        ).toJson.toString()
 
-      Http().singleRequest(HttpRequest(
-        HttpMethods.POST,
-        uri = s"$responseUri?access_token=$pageAccessToken",
-        entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-      ).andThen {
-        case Failure(err) => logger.info("can't send response", err)
+        Http().singleRequest(HttpRequest(
+          HttpMethods.POST,
+          uri = s"$responseUri?access_token=$pageAccessToken",
+          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+        ).andThen {
+          case Failure(err) => logger.info("can't send response", err)
+        }
       }
     }
 
@@ -110,22 +117,24 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                                                                         materializer :ActorMaterializer) {
       import spray.json._
 
-      logger.info("send notify message " + text)
+      splitText(text).foreach { txt =>
+        logger.info("send chat message " + txt)
 
-      val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId.toString),
-        message = FBMessage(
-          text = Some("(system msg): " + text),
-          metadata = Some("DEVELOPER_DEFINED_METADATA")
-        )
-      ).toJson.toString()
+        val fbMessage = FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = FBMessage(
+            text = Some("(system msg): " + txt),
+            metadata = Some("DEVELOPER_DEFINED_METADATA")
+          )
+        ).toJson.toString()
 
-      Http().singleRequest(HttpRequest(
-        HttpMethods.POST,
-        uri = s"$responseUri?access_token=$pageAccessToken",
-        entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-      ).andThen {
-        case Failure(err) => logger.info("can't send response", err)
+        Http().singleRequest(HttpRequest(
+          HttpMethods.POST,
+          uri = s"$responseUri?access_token=$pageAccessToken",
+          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+        ).andThen {
+          case Failure(err) => logger.info("can't send response", err)
+        }
       }
     }
 
@@ -133,24 +142,26 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                                                                         materializer :ActorMaterializer) {
       import spray.json._
 
-      logger.info("send prompt message " + text)
+      splitText(text).foreach { txt =>
+        logger.info("send chat message " + txt)
 
-      val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId.toString),
-        message = FBMessage(
-          text = Some("(system msg): " + text),
-          metadata = Some("DEVELOPER_DEFINED_METADATA"),
-          attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
-            FBButton("postback", "/begin", "/begin")))))
-        )
-      ).toJson.toString()
+        val fbMessage = FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = FBMessage(
+            text = Some("(system msg): " + txt),
+            metadata = Some("DEVELOPER_DEFINED_METADATA"),
+            attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
+              FBButton("postback", "/begin", "/begin")))))
+          )
+        ).toJson.toString()
 
-      Http().singleRequest(HttpRequest(
-        HttpMethods.POST,
-        uri = s"$responseUri?access_token=$pageAccessToken",
-        entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-      ).andThen {
-        case Failure(err) => logger.info("can't send response", err)
+        Http().singleRequest(HttpRequest(
+          HttpMethods.POST,
+          uri = s"$responseUri?access_token=$pageAccessToken",
+          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+        ).andThen {
+          case Failure(err) => logger.info("can't send response", err)
+        }
       }
     }
   }
