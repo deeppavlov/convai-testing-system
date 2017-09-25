@@ -75,45 +75,6 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     }
   }
 
-  private def handleMessage(fbService: ActorRef, fbObject: FBPObject, pageAccessToken: String)
-                   (implicit ec: ExecutionContext, system: ActorSystem,
-                    materializer: ActorMaterializer):
-  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
-    logger.info(s"Receive fbObject: $fbObject")
-    fbObject.entry.foreach { entry =>
-      entry.messaging.foreach { me =>
-        val senderId = me.sender.id
-        val message = me.message
-        message.text match {
-          case Some(text) =>
-            Try(senderId.toLong)
-              .map(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
-              .recover {
-                case NonFatal(e) => logger.error("can't parse to long from " + senderId, e)
-              }
-          case None =>
-            logger.info("Receive image")
-            Future.successful(())
-        }
-      }
-    }
-    (StatusCodes.OK, List.empty[HttpHeader], None)
-  }
-
-  private def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
-                 (implicit ec: ExecutionContext):
-  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
-
-    if (mode == "subscribe" && token == originalToken) {
-      logger.info(s"Verify webhook token: $token, mode $mode")
-      (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
-    }
-    else {
-      logger.error(s"Invalid webhook token: $token, mode $mode")
-      (StatusCodes.Forbidden, List.empty[HttpHeader], None)
-    }
-  }
-
   private implicit val sendMesFormat: RootJsonFormat[SendMes] = new RootJsonFormat[SendMes] {
     override def write(obj: SendMes): JsValue = obj match {
       case SendMes(chat_id, message) =>

@@ -4,16 +4,20 @@ import java.nio.charset.StandardCharsets
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-import akka.actor.ActorRef
-import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
+import ai.ipavlov.communication.FbChat
+import ai.ipavlov.communication.rest.Routes.logger
+import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives}
-import akka.stream.Materializer
+import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.codec.binary.Hex
 
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
   * @author vadim
@@ -33,7 +37,11 @@ trait RouteSupport extends LazyLogging with Directives {
       val computedHash = Hex.encodeHex(result).mkString
       logger.info(s"Computed hash: $computedHash")
 
-      computedHash == expected
+      val res = computedHash == expected
+
+      if (!res) logger.warn("token verification failed")
+
+      res
     }
 
     req.headers.find(_.name == "X-Hub-Signature").map(_.value()) match {
@@ -54,6 +62,45 @@ trait RouteSupport extends LazyLogging with Directives {
       case None =>
         logger.error(s"X-Hub-Signature is not defined")
         complete(StatusCodes.Forbidden)
+    }
+  }
+
+  def handleMessage(fbService: ActorRef, fbObject: FBPObject, pageAccessToken: String)
+                           (implicit ec: ExecutionContext, system: ActorSystem,
+                            materializer: ActorMaterializer):
+  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+    logger.info(s"Receive fbObject: $fbObject")
+    fbObject.entry.foreach { entry =>
+      entry.messaging.foreach { me =>
+        val senderId = me.sender.id
+        val message = me.message
+        message.text match {
+          case Some(text) =>
+            Try(senderId.toLong)
+              .map(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+              .recover {
+                case NonFatal(e) => logger.error("can't parse to long from " + senderId, e)
+              }
+          case None =>
+            logger.info("Receive image")
+            Future.successful(())
+        }
+      }
+    }
+    (StatusCodes.OK, List.empty[HttpHeader], None)
+  }
+
+  def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
+                         (implicit ec: ExecutionContext):
+  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+
+    if (mode == "subscribe" && token == originalToken) {
+      logger.info(s"Verify webhook token: $token, mode $mode")
+      (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
+    }
+    else {
+      logger.error(s"Invalid webhook token: $token, mode $mode")
+      (StatusCodes.Forbidden, List.empty[HttpHeader], None)
     }
   }
 }
