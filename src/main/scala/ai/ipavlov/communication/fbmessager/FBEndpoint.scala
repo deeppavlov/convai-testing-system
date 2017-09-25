@@ -78,10 +78,10 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
     private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
 
     private def splitText(txt: String): Seq[String] = {
-      txt.foldLeft(List(List.empty[Char])) { case (acc, c) =>
-        if (acc.head.length <= 600) (c :: acc.head) :: acc.tail
-        else List(c) :: acc
-      }.map(_.reverse.mkString("")).reverse
+      txt.split(" ").foldLeft(List.empty[String]) { case (acc, c) =>
+        if (acc.head.length <= 600) (acc.head + c) :: acc.tail
+        else c :: acc
+      }.reverse
     }
 
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
