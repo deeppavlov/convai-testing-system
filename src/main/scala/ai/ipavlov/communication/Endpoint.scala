@@ -1,5 +1,6 @@
 package ai.ipavlov.communication
 
+import ai.ipavlov.communication.fbmessager.FBEndpoint
 import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
 import ai.ipavlov.communication.telegram.{BotWorker, TelegramEndpoint}
 import ai.ipavlov.dialog.DialogFather
@@ -17,11 +18,12 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
   private val telegramGate = context.actorOf(TelegramEndpoint.props(self, storage), "telegram-gate")
   private val botGate = context.actorOf(BotEndpoint.props(self), "bot-gate")
+  private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessager.pageAccessToken")).getOrElse("unknown")
+  private val fbGate = context.actorOf(FBEndpoint.props(self, storage, facebookPageAccessToken), "fb-gate")
 
   private val telegramToken = Try(context.system.settings.config.getString("telegram.token")).getOrElse("unknown")
   private val facebookSecret = Try(context.system.settings.config.getString("fbmessager.secret")).getOrElse("unknown")
   private val facebookToken = Try(context.system.settings.config.getString("fbmessager.token")).getOrElse("unknown")
-  private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessager.pageAccessToken")).getOrElse("unknown")
   private val telegramWebhook = Try(context.system.settings.config.getString("telegram.webhook")).getOrElse {
     log.error("telegram.webhook not set!")
     "https://localhost"
@@ -30,22 +32,28 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val bot = new BotWorker(context.system, telegramGate,
-    Routes.route(botGate, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
+    Routes.route(botGate, fbGate, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
     telegramToken, telegramWebhook).run()
 
   private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
     case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
+    case message @ ChatMessageToUser(_: FbChat, _, _, _) => fbGate forward message
 
     case m @ ActivateTalkForUser(_: TelegramChat, _) => telegramGate forward m
     case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
+    case m @ ActivateTalkForUser(_: FbChat, _) => fbGate forward m
 
     case m @ FinishTalkForUser(_: TelegramChat, _) => telegramGate forward m
     case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
+    case m @ FinishTalkForUser(_: FbChat, _) => fbGate forward m
 
-    case m: AskEvaluationFromHuman => telegramGate forward m
-    case m: SystemNotificationToUser => telegramGate forward m
-    case m: EndHumanDialog => telegramGate forward m
+    case m@AskEvaluationFromHuman(_: TelegramChat, _) => telegramGate forward m
+    case m@SystemNotificationToUser(_: TelegramChat, _) => telegramGate forward m
+    case m@EndHumanDialog(_: TelegramChat, _) => telegramGate forward m
+    case m@AskEvaluationFromHuman(_: FbChat, _) => fbGate forward m
+    case m@SystemNotificationToUser(_: FbChat, _) => fbGate forward m
+    case m@EndHumanDialog(_: FbChat, _) => fbGate forward m
 
     case m: DialogFather.UserAvailable => talkConstructor forward m
     case m: DialogFather.UserLeave => talkConstructor forward m

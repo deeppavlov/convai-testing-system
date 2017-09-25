@@ -24,9 +24,9 @@ case class FBMessage(mid: Option[String] = None,
 
 case class FBQuickReply(title: String, payload: String)
 
-case class FBSender(id: String)
+case class FBSender(id: Long)
 
-case class FBRecipient(id: String)
+case class FBRecipient(id: Long)
 
 case class FBMessageEventIn(sender: FBSender,
                             recipient: FBRecipient,

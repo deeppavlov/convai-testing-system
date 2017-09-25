@@ -1,5 +1,6 @@
 package ai.ipavlov.communication.telegram
 
+import ai.ipavlov.Messages
 import ai.ipavlov.communication.Endpoint.ChancelTestDialog
 import ai.ipavlov.communication.{Endpoint, TelegramChat}
 import ai.ipavlov.dialog.{Dialog, DialogFather, MongoStorage}
@@ -94,23 +95,23 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
       telegramCall(SendMessage(Left(id), "`(system msg):` " + BuildInfo.version, Some(ParseMode.Markdown)))
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/begin") if isInDialog(id, username) =>
-      telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(id), Messages.notSupported))
 
     case Command(Chat(chatId, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isInDialog(chatId, username) =>
       daddy ! DialogFather.UserLeave(TelegramChat(chatId, username))
       if (activeUsers.get(TelegramChat(chatId, username)).flatten.isEmpty) {
         activeUsers.remove(TelegramChat(chatId, username))
-        telegramCall(SendMessage(Left(chatId),"""`(system msg):` exit""", Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+        telegramCall(SendMessage(Left(chatId), Messages.exit, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("/begin") )
           )))
         ))
       }
 
     case Command(Chat(id, ChatType.Private, _, username, _, _, _, _, _, _), "/end") if isNotInDialog(id, username) =>
-      telegramCall(SendMessage(Left(id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(id), Messages.notSupported))
 
     case Command(chat, _) =>
-      telegramCall(SendMessage(Left(chat.id), "Messages of this type aren't supported \uD83D\uDE1E"))
+      telegramCall(SendMessage(Left(chat.id), Messages.notSupported))
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if isInDialog(message.chat.id, message.chat.username) =>
       val user = TelegramChat(message.chat.id, message.chat.username)
@@ -200,27 +201,7 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
   private def isInDialog(chatId: Long, username: Option[String]) = activeUsers.contains(TelegramChat(chatId, username))
   private def isNotInDialog(chatId: Long, username: Option[String]) = !isInDialog(chatId, username)
 
-  private def helpMessage(chatId: Long) = SendMessage(Left(chatId),
-    """
-      |1. Please set your Username in Settings menu.
-      |    - MacOS & iOS:
-      |    Gear ("Settings") button to bottom left, after that "Username";
-      |    - Windows & Linux & Android:
-      |    Menu button left top, "Settings" and "Username" field.
-      |2. To start a dialog type or choose a /begin command .
-      |3. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message from @ConvaiBot `Please wait for you peer.`.
-      |4. Peer might be a bot or another human evaluator.
-      |5. After you were connected with your peer you will receive a starting message - a passage or two from a Wikipedia article.
-      |6. Your task is to discuss the content of a presented passage with the peer and score her/his replies.
-      |7. Please score every utterance of your peer with a ‘thumb UP’ button if you like it, and ‘thumb DOWN’ button in the opposite case.
-      |8. To finish the conversation type or choose a command /end.
-      |9. When the conversation is finished, you will receive a request from @ConvaiBot to score the overall quality of the dialog along three dimensions:
-      |    - quality - how much are you satisfied with the whole conversation?
-      |    - breadth - in your opinion was a topic discussed thoroughly or just from one side?
-      |    - engagement - was it interesting to participate in this conversation?
-      |10. If your peer ends the dialog before you, you will also receive a scoring request from @ConvaiBot.
-      |11. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
-    """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
+  private def helpMessage(chatId: Long) = SendMessage(Left(chatId), Messages.helpMessage, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 
   private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 }

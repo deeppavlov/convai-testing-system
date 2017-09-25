@@ -1,9 +1,10 @@
 package ai.ipavlov.communication.rest
 
-import ai.ipavlov.communication.fbmessager.{FBPObject, FBService, RouteSupport}
+import ai.ipavlov.communication.FbChat
+import ai.ipavlov.communication.fbmessager.{FBPObject, RouteSupport}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
+import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
@@ -12,7 +13,7 @@ import com.typesafe.scalalogging.LazyLogging
 import info.mukel.telegrambot4s.models.{Message, Update}
 import spray.json._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 /**
@@ -26,9 +27,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
 
   implicit val timeout: Timeout = 5.seconds
 
-  private val fbService = FBService
-
-  def route(botService: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
+  def route(botService: ActorRef, fbService: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
 
     post {
       path(""".+""".r / "sendMessage") { token =>
@@ -56,7 +55,25 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     } ~ get {
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
-          (tokenFromFb, mode, challenge) => complete { fbService.verifyToken(tokenFromFb, mode, challenge, callbackToken) }
+          (tokenFromFb, mode, challenge) => complete {
+            {
+              def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
+                             (implicit ec: ExecutionContext):
+              (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+
+                if (mode == "subscribe" && token == originalToken) {
+                  logger.info(s"Verify webhook token: $token, mode $mode")
+                  (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
+                }
+                else {
+                  logger.error(s"Invalid webhook token: $token, mode $mode")
+                  (StatusCodes.Forbidden, List.empty[HttpHeader], None)
+                }
+              }
+
+              verifyToken(tokenFromFb, mode, challenge, callbackToken)
+            }
+          }
         }
       }
     } ~ post {
@@ -64,7 +81,30 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
-              fbService.handleMessage(fbObject, pageAccessToken)
+              {
+                def handleMessage(fbObject: FBPObject, pageAccessToken: String)
+                                 (implicit ec: ExecutionContext, system: ActorSystem,
+                                  materializer: ActorMaterializer):
+                (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+                  logger.info(s"Receive fbObject: $fbObject")
+                  fbObject.entry.foreach { entry =>
+                    entry.messaging.foreach { me =>
+                      val senderId = me.sender.id
+                      val message = me.message
+                      message.text match {
+                        case Some(text) =>
+                          Option(senderId.toLong).fold(logger.error("can't parse to long from " + senderId))(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+                        case None =>
+                          logger.info("Receive image")
+                          Future.successful(())
+                      }
+                    }
+                  }
+                  (StatusCodes.OK, List.empty[HttpHeader], None)
+                }
+
+                handleMessage(fbObject, pageAccessToken)
+              }
             }
           }
         }

@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+import akka.actor.ActorRef
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives}
 import akka.stream.Materializer
