@@ -86,7 +86,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       }.reverse
     }
 
-    private def now = (new Instant()).toEpochMilli
+    private def now = Instant.now().toEpochMilli
 
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                           materializer :ActorMaterializer) {
