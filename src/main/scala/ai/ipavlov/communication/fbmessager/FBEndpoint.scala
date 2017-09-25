@@ -79,11 +79,11 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
     //TODO
     private val responseUri = "https://graph.facebook.com/v2.6/me/messages"
 
-
-
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                           materializer :ActorMaterializer) {
       import spray.json._
+
+      logger.info("send chat message " + text)
 
       val fbMessage = FBMessageEventOut(
         recipient = FBRecipient(receiverId.toString),
@@ -110,6 +110,8 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                                                                         materializer :ActorMaterializer) {
       import spray.json._
 
+      logger.info("send notify message " + text)
+
       val fbMessage = FBMessageEventOut(
         recipient = FBRecipient(receiverId.toString),
         message = FBMessage(
@@ -130,6 +132,8 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
     def prompt(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                         materializer :ActorMaterializer) {
       import spray.json._
+
+      logger.info("send prompt message " + text)
 
       val fbMessage = FBMessageEventOut(
         recipient = FBRecipient(receiverId.toString),
