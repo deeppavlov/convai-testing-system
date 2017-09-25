@@ -15,7 +15,6 @@ case class FBButtonsPayload(text: String, buttons: List[FBButton]) extends FBPay
 case class FBAttachment(`type`: String, payload: FBPayload)
 
 case class FBMessage(mid: Option[String] = None,
-                     seq: Option[Long] = None,
                      text: Option[String] = None,
                      metadata: Option[String] = None,
                      attachment: Option[FBAttachment] = None,
@@ -58,7 +57,7 @@ object FBEntry extends DefaultJsonProtocol {
 }
 
 object FBMessage extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBMessage] = jsonFormat6(FBMessage(_, _, _, _, _, _))
+  implicit val format: RootJsonFormat[FBMessage] = jsonFormat5(FBMessage(_, _, _, _, _))
 }
 
 object FBQuickReply extends DefaultJsonProtocol {

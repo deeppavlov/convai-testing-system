@@ -12,8 +12,10 @@ import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Try}
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 /**
   * @author vadim
@@ -86,90 +88,61 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       }.reverse
     }
 
+    private def sendMessage(text: String, receiverId: Long, pageAccessToken: String, f: (String) => FBMessage)
+                           (implicit ec: ExecutionContext, system: ActorSystem, materializer :ActorMaterializer): Unit = {
+      import spray.json._
+
+      Try(splitText(text).foreach { txt =>
+        val fbMessage = FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = f(txt)
+        ).toJson.toString()
+
+        Await.result(Http().singleRequest(HttpRequest(
+          HttpMethods.POST,
+          uri = s"$responseUri?access_token=$pageAccessToken",
+          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+        ).andThen {
+          case Failure(err) => logger.info("can't send response", err)
+        }, 15.seconds)
+      }).recover {
+        case NonFatal(e) => log.error("message was not send", e)
+      }
+    }
+
     private def now = Instant.now().toEpochMilli
 
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                           materializer :ActorMaterializer) {
-      import spray.json._
-
-      splitText(text).foreach { txt =>
-        logger.info("send chat message " + txt)
-
-        val fbMessage = FBMessageEventOut(
-          recipient = FBRecipient(receiverId.toString),
-          message = FBMessage(
-            text = Some(txt),
-            metadata = Some("DEVELOPER_DEFINED_METADATA"),
-            seq = Some(now),
-            quick_replies = Some(List(
-              FBQuickReply("\uD83D\uDC4D", "like"),
-              FBQuickReply("\uD83D\uDC4E", "ulike")
-            ))
-          )
-        ).toJson.toString()
-
-        Http().singleRequest(HttpRequest(
-          HttpMethods.POST,
-          uri = s"$responseUri?access_token=$pageAccessToken",
-          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-        ).andThen {
-          case Failure(err) => logger.info("can't send response", err)
-        }
-      }
+      sendMessage(text, receiverId, pageAccessToken, txt => FBMessage(
+        text = Some(txt),
+        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        quick_replies = Some(List(
+          FBQuickReply("\uD83D\uDC4D", "like"),
+          FBQuickReply("\uD83D\uDC4E", "ulike")
+        ))
+      )
+      )
     }
 
     def notify(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                         materializer :ActorMaterializer) {
-      import spray.json._
-
-      splitText("(system msg): " + text).foreach { txt =>
-        logger.info("send chat message " + txt)
-
-        val fbMessage = FBMessageEventOut(
-          recipient = FBRecipient(receiverId.toString),
-          message = FBMessage(
-            text = Some(txt),
-            seq = Some(now),
-            metadata = Some("DEVELOPER_DEFINED_METADATA")
-          )
-        ).toJson.toString()
-
-        Http().singleRequest(HttpRequest(
-          HttpMethods.POST,
-          uri = s"$responseUri?access_token=$pageAccessToken",
-          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-        ).andThen {
-          case Failure(err) => logger.info("can't send response", err)
-        }
-      }
+      sendMessage("(system msg): " + text, receiverId, pageAccessToken, txt => FBMessage(
+        text = Some(txt),
+        metadata = Some("DEVELOPER_DEFINED_METADATA")
+      )
+      )
     }
 
     def prompt(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                         materializer :ActorMaterializer) {
-      import spray.json._
-
-      splitText("(system msg): " + text).foreach { txt =>
-        logger.info("send chat message " + txt)
-
-        val fbMessage = FBMessageEventOut(
-          recipient = FBRecipient(receiverId.toString),
-          message = FBMessage(
-            text = Some(txt),
-            seq = Some(now),
-            metadata = Some("DEVELOPER_DEFINED_METADATA"),
-            attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
-              FBButton("postback", "/begin", "/begin")))))
-          )
-        ).toJson.toString()
-
-        Http().singleRequest(HttpRequest(
-          HttpMethods.POST,
-          uri = s"$responseUri?access_token=$pageAccessToken",
-          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
-        ).andThen {
-          case Failure(err) => logger.info("can't send response", err)
-        }
-      }
+      sendMessage("(system msg): " + text, receiverId, pageAccessToken, txt => FBMessage(
+        text = Some(txt),
+        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        attachment = Some(FBAttachment("template", FBButtonsPayload("push /begin for start new dialog", List(
+          FBButton("postback", "/begin", "/begin")))))
+      )
+      )
     }
   }
 }
