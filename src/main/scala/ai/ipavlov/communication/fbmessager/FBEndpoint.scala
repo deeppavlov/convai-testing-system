@@ -92,7 +92,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                            (implicit ec: ExecutionContext, system: ActorSystem, materializer :ActorMaterializer): Unit = {
       import spray.json._
 
-      Try(splitText(text).foreach { txt =>
+      Future(splitText(text).foreach { txt =>
         val fbMessage = FBMessageEventOut(
           recipient = FBRecipient(receiverId.toString),
           message = f(txt)
