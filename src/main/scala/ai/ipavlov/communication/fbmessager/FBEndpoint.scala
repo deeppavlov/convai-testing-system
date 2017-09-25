@@ -86,7 +86,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       import spray.json._
 
       val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId),
+        recipient = FBRecipient(receiverId.toString),
         message = FBMessage(
           text = Some(text),
           metadata = Some("DEVELOPER_DEFINED_METADATA"),
@@ -111,7 +111,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       import spray.json._
 
       val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId),
+        recipient = FBRecipient(receiverId.toString),
         message = FBMessage(
           text = Some("(system msg): " + text),
           metadata = Some("DEVELOPER_DEFINED_METADATA")
@@ -132,7 +132,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       import spray.json._
 
       val fbMessage = FBMessageEventOut(
-        recipient = FBRecipient(receiverId),
+        recipient = FBRecipient(receiverId.toString),
         message = FBMessage(
           text = Some("(system msg): " + text),
           metadata = Some("DEVELOPER_DEFINED_METADATA"),
