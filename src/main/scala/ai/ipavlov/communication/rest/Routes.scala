@@ -56,23 +56,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
-            {
-              def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
-                             (implicit ec: ExecutionContext):
-              (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
-
-                if (mode == "subscribe" && token == originalToken) {
-                  logger.info(s"Verify webhook token: $token, mode $mode")
-                  (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
-                }
-                else {
-                  logger.error(s"Invalid webhook token: $token, mode $mode")
-                  (StatusCodes.Forbidden, List.empty[HttpHeader], None)
-                }
-              }
-
-              verifyToken(tokenFromFb, mode, challenge, callbackToken)
-            }
+            verifyToken(tokenFromFb, mode, challenge, callbackToken)
           }
         }
       }
@@ -81,34 +65,46 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
-              {
-                def handleMessage(fbObject: FBPObject, pageAccessToken: String)
-                                 (implicit ec: ExecutionContext, system: ActorSystem,
-                                  materializer: ActorMaterializer):
-                (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
-                  logger.info(s"Receive fbObject: $fbObject")
-                  fbObject.entry.foreach { entry =>
-                    entry.messaging.foreach { me =>
-                      val senderId = me.sender.id
-                      val message = me.message
-                      message.text match {
-                        case Some(text) =>
-                          Option(senderId.toLong).fold(logger.error("can't parse to long from " + senderId))(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
-                        case None =>
-                          logger.info("Receive image")
-                          Future.successful(())
-                      }
-                    }
-                  }
-                  (StatusCodes.OK, List.empty[HttpHeader], None)
-                }
-
-                handleMessage(fbObject, pageAccessToken)
-              }
+              handleMessage(fbService, fbObject, pageAccessToken)
             }
           }
         }
       }
+    }
+  }
+
+  private def handleMessage(fbService: ActorRef, fbObject: FBPObject, pageAccessToken: String)
+                   (implicit ec: ExecutionContext, system: ActorSystem,
+                    materializer: ActorMaterializer):
+  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+    logger.info(s"Receive fbObject: $fbObject")
+    fbObject.entry.foreach { entry =>
+      entry.messaging.foreach { me =>
+        val senderId = me.sender.id
+        val message = me.message
+        message.text match {
+          case Some(text) =>
+            Option(senderId.toLong).fold(logger.error("can't parse to long from " + senderId))(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+          case None =>
+            logger.info("Receive image")
+            Future.successful(())
+        }
+      }
+    }
+    (StatusCodes.OK, List.empty[HttpHeader], None)
+  }
+
+  private def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
+                 (implicit ec: ExecutionContext):
+  (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
+
+    if (mode == "subscribe" && token == originalToken) {
+      logger.info(s"Verify webhook token: $token, mode $mode")
+      (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
+    }
+    else {
+      logger.error(s"Invalid webhook token: $token, mode $mode")
+      (StatusCodes.Forbidden, List.empty[HttpHeader], None)
     }
   }
 
