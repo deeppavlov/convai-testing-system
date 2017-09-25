@@ -79,7 +79,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
 
     private def splitText(txt: String): Seq[String] = {
       txt.foldLeft(List(List.empty[Char])) { case (acc, c) =>
-        if (acc.head.length <= 640) (c :: acc.head) :: acc.tail
+        if (acc.head.length < 600) (c :: acc.head) :: acc.tail
         else List(c) :: acc
       }.map(_.reverse.mkString("")).reverse
     }
@@ -117,13 +117,13 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                                                                         materializer :ActorMaterializer) {
       import spray.json._
 
-      splitText(text).foreach { txt =>
+      splitText("(system msg): " + text).foreach { txt =>
         logger.info("send chat message " + txt)
 
         val fbMessage = FBMessageEventOut(
           recipient = FBRecipient(receiverId.toString),
           message = FBMessage(
-            text = Some("(system msg): " + txt),
+            text = Some(txt),
             metadata = Some("DEVELOPER_DEFINED_METADATA")
           )
         ).toJson.toString()
@@ -142,13 +142,13 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                                                                         materializer :ActorMaterializer) {
       import spray.json._
 
-      splitText(text).foreach { txt =>
+      splitText("(system msg): " + text).foreach { txt =>
         logger.info("send chat message " + txt)
 
         val fbMessage = FBMessageEventOut(
           recipient = FBRecipient(receiverId.toString),
           message = FBMessage(
-            text = Some("(system msg): " + txt),
+            text = Some(txt),
             metadata = Some("DEVELOPER_DEFINED_METADATA"),
             attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
               FBButton("postback", "/begin", "/begin")))))
