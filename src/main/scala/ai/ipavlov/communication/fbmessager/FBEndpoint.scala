@@ -1,5 +1,7 @@
 package ai.ipavlov.communication.fbmessager
 
+import java.time.Instant
+
 import ai.ipavlov.Messages
 import ai.ipavlov.communication.{Endpoint, FbChat}
 import ai.ipavlov.dialog.{Dialog, DialogFather}
@@ -79,10 +81,12 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
 
     private def splitText(txt: String): Seq[String] = {
       txt.split(" ").foldLeft(List("")) { case (acc, c) =>
-        if (acc.head.length <= 600) (acc.head + c) :: acc.tail
+        if (acc.head.length <= 600) (acc.head + " " + c) :: acc.tail
         else c :: acc
       }.reverse
     }
+
+    private def now = (new Instant()).toEpochMilli
 
     def chatItem(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                           materializer :ActorMaterializer) {
@@ -96,6 +100,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
           message = FBMessage(
             text = Some(txt),
             metadata = Some("DEVELOPER_DEFINED_METADATA"),
+            seq = Some(now),
             quick_replies = Some(List(
               FBQuickReply("\uD83D\uDC4D", "like"),
               FBQuickReply("\uD83D\uDC4E", "ulike")
@@ -124,6 +129,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
           recipient = FBRecipient(receiverId.toString),
           message = FBMessage(
             text = Some(txt),
+            seq = Some(now),
             metadata = Some("DEVELOPER_DEFINED_METADATA")
           )
         ).toJson.toString()
@@ -149,6 +155,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
           recipient = FBRecipient(receiverId.toString),
           message = FBMessage(
             text = Some(txt),
+            seq = Some(now),
             metadata = Some("DEVELOPER_DEFINED_METADATA"),
             attachment = Some(FBAttachment("template", FBButtonsPayload("ololo?", List(
               FBButton("postback", "/begin", "/begin")))))
