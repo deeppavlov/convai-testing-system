@@ -79,7 +79,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
 
     private def splitText(txt: String): Seq[String] = {
       txt.foldLeft(List(List.empty[Char])) { case (acc, c) =>
-        if (acc.length <= 640) (c :: acc.head) :: acc.tail
+        if (acc.head.length <= 640) (c :: acc.head) :: acc.tail
         else List(c) :: acc
       }.map(_.reverse.mkString("")).reverse
     }
