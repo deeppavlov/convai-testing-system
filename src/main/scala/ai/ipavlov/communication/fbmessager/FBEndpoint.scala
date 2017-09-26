@@ -106,7 +106,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
         }.map(_ => ())
       }
 
-      splitText(text).foldRight(Future.successful(())) { case (mes, ft) => ft.flatMap(_ => post(mes)) }
+      splitText(text).foldLeft(Future.successful(())) { case (ft, mes) => ft.flatMap(_ => post(mes)) }
     }
 
     private def now = Instant.now().toEpochMilli
