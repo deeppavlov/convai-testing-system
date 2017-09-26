@@ -57,7 +57,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
       daddy ! DialogFather.UserLeave(chat)
       if (activeUsers.get(chat).flatten.isEmpty) {
         activeUsers.remove(chat)
-        //FBService.notify(Messages.exit, chat.chatId, pageAccessEndpoint)(context.dispatcher, context.system, ActorMaterializer())
+        fBService.notify(Messages.exit, chat.chatId, pageAccessEndpoint)(context.dispatcher, context.system, ActorMaterializer())
       }
 
     case Message(FbChat(id), command) if (isNotInDialog(id) && command == "/end") || (isInDialog(id) && command == "/begin") =>
@@ -92,22 +92,21 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
                            (implicit ec: ExecutionContext, system: ActorSystem, materializer :ActorMaterializer): Unit = {
       import spray.json._
 
-      Future(splitText(text).foreach { txt =>
-        val fbMessage = FBMessageEventOut(
+      def post(txt: String): Future[Unit] = {
+        val message = FBMessageEventOut(
           recipient = FBRecipient(receiverId.toString),
           message = f(txt)
-        ).toJson.toString()
-
-        Await.result(Http().singleRequest(HttpRequest(
+        ).toJson
+        Http().singleRequest(HttpRequest(
           HttpMethods.POST,
           uri = s"$responseUri?access_token=$pageAccessToken",
-          entity = HttpEntity(ContentTypes.`application/json`, fbMessage))
+          entity = HttpEntity(ContentTypes.`application/json`, message.toString))
         ).andThen {
-          case Failure(err) => logger.info("can't send response", err)
-        }, 15.seconds)
-      }).recover {
-        case NonFatal(e) => log.error("message was not send", e)
+          case Failure(err) => logger.info("message was not send", err)
+        }.map(_ => ())
       }
+
+      splitText(text).foldRight(Future.successful(())) { case (mes, ft) => ft.flatMap(_ => post(mes)) }
     }
 
     private def now = Instant.now().toEpochMilli
@@ -127,7 +126,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
 
     def notify(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                         materializer :ActorMaterializer) {
-      sendMessage("(system msg): " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
         metadata = Some("DEVELOPER_DEFINED_METADATA")
       )
@@ -136,7 +135,7 @@ class FBEndpoint(daddy: ActorRef, storage: ActorRef, pageAccessEndpoint: String)
 
     def prompt(text: String, receiverId: Long, pageAccessToken: String)(implicit ec: ExecutionContext, system: ActorSystem,
                                                                         materializer :ActorMaterializer) {
-      sendMessage("(system msg): " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
         metadata = Some("DEVELOPER_DEFINED_METADATA"),
         attachment = Some(FBAttachment("template", FBButtonsPayload("push /begin for start new dialog", List(
