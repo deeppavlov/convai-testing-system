@@ -2,7 +2,7 @@ package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.dialog.{Dialog, DialogFather}
-import akka.actor.{ActorRef, FSM, Props}
+import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
 
 /**
   * @author vadim
@@ -48,7 +48,7 @@ sealed trait State
 case object Uninitialized extends State
 case class DialogRef(dialog: ActorRef) extends State
 
-class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[UserState, State] {
+class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends LoggingFSM[UserState, State] {
   //import context.dispatcher
 
   //private val h = context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
@@ -82,7 +82,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) =>
-      log.info("!!!!!!")
       goto(InDialog) using DialogRef(talk)
   }
 
@@ -122,6 +121,13 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
     case Event(event, data) =>
       log.warning("Received unhandled event: {} in state {}", event, stateName)
       stay
+  }
+
+  onTermination {
+    case StopEvent(FSM.Failure(_), state, data) =>
+      val lastEvents = getLog.mkString("\n\t")
+      log.warning("Failure in state " + state + " with data " + data + "\n" +
+        "Events leading up to this point:\n\t" + lastEvents)
   }
 
   initialize()
