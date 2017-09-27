@@ -1,7 +1,7 @@
 package ai.ipavlov.communication.rest
 
-import ai.ipavlov.communication.FbChat
 import ai.ipavlov.communication.fbmessager.{FBPObject, RouteSupport}
+import ai.ipavlov.communication.user.FbChat
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}

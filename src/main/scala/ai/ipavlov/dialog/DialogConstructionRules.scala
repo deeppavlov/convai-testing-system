@@ -1,6 +1,6 @@
 package ai.ipavlov.dialog
 
-import ai.ipavlov.communication.{Bot, Human, User}
+import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
 import akka.event.LoggingAdapter
 
 import scala.collection.mutable
@@ -19,7 +19,7 @@ trait DialogConstructionRules {
 
   var urgentlyDistributedK = 0
 
-  def availableDialogs(humanBotCoef: Double)(users: List[(User, Int, Deadline)]): Seq[(User, User, String)] = {
+  def availableDialogs(humanBotCoef: Double)(users: List[(UserSummary, Int, Deadline)]): Seq[(UserSummary, UserSummary, String)] = {
     val dedlinedUsers = users.filter(_._3.isOverdue()).map(t => (t._1, t._2))
     val commonUsers = users.filter(_._3.hasTimeLeft()).map(t => (t._1, t._2))
 
@@ -27,15 +27,15 @@ trait DialogConstructionRules {
     val robots = mutable.Map(commonUsers.filter { case (user, _) => user.isInstanceOf[Bot] }: _*)
     val P0 = 1.0 - 1.0 / (2 * humanBotCoef + 1)
 
-    def randomRobot(): Option[User] =
+    def randomRobot(): Option[UserSummary] =
       rnd.shuffle(robots.filter(_._2 > 0)).headOption.map { case (r, count) =>
         robots.update(r, count - 1)
         r
       }
 
-    val overdueUsers = dedlinedUsers.filter(d => d._2 > 0).foldRight(List.empty[(User, User)]) { case ((user, capacity), acc) =>
+    val overdueUsers = dedlinedUsers.filter(d => d._2 > 0).foldRight(List.empty[(UserSummary, UserSummary)]) { case ((user, capacity), acc) =>
       if (!robots.exists(_._2 > 0) || capacity < 1) acc
-      else randomRobot().fold[List[(User, User)]](acc) { r =>
+      else randomRobot().fold[List[(UserSummary, UserSummary)]](acc) { r =>
         urgentlyDistributedK += 1
         (user, r) :: acc
       }
@@ -45,7 +45,7 @@ trait DialogConstructionRules {
 
     (humans.zip(humans.reverse).take(humans.length / 2)
       .map { case (u1, u2) => if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1) }
-      .foldRight(List.empty[(User, User)]) { case ((a, b), acc) =>
+      .foldRight(List.empty[(UserSummary, UserSummary)]) { case ((a, b), acc) =>
         val isHumanPair = rnd.nextDouble() < humanProb
         val robot = rnd.shuffle(robots.filter(_._2 > 0)).headOption
 

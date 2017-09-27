@@ -3,7 +3,8 @@ package ai.ipavlov.dialog
 import java.time.{Clock, Instant}
 
 import ai.ipavlov.Implicits
-import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
+import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 
 import scala.annotation.tailrec
@@ -16,7 +17,7 @@ import scala.util.control.NoStackTrace
   * @author vadim
   * @since 06.07.17
   */
-class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Implicits {
+class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Implicits {
   import Dialog._
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
@@ -30,11 +31,11 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
     super.postStop()
   }
 
-  private val history: mutable.LinkedHashMap[Int, (User, String, Int)] = mutable.LinkedHashMap.empty[Int, (User, String, Int)]
+  private val history: mutable.LinkedHashMap[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)] = mutable.LinkedHashMap.empty[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)]
 
   override def receive: Receive = {
     case StartDialog =>
-      def firstMessageFor(user: User, text: String): Endpoint.MessageFromDialog = user match {
+      def firstMessageFor(user: UserSummary, text: String): Endpoint.MessageFromDialog = user match {
         case u: Human => Endpoint.SystemNotificationToUser(u, text)
         case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId, Instant.now(clck).getNano)
       }
@@ -76,7 +77,7 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
 
   }
 
-  private val evaluations: mutable.Set[(User, (Int, Int, Int))] = mutable.Set.empty[(User, (Int, Int, Int))]
+  private val evaluations: mutable.Set[(UserSummary, (Int, Int, Int))] = mutable.Set.empty[(UserSummary, (Int, Int, Int))]
 
   def onEvaluation(aEvaluation: ActorRef, bEvaluation: ActorRef): Receive = {
     case EvaluationProcess.CompleteEvaluation(user, q, br, e) =>
@@ -112,9 +113,9 @@ class Dialog(a: User, b: User, txtContext: String, gate: ActorRef, database: Act
 }
 
 object Dialog {
-  def props(userA: User, userB: User, context: String, gate: ActorRef, database: ActorRef, clck: Clock) = Props(new Dialog(userA, userB, context, gate, database, clck))
+  def props(userA: UserSummary, userB: UserSummary, context: String, gate: ActorRef, database: ActorRef, clck: Clock) = Props(new Dialog(userA, userB, context, gate, database, clck))
 
-  case class PushMessageToTalk(from: User, message: String)
+  case class PushMessageToTalk(from: UserSummary, message: String)
 
   case object StartDialog
   case object EndDialog

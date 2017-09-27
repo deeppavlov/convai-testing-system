@@ -2,8 +2,9 @@ package ai.ipavlov
 
 import java.time.Clock
 
-import ai.ipavlov.communication.{Bot, Endpoint, Human, TelegramChat}
+import ai.ipavlov.communication.{Endpoint, Human, TelegramChat}
 import ai.ipavlov.communication.rest.BotEndpoint
+import ai.ipavlov.communication.user.{Bot, Human, TelegramChat}
 import ai.ipavlov.dialog.{DialogFather, SqadQuestions}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}

@@ -3,7 +3,8 @@ package ai.ipavlov.dialog
 import java.time.{Clock, Instant, ZoneId}
 import java.util.Random
 
-import ai.ipavlov.communication.{Bot, Endpoint, Human}
+import ai.ipavlov.communication.user.{Bot, Human}
+import ai.ipavlov.communication.{Endpoint, Human}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory

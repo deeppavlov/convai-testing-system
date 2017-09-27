@@ -1,8 +1,8 @@
 package ai.ipavlov.communication.telegram
 
-import ai.ipavlov.Messages
 import ai.ipavlov.communication.Endpoint.ChancelTestDialog
-import ai.ipavlov.communication.{Endpoint, TelegramChat}
+import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.user.{Messages, TelegramChat}
 import ai.ipavlov.dialog.{Dialog, DialogFather, MongoStorage}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.util.Timeout

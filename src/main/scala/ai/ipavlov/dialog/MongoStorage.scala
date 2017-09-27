@@ -2,7 +2,7 @@ package ai.ipavlov.dialog
 
 import java.time.Instant
 
-import ai.ipavlov.communication.{Bot, TelegramChat, User}
+import ai.ipavlov.communication.user.{Bot, TelegramChat}
 import akka.actor.{Actor, ActorLogging, Props}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.{ObservableImplicits, _}
@@ -93,7 +93,7 @@ object MongoStorage {
     ), DEFAULT_CODEC_REGISTRY
   )
 
-  case class WriteDialog(id: Int, users: Set[User], context: String, thread: Seq[(User, String, Int)], evaluation: Set[(User, (Int, Int, Int))])
+  case class WriteDialog(id: Int, users: Set[ai.ipavlov.communication.user.UserSummary], context: String, thread: Seq[(ai.ipavlov.communication.user.UserSummary, String, Int)], evaluation: Set[(ai.ipavlov.communication.user.UserSummary, (Int, Int, Int))])
 
   private case class WriteLanguageAssessmentDTO(_id: ObjectId, login: Option[String], chatId: Long, level: Int)
   private object WriteLanguageAssessmentDTO {

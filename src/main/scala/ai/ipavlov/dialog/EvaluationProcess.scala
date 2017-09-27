@@ -3,7 +3,8 @@ package ai.ipavlov.dialog
 import java.time.Instant
 
 import ai.ipavlov.Implicits
-import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
+import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
+import ai.ipavlov.communication.Endpoint
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 import scala.util.Try
@@ -12,7 +13,7 @@ import scala.util.Try
   * @author vadim
   * @since 13.07.17
   */
-class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Actor with ActorLogging with Implicits {
+class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) extends Actor with ActorLogging with Implicits {
   import Dialog._
   import EvaluationProcess._
 
@@ -65,9 +66,9 @@ class EvaluationProcess(user: User, dialog: ActorRef, gate: ActorRef) extends Ac
 }
 
 object EvaluationProcess {
-  def props(user: User, dialog: ActorRef, gate: ActorRef) = Props(new EvaluationProcess(user, dialog, gate))
+  def props(user: UserSummary, dialog: ActorRef, gate: ActorRef) = Props(new EvaluationProcess(user, dialog, gate))
 
-  case class CompleteEvaluation(user: User, quality: Int, breadth: Int, engagement: Int)
+  case class CompleteEvaluation(user: UserSummary, quality: Int, breadth: Int, engagement: Int)
 
   case object StartEvaluation
 }

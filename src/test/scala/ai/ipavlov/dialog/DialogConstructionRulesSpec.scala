@@ -1,6 +1,7 @@
 package ai.ipavlov.dialog
 
-import ai.ipavlov.communication.{Bot, Human}
+import ai.ipavlov.communication.Human
+import ai.ipavlov.communication.user.{Bot, Human}
 import akka.event.LoggingAdapter
 import org.scalatest.{Matchers, WordSpecLike}
 

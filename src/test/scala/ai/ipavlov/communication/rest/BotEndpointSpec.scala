@@ -3,7 +3,8 @@ package ai.ipavlov.communication.rest
 import java.time.{Clock, Instant, ZoneId}
 
 import ai.ipavlov.communication.rest.BotEndpoint.GetMessages
-import ai.ipavlov.communication.{Bot, Endpoint}
+import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.user.Bot
 import ai.ipavlov.dialog.DialogFather.UserAvailable
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}

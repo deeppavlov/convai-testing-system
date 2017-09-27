@@ -2,7 +2,8 @@ package ai.ipavlov.dialog
 
 import java.time.Clock
 
-import ai.ipavlov.communication.{Bot, Endpoint, Human, User}
+import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
+import ai.ipavlov.communication.Endpoint
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
 import scala.collection.mutable
@@ -20,9 +21,9 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private val humanBotCoef: Double = Try(context.system.settings.config.getDouble("talk.bot.human_bot_coefficient")).getOrElse(1)
 
-  private val availableUsers: mutable.Map[User, (Int, Int)] = mutable.Map.empty[User, (Int, Int)]
-  private val usersChatsInTalks: mutable.Map[ActorRef, List[User]] = mutable.Map[ActorRef, List[User]]()
-  private val usersDedline: mutable.Map[User, Deadline] = mutable.Map[User, Deadline]()
+  private val availableUsers: mutable.Map[UserSummary, (Int, Int)] = mutable.Map.empty[UserSummary, (Int, Int)]
+  private val usersChatsInTalks: mutable.Map[ActorRef, List[UserSummary]] = mutable.Map[ActorRef, List[UserSummary]]()
+  private val usersDedline: mutable.Map[UserSummary, Deadline] = mutable.Map[UserSummary, Deadline]()
 
   gate ! Endpoint.SetDialogFather(self)
 
@@ -40,7 +41,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
         }
       }
 
-    case UserAvailable(user: User, maxConnections) =>
+    case UserAvailable(user: UserSummary, maxConnections) =>
       if (!availableUsers.contains(user)) {
         availableUsers.put(user, (maxConnections, 0))
         if (user.isInstanceOf[Human]) usersDedline.put(user, Deadline.now + 10.seconds)
@@ -51,12 +52,12 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
       val dialRes = availableDialogs(humanBotCoef)(availableUsersList)
       dialRes.foreach(assembleDialog(databaseDialogStorage))
-      if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[User]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
+      if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[UserSummary]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
         gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
       }
 
       log.debug("new user available: {}", user)
-    case UserLeave(user: User) =>
+    case UserLeave(user: UserSummary) =>
       if(availableUsers.remove(user).isDefined) log.info("user leave: {}", user)
 
       usersChatsInTalks.foreach {
@@ -83,7 +84,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private val nopStorage = context.actorOf(Props(new NopStorage), name="nop-storage")
 
-  private def assembleDialog(storage: ActorRef)(available: (User, User, String)) = available match {
+  private def assembleDialog(storage: ActorRef)(available: (UserSummary, UserSummary, String)) = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
       val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage, clck), name = s"dialog-${java.util.UUID.randomUUID()}")
@@ -106,7 +107,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       dialog ! Dialog.StartDialog
   }
 
-  private def availableUsersList: List[(User, Int, Deadline)] =
+  private def availableUsersList: List[(UserSummary, Int, Deadline)] =
     availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList.map { t =>
       (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 1.hour))
     }
@@ -119,8 +120,8 @@ object DialogFather {
   private case object AssembleDialogs
   case class CreateTestDialogWithBot(user: Human, botId: String)
 
-  case class UserAvailable(user: User, maxConnections: Int)
-  case class UserLeave(user: User)
+  case class UserAvailable(user: UserSummary, maxConnections: Int)
+  case class UserLeave(user: UserSummary)
 
   private class NopStorage extends Actor {
     override def receive: Receive = {

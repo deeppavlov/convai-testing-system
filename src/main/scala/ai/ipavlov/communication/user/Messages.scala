@@ -1,4 +1,4 @@
-package ai.ipavlov
+package ai.ipavlov.communication.user
 
 /**
   * @author vadim
@@ -29,4 +29,6 @@ object Messages {
   val notSupported = "Messages of this type aren't supported \uD83D\uDE1E"
 
   val exit = """`(system msg):` exit"""
+
+  val lastNotificationInDialog = """Thank you! It was great! Please choose /begin to continue evaluation."""
 }

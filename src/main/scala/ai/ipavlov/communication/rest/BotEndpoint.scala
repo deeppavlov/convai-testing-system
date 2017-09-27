@@ -2,7 +2,8 @@ package ai.ipavlov.communication.rest
 
 import java.time.{Clock, Instant}
 
-import ai.ipavlov.communication.{Bot, Endpoint}
+import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.user.Bot
 import ai.ipavlov.dialog.Dialog
 import ai.ipavlov.dialog.DialogFather.UserAvailable
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}

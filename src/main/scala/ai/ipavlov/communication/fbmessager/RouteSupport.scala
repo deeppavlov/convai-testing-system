@@ -4,8 +4,9 @@ import java.nio.charset.StandardCharsets
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-import ai.ipavlov.communication.FbChat
+import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.communication.rest.Routes.logger
+import ai.ipavlov.communication.user.{FbChat, User}
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives}
@@ -65,7 +66,7 @@ trait RouteSupport extends LazyLogging with Directives {
     }
   }
 
-  def handleMessage(fbService: ActorRef, fbObject: FBPObject, pageAccessToken: String)
+  def handleMessage(endpoint: ActorRef, fbObject: FBPObject, pageAccessToken: String)
                            (implicit ec: ExecutionContext, system: ActorSystem,
                             materializer: ActorMaterializer):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
@@ -76,8 +77,9 @@ trait RouteSupport extends LazyLogging with Directives {
         val message = me.message
         message.text match {
           case Some(text) if senderId != "1676239152448347" =>
-            Try(senderId.toLong)
-              .map(id => fbService ! ai.ipavlov.communication.fbmessager.FBEndpoint.Message(FbChat(id), text))
+            Try(me.recipient.id.toLong)
+              .map { id =>
+                endpoint ! Endpoint.MessageFromUser(FbChat(id), text) }
               .recover {
                 case NonFatal(e) => logger.error("can't parse to long from " + senderId, e)
               }
