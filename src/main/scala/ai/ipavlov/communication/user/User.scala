@@ -106,9 +106,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       talk ! Dialog.EvaluateMessage(mid, evaluation)
       stay()
 
-    case Event(Endpoint.FinishTalkForUser(_, _), DialogRef(_)) =>
-      log.info("!!!!!!!!")
-      goto(Idle) using Uninitialized
+    case Event(Endpoint.FinishTalkForUser(_, _), DialogRef(_)) => goto(Idle) using Uninitialized
 
     case Event(User.End, DialogRef(t)) =>
       dialogDaddy ! DialogFather.UserLeave(summary)
