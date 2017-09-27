@@ -81,7 +81,9 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
 
-    case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) => goto(InDialog) using DialogRef(talk)
+    case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) =>
+      log.info("!!!!!!")
+      goto(InDialog) using DialogRef(talk)
   }
 
   when(InDialog) {
@@ -106,7 +108,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       talk ! Dialog.EvaluateMessage(mid, evaluation)
       stay()
 
-    case Event(Endpoint.FinishTalkForUser(_, _), DialogRef(_)) => goto(Idle) using Uninitialized
+    case Event(Endpoint.FinishTalkForUser(_, _), DialogRef(_)) =>
+      goto(Idle) using Uninitialized
 
     case Event(User.End, DialogRef(t)) =>
       dialogDaddy ! DialogFather.UserLeave(summary)
