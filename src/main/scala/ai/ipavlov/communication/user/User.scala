@@ -67,11 +67,11 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       client ! Client.ShowSystemNotification(summary.id, Messages.helpMessage)
       stay using Uninitialized
 
-    case m =>
+    case Event(TryShutdown, _) => stop()
+
+    case _ =>
       client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
       stay()
-
-    case Event(TryShutdown, _) => stop()
   }
 
   onTransition {
