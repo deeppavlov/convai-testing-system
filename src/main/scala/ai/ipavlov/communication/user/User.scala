@@ -60,7 +60,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
 
   when(Idle) {
     case Event(User.Begin, Uninitialized) =>
-      log.info("!!!!!")
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>

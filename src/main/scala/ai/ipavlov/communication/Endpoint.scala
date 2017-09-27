@@ -74,7 +74,9 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m @ ChatMessageToUser(h: FbChat, _, _, _) => user(h) forward m
       case m @ SystemNotificationToUser(h: FbChat, _) => user(h) forward m
 
-      case m @ ActivateTalkForUser(h: FbChat, _) => user(h) forward m
+      case m @ ActivateTalkForUser(h: FbChat, _) =>
+        log.info("!!!!!!!!")
+        user(h) forward m
       case m @ FinishTalkForUser(h: FbChat, _) => user(h) forward m
       case m @ AskEvaluationFromHuman(h: FbChat, _) => user(h) forward m
       case m @ EndHumanDialog(h: FbChat, _) => user(h) forward m
