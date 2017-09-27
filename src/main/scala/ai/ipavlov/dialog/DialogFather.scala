@@ -31,7 +31,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      log.info(availableUsersList.toString())
       availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(databaseDialogStorage))
 
     case Terminated(t) =>

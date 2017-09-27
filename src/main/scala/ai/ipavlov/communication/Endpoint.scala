@@ -4,6 +4,7 @@ import ai.ipavlov.communication.fbmessager.FBClient
 import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
 import ai.ipavlov.communication.telegram.{BotWorker, TelegramEndpoint}
 import ai.ipavlov.communication.user._
+import ai.ipavlov.dialog.DialogFather
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
 
@@ -89,6 +90,9 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
       case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
       case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
+      case m: DialogFather.UserAvailable => talkConstructor forward m
+      case m: DialogFather.UserLeave => talkConstructor forward m
+      case m: DialogFather.CreateTestDialogWithBot => talkConstructor forward m
     }
   }
 
