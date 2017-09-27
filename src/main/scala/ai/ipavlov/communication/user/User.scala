@@ -68,9 +68,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       stay using Uninitialized
 
     case m =>
-      log.info("????????" + m.toString)
       client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
       stay()
+
+    case Event(TryShutdown, _) => stop()
   }
 
   onTransition {
@@ -83,8 +84,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) => goto(InDialog) using DialogRef(talk)
-
-    case Event(TryShutdown, _) => stop()
 
     case _ => stay()
   }
