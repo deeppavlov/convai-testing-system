@@ -84,7 +84,9 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) => goto(InDialog) using DialogRef(talk)
 
-    case _ => stay()
+    case m =>
+      log.info("!!!!!!! " + m)
+      stay()
   }
 
   when(InDialog) {

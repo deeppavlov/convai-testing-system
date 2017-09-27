@@ -42,7 +42,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       }
 
     case UserAvailable(user: UserSummary, maxConnections) =>
-      log.info("!!!!!!!!")
       if (!availableUsers.contains(user)) {
         availableUsers.put(user, (maxConnections, 0))
         if (user.isInstanceOf[Human]) usersDedline.put(user, Deadline.now + 10.seconds)
