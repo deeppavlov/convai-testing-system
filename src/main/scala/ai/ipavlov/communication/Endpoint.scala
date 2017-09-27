@@ -79,7 +79,8 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m @ AskEvaluationFromHuman(h: FbChat, _) => user(h) forward m
       case m @ EndHumanDialog(h: FbChat, _) => user(h) forward m
 
-      case m @ MessageFromUser(h: FbChat, _) => user(h) forward m
+      case m @ MessageFromUser(h: FbChat, text) => user(h) ! User.AppendMessageToTalk(text)
+      case m @ EvaluateFromUser(h: FbChat, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)
     }
   }
 
@@ -115,6 +116,7 @@ object Endpoint {
 
 
   case class MessageFromUser(user: UserSummary, text: String)
+  case class EvaluateFromUser(user: UserSummary, mid: Int, eval: Int)
 
 }
 
