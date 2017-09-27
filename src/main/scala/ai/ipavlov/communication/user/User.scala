@@ -58,6 +58,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
   when(Idle) {
     case Event(User.Begin, Uninitialized) =>
+      dialogDaddy ! DialogFather.UserAvailable(summary, 1)
+      log.info("!!!!!!")
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
@@ -71,10 +73,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     /*case Event(TryShutdown, _) =>
       h.cancel()
       stop()*/
-  }
-
-  onTransition {
-    case Idle -> WaitDialogCreation => dialogDaddy ! DialogFather.UserAvailable(summary, 1)
   }
 
   when(WaitDialogCreation) {
