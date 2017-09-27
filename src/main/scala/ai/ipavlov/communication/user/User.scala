@@ -61,7 +61,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
 
     case Event(User.Help, Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.id, Messages.helpMessage)
-      stay using Uninitialized
+      stay()
 
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.id, mes)
@@ -70,10 +70,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
     /*case Event(TryShutdown, _) =>
       h.cancel()
       stop()*/
-
-    case _ =>
-      client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
-      stay()
   }
 
   onTransition {
@@ -86,8 +82,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) => goto(InDialog) using DialogRef(talk)
-
-    case _ => stay()
   }
 
   when(InDialog) {
@@ -119,6 +113,12 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       stay()
 
     //case Event(TryShutdown, _) => stay()
+  }
+
+  whenUnhandled {
+    case Event(event, data) =>
+      log.warning("Received unhandled event: {} in state {}", event, stateName)
+      stay
   }
 }
 

@@ -75,7 +75,7 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
         uri = s"$responseUri?access_token=$pageAccessToken",
         entity = HttpEntity(ContentTypes.`application/json`, message.toString))
       ).andThen {
-        case Failure(err) => log.error("message did not send", err)
+        case Failure(err) => log.error("message did not send: {}", err)
       }.map(_ => ())
     }
 
