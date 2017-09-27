@@ -120,6 +120,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       log.warning("Received unhandled event: {} in state {}", event, stateName)
       stay
   }
+
+  initialize()
 }
 
 object User {
