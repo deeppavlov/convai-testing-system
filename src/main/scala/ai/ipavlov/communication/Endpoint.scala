@@ -1,8 +1,8 @@
 package ai.ipavlov.communication
 
 import ai.ipavlov.communication.fbmessager.FBClient
-import ai.ipavlov.communication.rest.BotEndpoint
-import ai.ipavlov.communication.telegram.TelegramEndpoint
+import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
+import ai.ipavlov.communication.telegram.{BotWorker, TelegramEndpoint}
 import ai.ipavlov.communication.user._
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.stream.ActorMaterializer
@@ -31,11 +31,11 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  /*private val bot = new BotWorker(context.system, telegramGate,
-    Routes.route(botGate, fbGate, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
+  private val bot = new BotWorker(context.system, telegramGate,
+    Routes.route(botGate, self, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
     telegramToken, telegramWebhook).run()
 
-  private def initialized(talkConstructor: ActorRef): Receive = {
+  /*private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
     case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
     case message @ ChatMessageToUser(_: FbChat, _, _, _) => fbGate forward message
@@ -112,11 +112,6 @@ object Endpoint {
   case class SetDialogFather(daddy: ActorRef)
 
   case class ChancelTestDialog(user: Human, cause: String)
-
-
-
-
-
 
 
   case class MessageFromUser(user: UserSummary, text: String)

@@ -29,7 +29,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
 
   implicit val timeout: Timeout = 5.seconds
 
-  def route(botService: ActorRef, fbService: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
+  def route(botService: ActorRef, endpoint: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
 
     post {
       path(""".+""".r / "sendMessage") { token =>
@@ -67,7 +67,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
-              handleMessage(fbService, fbObject, pageAccessToken)
+              handleMessage(endpoint, fbObject, pageAccessToken)
             }
           }
         }
