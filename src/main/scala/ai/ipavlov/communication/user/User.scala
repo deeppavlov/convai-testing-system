@@ -60,16 +60,21 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
 
   when(Idle) {
     case Event(User.Begin, Uninitialized) =>
-      dialogDaddy ! DialogFather.UserAvailable(summary, 1)
+      log.info("!!!!!")
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.id, Messages.helpMessage)
       stay using Uninitialized
 
-    case _ =>
+    case m =>
+      log.info("????????" + m.toString)
       client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
       stay()
+  }
+
+  onTransition {
+    case Idle -> WaitDialogCreation => dialogDaddy ! DialogFather.UserAvailable(summary, 1)
   }
 
   when(WaitDialogCreation) {
