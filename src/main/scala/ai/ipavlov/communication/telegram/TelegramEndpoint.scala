@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
   import TelegramEndpoint._
   import context.dispatcher
-  private implicit val timeout: Timeout = 5.seconds
+ /* private implicit val timeout: Timeout = 5.seconds
 
   override def receive: Receive = unititialized
 
@@ -203,7 +203,8 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId), Messages.helpMessage, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 
-  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
+  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"*/
+  override def receive = ???
 }
 
 object TelegramEndpoint {

@@ -19,29 +19,26 @@ case class Bot(token: String) extends UserSummary {
   val id: String = token
 }
 
-trait Human extends UserSummary {
-  val chatId: Long
-  val id: String = chatId.toString
-}
+trait Human extends UserSummary
 
-case class TelegramChat(chatId: Long, username: Option[String]) extends Human {
+case class TelegramChat(id: String, username: Option[String]) extends Human {
   override def canEqual(a: Any): Boolean = a.isInstanceOf[TelegramChat]
   override def equals(that: Any): Boolean =
     that match {
-      case that: TelegramChat => that.canEqual(this) && that.chatId == chatId
+      case that: TelegramChat => that.canEqual(this) && that.id == id
       case _ => false
     }
-  override def hashCode: Int = { chatId.hashCode() }
+  override def hashCode: Int = { id.hashCode() }
 }
 
-case class FbChat(chatId: Long) extends Human {
+case class FbChat(id: String) extends Human {
   override def canEqual(a: Any): Boolean = a.isInstanceOf[TelegramChat]
   override def equals(that: Any): Boolean =
     that match {
-      case that: FbChat => that.canEqual(this) && that.chatId == chatId
+      case that: FbChat => that.canEqual(this) && that.id == id
       case _ => false
     }
-  override def hashCode: Int = { chatId.hashCode() }
+  override def hashCode: Int = { id.hashCode() }
 }
 
 sealed trait UserState
@@ -67,17 +64,17 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.chatId.toString, Messages.helpMessage)
+      client ! Client.ShowSystemNotification(summary.id, Messages.helpMessage)
       stay using Uninitialized
 
     case _ =>
-      client ! Client.ShowSystemNotification(summary.chatId.toString, Messages.notSupported)
+      client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
       stay()
   }
 
   when(WaitDialogCreation) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.chatId.toString, mes)
+      client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) => goto(InDialog) using DialogRef(talk)
@@ -89,17 +86,17 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
 
   when(InDialog) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), DialogRef(t)) =>
-      client ! Client.ShowSystemNotification(summary.chatId.toString, mes)
+      client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
     case Event(Endpoint.ChatMessageToUser(_, message: String, _, id: Int), DialogRef(_)) =>
       //TODO
-      client ! Client.ShowChatMessage(summary.chatId.toString, id.toString, message)
+      client ! Client.ShowChatMessage(summary.id, id.toString, message)
       stay()
     case Event(Endpoint.AskEvaluationFromHuman(_, text), DialogRef(_)) =>
-      client ! Client.ShowEvaluationMessage(summary.chatId.toString, text)
+      client ! Client.ShowEvaluationMessage(summary.id, text)
       stay()
     case Event(Endpoint.EndHumanDialog(_, _), DialogRef(_)) =>
-      client ! Client.ShowLastNotificationInDialog(summary.chatId.toString, Messages.lastNotificationInDialog)
+      client ! Client.ShowLastNotificationInDialog(summary.id, Messages.lastNotificationInDialog)
       stay()
 
     case Event(User.AppendMessageToTalk(text), DialogRef(talk)) =>

@@ -67,7 +67,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
     val fbClient = context.actorOf(FBClient.props(talkConstructor, storage, facebookPageAccessToken), name="fbClient")
 
     def user(h: Human): ActorRef = h match {
-      case _: FbChat => context.child("fb-" + h.chatId).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient)))
+      case _: FbChat => context.child("fb-" + h.id).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient)))
     }
 
     {
