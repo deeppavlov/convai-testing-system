@@ -70,7 +70,7 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
         message = f(txt)
       ).toJson
 
-      log.info("!!!!!!!!!!!! " + text)
+      log.info("!!!!!!!!!!!! " + text + " " + receiverId)
       Http().singleRequest(HttpRequest(
         HttpMethods.POST,
         uri = s"$responseUri?access_token=$pageAccessToken",
