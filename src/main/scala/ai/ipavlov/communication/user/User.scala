@@ -49,6 +49,7 @@ case object Uninitialized extends State
 case class DialogRef(dialog: ActorRef) extends State
 
 class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends LoggingFSM[UserState, State] {
+  override def logDepth = 12
   //import context.dispatcher
 
   //private val h = context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)

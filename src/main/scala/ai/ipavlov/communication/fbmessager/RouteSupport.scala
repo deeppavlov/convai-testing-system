@@ -36,7 +36,7 @@ trait RouteSupport extends LazyLogging with Directives {
       val result = mac.doFinal(payload)
 
       val computedHash = Hex.encodeHex(result).mkString
-      logger.info(s"Computed hash: $computedHash")
+      logger.debug(s"Computed hash: $computedHash")
 
       val res = computedHash == expected
 
@@ -49,7 +49,7 @@ trait RouteSupport extends LazyLogging with Directives {
       case Some(token) =>
         val payload =
           Await.result(req.entity.toStrict(5 seconds).map(_.data.decodeString("UTF-8")), 5 second)
-        logger.info(s"Receive token $token and payload $payload")
+        logger.debug(s"Receive token $token and payload $payload")
         val elements = token.split("=")
         val method = elements(0)
         val signaturedHash = elements(1)
@@ -70,7 +70,7 @@ trait RouteSupport extends LazyLogging with Directives {
                            (implicit ec: ExecutionContext, system: ActorSystem,
                             materializer: ActorMaterializer):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
-    logger.info(s"Receive fbObject: $fbObject")
+    logger.debug(s"Receive fbObject: $fbObject")
     fbObject.entry.foreach { entry =>
       entry.messaging.foreach { me =>
         val senderId = me.sender.id
@@ -79,7 +79,7 @@ trait RouteSupport extends LazyLogging with Directives {
           case Some(text) if senderId != "1676239152448347" => endpoint ! Endpoint.MessageFromUser(FbChat(senderId), text)
           case Some(_) =>
           case None =>
-            logger.info("Receive image")
+            logger.debug("Receive image")
         }
       }
     }
@@ -91,7 +91,7 @@ trait RouteSupport extends LazyLogging with Directives {
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
 
     if (mode == "subscribe" && token == originalToken) {
-      logger.info(s"Verify webhook token: $token, mode $mode")
+      logger.debug(s"Verify webhook token: $token, mode $mode")
       (StatusCodes.OK, List.empty[HttpHeader], Some(Left(challenge)))
     }
     else {
