@@ -1,11 +1,8 @@
 package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.user.User.TryShutdown
 import ai.ipavlov.dialog.{Dialog, DialogFather}
-import akka.actor.{ActorRef, FSM, PoisonPill, Props}
-
-import scala.concurrent.duration._
+import akka.actor.{ActorRef, FSM, Props}
 
 /**
   * @author vadim
