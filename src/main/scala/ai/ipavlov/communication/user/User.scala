@@ -52,9 +52,9 @@ case object Uninitialized extends State
 case class DialogRef(dialog: ActorRef) extends State
 
 class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[UserState, State] {
-  import context.dispatcher
+  //import context.dispatcher
 
-  context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
+  //private val h = context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
 
   startWith(Idle, Uninitialized)
 
@@ -70,7 +70,9 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
 
-    case Event(TryShutdown, _) => stop()
+    /*case Event(TryShutdown, _) =>
+      h.cancel()
+      stop()*/
 
     case _ =>
       client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
@@ -119,7 +121,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       dialogDaddy ! DialogFather.UserLeave(summary)
       stay()
 
-    case Event(TryShutdown, _) => stay()
+    //case Event(TryShutdown, _) => stay()
   }
 }
 
@@ -133,5 +135,5 @@ object User {
   case class EvaluateMessage(messageId: Int, evaluation: Int)
   case class AppendMessageToTalk(text: String) extends UserCommand
 
-  private case object TryShutdown
+  //private case object TryShutdown
 }

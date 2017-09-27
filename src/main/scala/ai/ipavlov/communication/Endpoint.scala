@@ -84,6 +84,11 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m @ MessageFromUser(h: FbChat, text) if text.trim == "/help" => user(h) ! User.Help
       case m @ MessageFromUser(h: FbChat, text) => user(h) ! User.AppendMessageToTalk(text)
       case m @ EvaluateFromUser(h: FbChat, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)
+
+
+      case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
+      case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
+      case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
     }
   }
 
