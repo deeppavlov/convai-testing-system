@@ -67,7 +67,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends FSM[
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
-      log.info("!!!!!!!!!!!!")
       client ! Client.ShowSystemNotification(summary.chatId.toString, Messages.helpMessage)
       stay using Uninitialized
 
