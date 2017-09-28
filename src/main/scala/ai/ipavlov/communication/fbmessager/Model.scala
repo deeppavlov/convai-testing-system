@@ -21,6 +21,8 @@ case class FBMessage(mid: Option[String] = None,
                      quick_replies: Option[List[FBQuickReply]] = None
                     )
 
+case class FBPostback(payload: String, title: String)
+
 case class FBQuickReply(title: String, payload: String)
 
 case class FBSender(id: String)
@@ -30,13 +32,15 @@ case class FBRecipient(id: String)
 case class FBMessageEventIn(sender: FBSender,
                             recipient: FBRecipient,
                             timestamp: Long,
-                            message: FBMessage)
+                            message: Option[FBMessage],
+                            postback: Option[FBPostback]
+                           )
 
 case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
 
 case class FBEntry(id: String,
-                   time: Long, messaging:
-                   List[FBMessageEventIn])
+                   time: Long,
+                   messaging: List[FBMessageEventIn])
 
 case class FBPObject(`object`: String, entry: List[FBEntry])
 
@@ -49,7 +53,7 @@ object FBPObject extends DefaultJsonProtocol {
 }
 
 object FBMessageEventIn extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat4(FBMessageEventIn(_,_, _, _))
+  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat5(FBMessageEventIn(_,_, _, _, _))
 }
 
 object FBEntry extends DefaultJsonProtocol {
@@ -85,6 +89,10 @@ object FBRecipient extends DefaultJsonProtocol {
 
 object FBButton extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBButton] = jsonFormat3(FBButton(_, _, _))
+}
+
+object FBPostback extends DefaultJsonProtocol {
+  implicit val format: RootJsonFormat[FBPostback] = jsonFormat2(FBPostback(_, _))
 }
 
 object FBAttachment extends DefaultJsonProtocol {

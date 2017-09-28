@@ -72,15 +72,14 @@ trait RouteSupport extends LazyLogging with Directives {
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
     logger.debug(s"Receive fbObject: $fbObject")
     fbObject.entry.foreach { entry =>
-      entry.messaging.foreach { me =>
-        val senderId = me.sender.id
-        val message = me.message
-        message.text match {
-          case Some(text) if senderId != "1676239152448347" => endpoint ! Endpoint.MessageFromUser(FbChat(senderId), text)
-          case Some(m) => logger.info("!!!!!" + m)
-          case None =>
-            logger.debug("Receive image")
-        }
+      entry.messaging.foreach {
+        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, Some(text), _, _, _)), None) =>
+          endpoint ! Endpoint.MessageFromUser(FbChat(sender.id), text)
+
+        case FBMessageEventIn(sender, recepient, _, None, Some(FBPostback(payload, _))) =>
+          endpoint ! Endpoint.MessageFromUser(FbChat(sender.id), payload)
+
+        case m => logger.warn("unhandled message {}", m)
       }
     }
     (StatusCodes.OK, List.empty[HttpHeader], None)

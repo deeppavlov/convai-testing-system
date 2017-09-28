@@ -50,7 +50,6 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
             complete(toJson(l))
           case util.Failure(ex) =>
-            //log.warn("erroe while getUpdates processing: " + ex.toString)
             complete(StatusCodes.BadRequest)
         }
       }
