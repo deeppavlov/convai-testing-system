@@ -77,7 +77,7 @@ trait RouteSupport extends LazyLogging with Directives {
         val message = me.message
         message.text match {
           case Some(text) if senderId != "1676239152448347" => endpoint ! Endpoint.MessageFromUser(FbChat(senderId), text)
-          case Some(_) =>
+          case Some(m) => logger.info("!!!!!" + m)
           case None =>
             logger.debug("Receive image")
         }

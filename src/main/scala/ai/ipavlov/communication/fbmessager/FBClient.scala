@@ -47,7 +47,10 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
       sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = Some("DEVELOPER_DEFINED_METADATA"),
-        attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List( FBButton("postback", "/begin", "/begin"))))))
+        attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
+          FBButton("postback", "begin", "/begin"),
+          FBButton("postback", "help", "/help")
+        )))))
       )
   }
 
