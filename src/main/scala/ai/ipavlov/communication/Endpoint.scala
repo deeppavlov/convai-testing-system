@@ -69,7 +69,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
     def user(h: Human): ActorRef = {
       h match {
-        case _: FbChat => context.child("fb-" + h.id).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient)))
+        case _: FbChat => context.child("fb-" + h.id).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient), name = "fb-" + h.id))
       }
     }
 

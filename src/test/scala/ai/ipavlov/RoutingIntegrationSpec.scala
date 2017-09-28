@@ -2,7 +2,7 @@ package ai.ipavlov
 
 import java.time.Clock
 
-import ai.ipavlov.communication.{Endpoint, Human, TelegramChat}
+import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.communication.rest.BotEndpoint
 import ai.ipavlov.communication.user.{Bot, Human, TelegramChat}
 import ai.ipavlov.dialog.{DialogFather, SqadQuestions}
@@ -70,8 +70,8 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
           case m@DialogFather.UserAvailable(_: Bot, _) => botActivationMessages += m
         }
         botActivationMessages.foreach(dialogConstructor ! _)
-        dialogConstructor ! DialogFather.UserAvailable(TelegramChat(1, Some("vasya")), 1)
-        dialogConstructor ! DialogFather.UserAvailable(TelegramChat(2, Some("petya")), 1)
+        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("1", Some("vasya")), 1)
+        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("2", Some("petya")), 1)
 
         gate.expectMsgPF(3.seconds) { case Endpoint.SystemNotificationToUser(_, _) => }
         gate.expectMsgPF(3.seconds) {
@@ -83,8 +83,8 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
           case Endpoint.ActivateTalkForUser(_: Bot, _) => robot_dialogs += 1
         }
 
-        dialogConstructor ! DialogFather.UserLeave(TelegramChat(1, Some("vasya")))
-        dialogConstructor ! DialogFather.UserLeave(TelegramChat(1, Some("petya")))
+        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", Some("vasya")))
+        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", Some("petya")))
 
         system.stop(botGate)
         system.stop(dialogConstructor)

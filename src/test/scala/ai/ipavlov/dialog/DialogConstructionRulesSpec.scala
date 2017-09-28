@@ -1,6 +1,5 @@
 package ai.ipavlov.dialog
 
-import ai.ipavlov.communication.Human
 import ai.ipavlov.communication.user.{Bot, Human}
 import akka.event.LoggingAdapter
 import org.scalatest.{Matchers, WordSpecLike}
@@ -51,7 +50,5 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
     }
   }
 
-  case class Tester(override val id: String) extends Human {
-    override val chatId: Long = id.toLong
-  }
+  case class Tester(id: String) extends Human
 }
