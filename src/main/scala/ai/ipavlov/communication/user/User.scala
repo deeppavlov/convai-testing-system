@@ -1,8 +1,11 @@
 package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.user.User.TryShutdown
 import ai.ipavlov.dialog.{Dialog, DialogFather}
 import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
+
+import scala.concurrent.duration._
 
 /**
   * @author vadim
@@ -42,9 +45,9 @@ case class DialogRef(dialog: ActorRef) extends State
 
 class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends LoggingFSM[UserState, State] {
   override def logDepth = 12
-  //import context.dispatcher
+  import context.dispatcher
 
-  //private val h = context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
+  context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
 
   startWith(Idle, Uninitialized)
 
@@ -60,9 +63,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
 
-    /*case Event(TryShutdown, _) =>
-      h.cancel()
-      stop()*/
+    case Event(TryShutdown, _) => stop()
   }
 
   onTransition {
@@ -76,6 +77,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) =>
       goto(InDialog) using DialogRef(talk)
+
+    case Event(TryShutdown, _) => stay()
   }
 
   when(InDialog) {
@@ -107,12 +110,13 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       dialogDaddy ! DialogFather.UserLeave(summary)
       stay()
 
-    //case Event(TryShutdown, _) => stay()
+    case Event(TryShutdown, _) => stay()
   }
 
   whenUnhandled {
     case Event(event, data) =>
       log.warning("Received unhandled event: {} in state {}", event, stateName)
+      client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
       stay
   }
 
@@ -136,5 +140,5 @@ object User {
   case class EvaluateMessage(messageId: Int, evaluation: Int)
   case class AppendMessageToTalk(text: String) extends UserCommand
 
-  //private case object TryShutdown
+  private case object TryShutdown
 }
