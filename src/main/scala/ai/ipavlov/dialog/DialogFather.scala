@@ -88,7 +88,6 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
       val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage, clck), name = s"dialog-${java.util.UUID.randomUUID()}")
-      log.info("start talk between {} and {}", a, b)
       gate ! Endpoint.ActivateTalkForUser(a, dialog)
       gate ! Endpoint.ActivateTalkForUser(b, dialog)
       usersChatsInTalks += dialog -> List(a, b)

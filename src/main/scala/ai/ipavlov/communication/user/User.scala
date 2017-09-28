@@ -28,15 +28,7 @@ case class TelegramChat(id: String, username: Option[String]) extends Human {
   override def hashCode: Int = { id.hashCode() }
 }
 
-case class FbChat(id: String) extends Human {
-  override def canEqual(a: Any): Boolean = a.isInstanceOf[TelegramChat]
-  override def equals(that: Any): Boolean =
-    that match {
-      case that: FbChat => that.canEqual(this) && that.id == id
-      case _ => false
-    }
-  override def hashCode: Int = { id.hashCode() }
-}
+case class FbChat(id: String) extends Human
 
 sealed trait UserState
 case object Idle extends UserState

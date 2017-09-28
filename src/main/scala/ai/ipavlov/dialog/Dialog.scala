@@ -33,6 +33,8 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
 
   private val history: mutable.LinkedHashMap[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)] = mutable.LinkedHashMap.empty[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)]
 
+  log.info("start talk between {} and {}", a, b)
+
   override def receive: Receive = {
     case StartDialog =>
       def firstMessageFor(user: UserSummary, text: String): Endpoint.MessageFromDialog = user match {
