@@ -45,11 +45,9 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
       )
     case Client.ShowLastNotificationInDialog(receiverId, text) =>
       sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
-        text = Some(txt),
+        text = None,
         metadata = Some("DEVELOPER_DEFINED_METADATA"),
-        attachment = Some(FBAttachment("template", FBButtonsPayload("push /begin for start new dialog", List(
-          FBButton("postback", "/begin", "/begin")))))
-      )
+        attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List( FBButton("postback", "/begin", "/begin"))))))
       )
   }
 
