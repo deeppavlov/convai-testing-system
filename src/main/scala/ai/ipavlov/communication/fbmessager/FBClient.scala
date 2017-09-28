@@ -6,9 +6,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.ActorMaterializer
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.util.Failure
-import scala.concurrent.duration._
 
 /**
   * @author vadim
@@ -24,38 +23,29 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
     case Client.ShowChatMessage(receiverId, messageId, text) =>
       sendMessage(text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
-        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        metadata = Some(messageId),
         quick_replies = Some(List(
-          FBQuickReply("\uD83D\uDC4D", "like"),
-          FBQuickReply("\uD83D\uDC4E", "ulike")
+          FBQuickReply(Some("\uD83D\uDC4D"), "like " + messageId),
+          FBQuickReply(Some("\uD83D\uDC4E"), " dislike " + messageId)
         ))
       )
       )
     case Client.ShowSystemNotification(receiverId, text) =>
-      /*sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
-        metadata = Some("DEVELOPER_DEFINED_METADATA")
-      )
-      )*/
-      sendMessage(text, receiverId, pageAccessToken, txt => FBMessage(
-        text = Some(txt),
-        metadata = Some("DEVELOPER_DEFINED_METADATA"),
-        quick_replies = Some(List(
-          FBQuickReply("\uD83D\uDC4D", "like"),
-          FBQuickReply("\uD83D\uDC4E", "ulike")
-        ))
+        metadata = None
       )
       )
     case Client.ShowEvaluationMessage(receiverId, text) =>
       sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
-        metadata = Some("DEVELOPER_DEFINED_METADATA")
+        metadata = None
       )
       )
     case Client.ShowLastNotificationInDialog(receiverId, text) =>
       sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
-        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
           FBButton("postback", "begin", "/begin"),
           FBButton("postback", "help", "/help")

@@ -3,6 +3,7 @@ package ai.ipavlov.communication.rest
 import ai.ipavlov.communication.fbmessager.{FBPObject, RouteSupport}
 import ai.ipavlov.communication.user.FbChat
 import akka.actor.{ActorRef, ActorSystem}
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
@@ -22,14 +23,18 @@ import scala.util.control.NonFatal
   * @author vadim
   * @since 10.07.17
   */
-object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport with LazyLogging with RouteSupport {
+object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport with RouteSupport {
 
   import BotEndpoint._
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
   implicit val timeout: Timeout = 5.seconds
 
-  def route(botService: ActorRef, endpoint: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)(implicit materializer: ActorMaterializer, ec: ExecutionContext, system: ActorSystem): Route = extractRequest { request: HttpRequest =>
+  def route(botService: ActorRef, endpoint: ActorRef, fbSecret: String, callbackToken: String, pageAccessToken: String)
+           (implicit materializer: ActorMaterializer,
+            ec: ExecutionContext,
+            system: ActorSystem,
+            logger: LoggingAdapter): Route = extractRequest { request: HttpRequest =>
 
     post {
       path(""".+""".r / "sendMessage") { token =>
@@ -62,7 +67,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         }
       }
     } ~ post {
-      verifyPayload(request, fbSecret)(materializer, ec) {
+      verifyPayload(request, fbSecret)(materializer, ec, logger) {
         path("webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {

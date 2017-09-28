@@ -5,29 +5,28 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.rest.Routes.logger
-import ai.ipavlov.communication.user.{FbChat, User}
+import ai.ipavlov.communication.user.FbChat
 import akka.actor.{ActorRef, ActorSystem}
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.{HttpHeader, HttpRequest, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{Directive0, Directives}
 import akka.stream.{ActorMaterializer, Materializer}
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.codec.binary.Hex
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 import scala.language.postfixOps
-import scala.util.Try
-import scala.util.control.NonFatal
 
 /**
   * @author vadim
   * @since 18.09.17
   */
-trait RouteSupport extends LazyLogging with Directives {
+trait RouteSupport extends Directives {
 
   def verifyPayload(req: HttpRequest, appSecret: String)
-                   (implicit materializer: Materializer, ec: ExecutionContext): Directive0 = {
+                   (implicit materializer: Materializer,
+                    ec: ExecutionContext,
+                    logger: LoggingAdapter): Directive0 = {
 
     def isValid(payload: Array[Byte], secret: String, expected: String): Boolean = {
       val secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA1")
@@ -40,7 +39,7 @@ trait RouteSupport extends LazyLogging with Directives {
 
       val res = computedHash == expected
 
-      if (!res) logger.warn("token verification failed")
+      if (!res) logger.warning("token verification failed")
 
       res
     }
@@ -68,25 +67,34 @@ trait RouteSupport extends LazyLogging with Directives {
 
   def handleMessage(endpoint: ActorRef, fbObject: FBPObject, pageAccessToken: String)
                            (implicit ec: ExecutionContext, system: ActorSystem,
-                            materializer: ActorMaterializer):
+                            materializer: ActorMaterializer,
+                            logger: LoggingAdapter):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
     logger.debug(s"Receive fbObject: $fbObject")
     fbObject.entry.foreach { entry =>
       entry.messaging.foreach {
-        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, Some(text), _, _, _)), None) =>
+        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, Some(text), _, _, _, _)), None) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id), text)
+
+        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, None, _, _, _, Some(FBQuickReply(None, payload)))), None) =>
+          payload.split(" ").toList match {
+            case "like" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id), messageId, 2)
+            case "dislike" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id), messageId, 1)
+            case m => logger.warning("bad evaluation message: {}", m)
+          }
 
         case FBMessageEventIn(sender, recepient, _, None, Some(FBPostback(payload, _))) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id), payload)
 
-        case m => logger.warn("unhandled message {}", m)
+        case m => logger.warning("unhandled message {}", m)
       }
     }
     (StatusCodes.OK, List.empty[HttpHeader], None)
   }
 
   def verifyToken(token: String, mode: String, challenge: String, originalToken: String)
-                         (implicit ec: ExecutionContext):
+                         (implicit ec: ExecutionContext,
+                          logger: LoggingAdapter):
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
 
     if (mode == "subscribe" && token == originalToken) {

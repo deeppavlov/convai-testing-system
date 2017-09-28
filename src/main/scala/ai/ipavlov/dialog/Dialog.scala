@@ -31,28 +31,28 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
     super.postStop()
   }
 
-  private val history: mutable.LinkedHashMap[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)] = mutable.LinkedHashMap.empty[Int, (ai.ipavlov.communication.user.UserSummary, String, Int)]
+  private val history: mutable.LinkedHashMap[String, (ai.ipavlov.communication.user.UserSummary, String, Int)] = mutable.LinkedHashMap.empty[String, (ai.ipavlov.communication.user.UserSummary, String, Int)]
 
   log.info("start talk between {} and {}", a, b)
+
+  @tailrec
+  private def genId: String = {
+    val id = Instant.now(clck).getNano.toString
+    if (history.contains(id)) genId
+    else id
+  }
 
   override def receive: Receive = {
     case StartDialog =>
       def firstMessageFor(user: UserSummary, text: String): Endpoint.MessageFromDialog = user match {
         case u: Human => Endpoint.SystemNotificationToUser(u, text)
-        case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId, Instant.now(clck).getNano)
+        case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId, genId)
       }
 
       gate ! firstMessageFor(a, txtContext)
       gate ! firstMessageFor(b, txtContext)
 
     case PushMessageToTalk(from, text) =>
-      @tailrec
-      def genId: Int = {
-        val id = Instant.now(clck).getNano
-        if (history.contains(id)) genId
-        else id
-      }
-
       val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
       val id = genId
       gate ! Endpoint.ChatMessageToUser(oppanent, text, self.chatId, id)
@@ -122,7 +122,7 @@ object Dialog {
   case object StartDialog
   case object EndDialog
 
-  case class EvaluateMessage(messageId: Int, category: Int)
+  case class EvaluateMessage(messageId: String, category: Int)
   case object Ok
   case object BadEvaluation extends RuntimeException with NoStackTrace
 }

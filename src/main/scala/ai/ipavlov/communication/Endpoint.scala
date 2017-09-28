@@ -33,7 +33,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private val bot = new BotWorker(context.system, telegramGate,
-    Routes.route(botGate, self, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system),
+    Routes.route(botGate, self, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system, log),
     telegramToken, telegramWebhook).run()
 
   /*private def initialized(talkConstructor: ActorRef): Receive = {
@@ -74,19 +74,19 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
     }
 
     {
-      case m @ ChatMessageToUser(h: FbChat, _, _, _) => user(h) forward m
-      case m @ SystemNotificationToUser(h: FbChat, _) => user(h) forward m
-
-      case m @ ActivateTalkForUser(h: FbChat, _) => user(h) forward m
-      case m @ FinishTalkForUser(h: FbChat, _) => user(h) forward m
-      case m @ AskEvaluationFromHuman(h: FbChat, _) => user(h) forward m
-      case m @ EndHumanDialog(h: FbChat, _) => user(h) forward m
-
-      case m @ MessageFromUser(h: FbChat, text) if text.trim == "/begin" => user(h) ! User.Begin
-      case m @ MessageFromUser(h: FbChat, text) if text.trim == "/end" => user(h) ! User.End
-      case m @ MessageFromUser(h: FbChat, text) if text.trim == "/help" => user(h) ! User.Help
-      case m @ MessageFromUser(h: FbChat, text) => user(h) ! User.AppendMessageToTalk(text)
-      case m @ EvaluateFromUser(h: FbChat, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)
+      case m @ ChatMessageToUser(h: Human, _, _, _) => user(h) forward m
+      case m @ SystemNotificationToUser(h: Human, _) => user(h) forward m
+      case m @ ActivateTalkForUser(h: Human, _) => user(h) forward m
+      case m @ FinishTalkForUser(h: Human, _) => user(h) forward m
+      case m @ AskEvaluationFromHuman(h: Human, _) => user(h) forward m
+      case m @ EndHumanDialog(h: Human, _) => user(h) forward m
+      case m @ ChancelTestDialog(h: Human, cause) => user(h) forward m
+      case m @ MessageFromUser(h: Human, text) if text.trim == "/begin" => user(h) ! User.Begin
+      case m @ MessageFromUser(h: Human, text) if text.trim == "/end" => user(h) ! User.End
+      case m @ MessageFromUser(h: Human, text) if text.trim == "/help" => user(h) ! User.Help
+      case m @ MessageFromUser(h: Human, text) if text.trim.startsWith("/test") => user(h) ! User.Test(text.trim.substring("/test".length).trim)
+      case m @ MessageFromUser(h: Human, text) => user(h) ! User.AppendMessageToTalk(text)
+      case m @ EvaluateFromUser(h: Human, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)
 
 
       case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
@@ -115,7 +115,7 @@ object Endpoint {
   def props(storage: ActorRef): Props = Props(new Endpoint(storage))
 
   sealed trait MessageFromDialog
-  case class ChatMessageToUser(receiver: UserSummary, message: String, fromDialogId: Int, id: Int) extends MessageFromDialog
+  case class ChatMessageToUser(receiver: UserSummary, message: String, fromDialogId: Int, id: String) extends MessageFromDialog
   trait SystemNotification extends MessageFromDialog
   case class AskEvaluationFromHuman(receiver: Human, question: String) extends SystemNotification
   case class EndHumanDialog(receiver: Human, text: String) extends SystemNotification
@@ -130,7 +130,7 @@ object Endpoint {
 
 
   case class MessageFromUser(user: UserSummary, text: String)
-  case class EvaluateFromUser(user: UserSummary, mid: Int, eval: Int)
+  case class EvaluateFromUser(user: UserSummary, mid: String, eval: Int)
 
 }
 

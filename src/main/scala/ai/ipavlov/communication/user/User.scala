@@ -38,10 +38,14 @@ case object Idle extends UserState
 case object WaitDialogCreation extends UserState
 case object InDialog extends UserState
 case object OnEvaluation extends UserState
+case object BotTestDialogCreation extends UserState
+case object BotTesting extends UserState
 
 sealed trait State
 case object Uninitialized extends State
 case class DialogRef(dialog: ActorRef) extends State
+case class BotUnderTest(botId: String) extends State
+case class BotTestingData(botId: String, dialog: ActorRef) extends State
 
 class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends LoggingFSM[UserState, State] {
   override def logDepth = 12
@@ -63,11 +67,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
 
-    case Event(TryShutdown, _) => stop()
-  }
+    case Event(User.Test(botId), Uninitialized) =>
+      goto(BotTestDialogCreation) using BotUnderTest(botId)
 
-  onTransition {
-    case Idle -> WaitDialogCreation => dialogDaddy ! DialogFather.UserAvailable(summary, 1)
+    case Event(TryShutdown, _) => stop()
   }
 
   when(WaitDialogCreation) {
@@ -85,7 +88,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.SystemNotificationToUser(_, mes), DialogRef(t)) =>
       client ! Client.ShowSystemNotification(summary.id, mes)
       stay()
-    case Event(Endpoint.ChatMessageToUser(_, message: String, _, id: Int), DialogRef(_)) =>
+    case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), DialogRef(_)) =>
       //TODO
       client ! Client.ShowChatMessage(summary.id, id.toString, message)
       stay()
@@ -113,6 +116,65 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(TryShutdown, _) => stay()
   }
 
+  when(BotTestDialogCreation) {
+    case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
+      client ! Client.ShowSystemNotification(summary.id, mes)
+      stay()
+
+    case Event(Endpoint.ActivateTalkForUser(_, talk), BotUnderTest(botId)) =>
+      goto(BotTesting) using BotTestingData(botId, talk)
+
+    case Event(TryShutdown, _) => stay()
+
+    case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
+      log.info("test dialog canceled: {}", cause)
+      goto(Idle) using Uninitialized
+  }
+
+  when(BotTesting) {
+    case Event(Endpoint.SystemNotificationToUser(_, mes), _) =>
+      client ! Client.ShowSystemNotification(summary.id, mes)
+      stay()
+    case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), _) =>
+      //TODO
+      client ! Client.ShowChatMessage(summary.id, id.toString, message)
+      stay()
+    case Event(Endpoint.AskEvaluationFromHuman(_, text), _) =>
+      client ! Client.ShowEvaluationMessage(summary.id, text)
+      stay()
+    case Event(Endpoint.EndHumanDialog(_, _), _) =>
+      client ! Client.ShowLastNotificationInDialog(summary.id, Messages.lastNotificationInDialog)
+      stay()
+
+    case Event(User.AppendMessageToTalk(text), BotTestingData(_, talk)) =>
+      talk ! Dialog.PushMessageToTalk(summary, text)
+      stay()
+    case Event(User.EvaluateMessage(mid, evaluation), BotTestingData(_, talk)) =>
+      talk ! Dialog.EvaluateMessage(mid, evaluation)
+      stay()
+
+    case Event(Endpoint.FinishTalkForUser(_, _), _) =>
+      goto(Idle) using Uninitialized
+
+    case Event(User.End, _) =>
+      dialogDaddy ! DialogFather.UserLeave(summary)
+      stay()
+
+    case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
+      log.info("test dialog canceled: {}", cause)
+      goto(Idle) using Uninitialized
+
+    case Event(TryShutdown, _) => stay()
+  }
+
+  onTransition {
+    case Idle -> WaitDialogCreation => dialogDaddy ! DialogFather.UserAvailable(summary, 1)
+    case Idle -> BotTestDialogCreation => stateData match {
+      case BotUnderTest(botId) => dialogDaddy ! DialogFather.CreateTestDialogWithBot (summary, botId)
+      case _ => log.error("inconsistent state! state name: {}, state data: {}", stateName, stateData)
+    }
+  }
+
   whenUnhandled {
     case Event(event, data) =>
       log.warning("Received unhandled event: {} in state {}", event, stateName)
@@ -137,7 +199,9 @@ object User {
   case object Begin extends UserCommand
   case object End extends UserCommand
   case object Help extends UserCommand
-  case class EvaluateMessage(messageId: Int, evaluation: Int)
+  case class  Test(botId: String) extends UserCommand
+
+  case class EvaluateMessage(messageId: String, evaluation: Int)
   case class AppendMessageToTalk(text: String) extends UserCommand
 
   private case object TryShutdown

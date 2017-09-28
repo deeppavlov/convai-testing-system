@@ -118,7 +118,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsgPF(3.seconds) { case Endpoint.ChatMessageToUser(Bot("111"), "/start test", _, _) => }
 
       talk ! Dialog.PushMessageToTalk(Tester("1"), "ololo")
-      gate.expectMsg(Endpoint.ChatMessageToUser(Bot("111"), "ololo", talk.hashCode(), 0))
+      gate.expectMsg(Endpoint.ChatMessageToUser(Bot("111"), "ololo", talk.hashCode(), "0"))
 
       clck.tick()
 
