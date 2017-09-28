@@ -57,6 +57,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
   when(Idle) {
     case Event(User.Begin, Uninitialized) =>
+      dialogDaddy ! DialogFather.UserAvailable(summary, 1)
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
@@ -68,6 +69,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       stay()
 
     case Event(User.Test(botId), Uninitialized) =>
+      dialogDaddy ! DialogFather.CreateTestDialogWithBot (summary, botId)
       goto(BotTestDialogCreation) using BotUnderTest(botId)
 
     case Event(TryShutdown, _) => stop()
@@ -165,14 +167,6 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(Idle) using Uninitialized
 
     case Event(TryShutdown, _) => stay()
-  }
-
-  onTransition {
-    case Idle -> WaitDialogCreation => dialogDaddy ! DialogFather.UserAvailable(summary, 1)
-    case Idle -> BotTestDialogCreation => stateData match {
-      case BotUnderTest(botId) => dialogDaddy ! DialogFather.CreateTestDialogWithBot (summary, botId)
-      case _ => log.error("inconsistent state! state name: {}, state data: {}", stateName, stateData)
-    }
   }
 
   whenUnhandled {
