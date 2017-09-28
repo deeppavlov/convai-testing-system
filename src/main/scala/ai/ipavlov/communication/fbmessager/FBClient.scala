@@ -32,9 +32,18 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
       )
       )
     case Client.ShowSystemNotification(receiverId, text) =>
-      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      /*sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
         metadata = Some("DEVELOPER_DEFINED_METADATA")
+      )
+      )*/
+      sendMessage(text, receiverId, pageAccessToken, txt => FBMessage(
+        text = Some(txt),
+        metadata = Some("DEVELOPER_DEFINED_METADATA"),
+        quick_replies = Some(List(
+          FBQuickReply("\uD83D\uDC4D", "like"),
+          FBQuickReply("\uD83D\uDC4E", "ulike")
+        ))
       )
       )
     case Client.ShowEvaluationMessage(receiverId, text) =>
