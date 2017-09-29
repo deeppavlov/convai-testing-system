@@ -59,7 +59,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         }
       }
     } ~ get {
-      path("fb" / "webhook") {
+      path("fbwebhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
             verifyToken(tokenFromFb, mode, challenge, callbackToken)
@@ -68,7 +68,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       }
     } ~ post {
       verifyPayload(request, fbSecret)(materializer, ec, logger) {
-        path("fb" / "webhook") {
+        path("fbwebhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
