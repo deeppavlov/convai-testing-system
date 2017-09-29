@@ -58,8 +58,8 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             complete(StatusCodes.BadRequest)
         }
       }
-    } /* ~ get {
-      path("webhook") {
+    } ~ get {
+      path("fb" / "webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
             verifyToken(tokenFromFb, mode, challenge, callbackToken)
@@ -68,7 +68,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       }
     } ~ post {
       verifyPayload(request, fbSecret)(materializer, ec, logger) {
-        path("webhook") {
+        path("fb" / "webhook") {
           entity(as[FBPObject]) { fbObject =>
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
@@ -76,7 +76,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
           }
         }
       }
-    } */
+    }
   }
 
   private implicit val sendMesFormat: RootJsonFormat[SendMes] = new RootJsonFormat[SendMes] {
