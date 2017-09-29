@@ -26,7 +26,8 @@ class UserSpec extends TestKit(ActorSystem("UserSpec", ConfigFactory.parseString
   }
 
   case object Tester extends Human {
-    override val id: String = "tester-1"
+    override val address: String = "tester-1"
+    override val username: String = "tester-1"
   }
 
   "user FSM" should {

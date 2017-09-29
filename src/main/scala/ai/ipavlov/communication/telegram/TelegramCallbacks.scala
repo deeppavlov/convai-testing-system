@@ -1,41 +1,25 @@
 package ai.ipavlov.communication.telegram
 
-import ai.ipavlov.communication.Endpoint.ChancelTestDialog
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.user.{Messages, TelegramChat}
-import ai.ipavlov.dialog.{Dialog, DialogFather, MongoStorage}
+import ai.ipavlov.communication.user.TelegramChat
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.util.Timeout
-import buildinfo.BuildInfo
 import info.mukel.telegrambot4s.api._
 import info.mukel.telegrambot4s.methods.{AnswerCallbackQuery, EditMessageReplyMarkup, ParseMode, SendMessage}
 import info.mukel.telegrambot4s.models._
 
-import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.Try
-import scala.util.control.NonFatal
 
 /**
   * @author vadim
   * @since 04.07.17
   */
-class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
-  import TelegramEndpoint._
-  import context.dispatcher
- /* private implicit val timeout: Timeout = 5.seconds
+class TelegramCallbacks(endpoint: ActorRef, telegramCall: RequestHandler) extends Actor with ActorLogging with Stash with akka.pattern.AskSupport {
+  import TelegramCallbacks._
+  private implicit val timeout: Timeout = 5.seconds
 
-  override def receive: Receive = unititialized
-
-  private val unititialized: Receive = {
-    case SetGateway(gate) =>
-      context.become(initialized(gate))
-      unstashAll()
-
-    case m => stash()
-  }
-
-  private def initialized(telegramCall: RequestHandler): Receive = {
+ /* private def initialized(telegramCall: RequestHandler): Receive = {
     case SetGateway(g) => context.become(initialized(g))
 
     //TODO
@@ -202,13 +186,56 @@ class TelegramEndpoint(daddy: ActorRef, storage: ActorRef) extends Actor with Ac
   private def isNotInDialog(chatId: Long, username: Option[String]) = !isInDialog(chatId, username)
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId), Messages.helpMessage, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
+*/
+  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 
-  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"*/
-  override def receive = ???
+  override val receive: Receive = {
+    case Command(chat, "/start") =>
+      telegramCall(SendMessage(Left(chat.id),
+        """
+          |Welcome!
+          |You’re going to participate in The Conversational Intelligence Challenge as a volunteer.
+          |Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0. Please use command /help for instruction[.](https://raw.githubusercontent.com/deepmipt/nips_router_bot/master/src/main/resources/sponsors_480.png)
+        """.stripMargin, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+          Seq( KeyboardButton("/begin") ),
+          Seq( KeyboardButton("/help") )
+        )))
+      ))
+
+    case Update(num , _, _, _, _, _, _, Some(CallbackQuery(cdId, User(uid, firstName, _, Some(username), _), Some(responseToMessage), _, _, Some(data),None)), None, None) =>
+      (data.split(",").toList, responseToMessage.chat.id) match {
+        case (messageId :: "dislike" :: Nil, chatId) if Try(messageId.toInt).isSuccess =>
+          endpoint ! Endpoint.EvaluateFromUser(TelegramChat(chatId.toString, username), messageId, 1)
+          telegramCall(AnswerCallbackQuery(cdId, None, Some(false), None, None))
+          telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
+            InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId.toInt, "like")),
+            InlineKeyboardButton.callbackData("\uD83D\uDC4E\u2605", encodeCbData(messageId.toInt, "dislike"))
+          )))
+          )))
+        case (messageId :: "like" :: Nil, chatId) if Try(messageId.toInt).isSuccess =>
+          endpoint ! Endpoint.EvaluateFromUser(TelegramChat(chatId.toString, username), messageId, 2)
+          telegramCall(AnswerCallbackQuery(cdId, None, Some(false), None, None))
+          telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
+            InlineKeyboardButton.callbackData("\uD83D\uDC4D\u2605", encodeCbData(messageId.toInt, "like")),
+            InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId.toInt, "dislike"))
+          )))
+          )))
+      }
+
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if message.chat.username.isEmpty =>
+      telegramCall(SendMessage(Left(message.chat.id), """`(system msg):` Please set your Username in Settings menu.
+                                           |    - MacOS & iOS:
+                                           |    Gear ("Settings") button to bottom left, after that "Username";
+                                           |    - Windows & Linux & Android:
+                                           |    Menu button left top, "Settings" and "Username" field.""".stripMargin, Some(ParseMode.Markdown)))
+
+    case Update(num, Some(message), _, _, _, _, _, None, _, _) if message.chat.username.isDefined && message.text.isDefined =>
+      endpoint ! Endpoint.MessageFromUser(TelegramChat(message.chat.id.toString, message.chat.username.get), message.text.get)
+  }
 }
 
-object TelegramEndpoint {
-  def props(talkConstructor: ActorRef, storage: ActorRef): Props = Props(new TelegramEndpoint(talkConstructor, storage))
+object TelegramCallbacks {
+  def props(endpoint: ActorRef, telegramCall: RequestHandler): Props = Props(new TelegramCallbacks(endpoint, telegramCall))
 
   private case object Command {
     def unapply(message: Update): Option[(Chat, String)] = {

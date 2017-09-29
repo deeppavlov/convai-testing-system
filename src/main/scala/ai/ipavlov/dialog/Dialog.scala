@@ -61,9 +61,9 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       if (history.size > maxLen) self ! EndDialog
 
     case EndDialog =>
-      val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.id}")
+      val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.address}")
       e1 ! EvaluationProcess.StartEvaluation
-      val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.id}")
+      val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.address}")
       e2 ! EvaluationProcess.StartEvaluation
       context.become(onEvaluation(e1, e2))
 

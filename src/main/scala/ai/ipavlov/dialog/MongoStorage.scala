@@ -65,7 +65,7 @@ object MongoStorage {
 
   private case object Init
 
-  private case class UserSummary(id: String, userType: String, username: Option[String])
+  private case class UserSummary(id: String, userType: String, username: String)
 
   private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
@@ -77,11 +77,11 @@ object MongoStorage {
       new Dialog(new ObjectId(),
         wd.id,
         wd.users.map {
-          case u: Bot => UserSummary(u.id, u.getClass.getName, Some(u.id))
-          case u: TelegramChat => UserSummary(u.id, u.getClass.getName, u.username)
+          case u: Bot => UserSummary(u.address, u.getClass.getName, u.address)
+          case u: TelegramChat => UserSummary(u.address, u.getClass.getName, u.username)
         },
-        wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.id, txt, Instant.now().getNano, evaluation) },
-        wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.id, q, b, e) } )
+        wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.address, txt, Instant.now().getNano, evaluation) },
+        wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.address, q, b, e) } )
   }
 
   private val codecRegistry = fromRegistries(

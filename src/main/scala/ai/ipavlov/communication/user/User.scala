@@ -12,26 +12,18 @@ import scala.concurrent.duration._
   * @since 06.07.17
   */
 trait UserSummary {
-  val id: String
+  val address: String
 }
 
 case class Bot(token: String) extends UserSummary {
-  val id: String = token
+  val address: String = token
 }
 
-trait Human extends UserSummary
-
-case class TelegramChat(id: String, username: Option[String]) extends Human {
-  override def canEqual(a: Any): Boolean = a.isInstanceOf[TelegramChat]
-  override def equals(that: Any): Boolean =
-    that match {
-      case that: TelegramChat => that.canEqual(this) && that.id == id
-      case _ => false
-    }
-  override def hashCode: Int = { id.hashCode() }
+trait Human extends UserSummary {
+  val username: String
 }
-
-case class FbChat(id: String) extends Human
+case class TelegramChat(address: String, username: String) extends Human
+case class FbChat(address: String, username: String) extends Human
 
 sealed trait UserState
 case object Idle extends UserState
@@ -61,11 +53,11 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.id, Messages.helpMessage)
+      client ! Client.ShowSystemNotification(summary.address, Messages.helpMessage)
       stay()
 
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.id, mes)
+      client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
     case Event(User.Test(botId), Uninitialized) =>
@@ -77,7 +69,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
   when(WaitDialogCreation) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.id, mes)
+      client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), Uninitialized) =>
@@ -88,17 +80,17 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
   when(InDialog) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), DialogRef(t)) =>
-      client ! Client.ShowSystemNotification(summary.id, mes)
+      client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
     case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), DialogRef(_)) =>
       //TODO
-      client ! Client.ShowChatMessage(summary.id, id.toString, message)
+      client ! Client.ShowChatMessage(summary.address, id.toString, message)
       stay()
     case Event(Endpoint.AskEvaluationFromHuman(_, text), DialogRef(_)) =>
-      client ! Client.ShowEvaluationMessage(summary.id, text)
+      client ! Client.ShowEvaluationMessage(summary.address, text)
       stay()
     case Event(Endpoint.EndHumanDialog(_, _), DialogRef(_)) =>
-      client ! Client.ShowLastNotificationInDialog(summary.id, Messages.lastNotificationInDialog)
+      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
       stay()
 
     case Event(User.AppendMessageToTalk(text), DialogRef(talk)) =>
@@ -120,7 +112,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
   when(BotTestDialogCreation) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.id, mes)
+      client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
     case Event(Endpoint.ActivateTalkForUser(_, talk), BotUnderTest(botId)) =>
@@ -129,23 +121,23 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(TryShutdown, _) => stay()
 
     case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
-      log.info("test dialog canceled: {}", cause)
+      client ! Client.ShowSystemNotification(summary.address, cause)
       goto(Idle) using Uninitialized
   }
 
   when(BotTesting) {
     case Event(Endpoint.SystemNotificationToUser(_, mes), _) =>
-      client ! Client.ShowSystemNotification(summary.id, mes)
+      client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
     case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), _) =>
       //TODO
-      client ! Client.ShowChatMessage(summary.id, id.toString, message)
+      client ! Client.ShowChatMessage(summary.address, id.toString, message)
       stay()
     case Event(Endpoint.AskEvaluationFromHuman(_, text), _) =>
-      client ! Client.ShowEvaluationMessage(summary.id, text)
+      client ! Client.ShowEvaluationMessage(summary.address, text)
       stay()
     case Event(Endpoint.EndHumanDialog(_, _), _) =>
-      client ! Client.ShowLastNotificationInDialog(summary.id, Messages.lastNotificationInDialog)
+      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
       stay()
 
     case Event(User.AppendMessageToTalk(text), BotTestingData(_, talk)) =>
@@ -172,7 +164,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   whenUnhandled {
     case Event(event, data) =>
       log.warning("Received unhandled event: {} in state {}", event, stateName)
-      client ! Client.ShowSystemNotification(summary.id, Messages.notSupported)
+      client ! Client.ShowSystemNotification(summary.address, Messages.notSupported)
       stay
   }
 

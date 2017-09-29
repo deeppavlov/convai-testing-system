@@ -18,7 +18,7 @@ import scala.util.Try
   * @since 05.07.17
   */
 class BotWorker(sys: ActorSystem,
-                telegramUserRepo: ActorRef,
+                endpoint: ActorRef,
                 externalRoutes: Route,
                 override val token: String,
                 override val webhookUrl: String
@@ -35,12 +35,10 @@ class BotWorker(sys: ActorSystem,
     8433
   } { port =>
     logger.info(s"bind on $port port")
-    port.toInt
+    port
   }
 
-  override val broker: Option[ActorRef] = Some(telegramUserRepo)
-
-  telegramUserRepo ! TelegramEndpoint.SetGateway(this.request)
-
+  private val telegramGate = system.actorOf(TelegramCallbacks.props(endpoint, this.request), "telegram-gate")
+  override val broker: Option[ActorRef] = Some(telegramGate)
 }
 

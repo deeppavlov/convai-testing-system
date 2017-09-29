@@ -50,5 +50,7 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
     }
   }
 
-  case class Tester(id: String) extends Human
+  case class Tester(address: String) extends Human {
+    val username: String = address
+  }
 }

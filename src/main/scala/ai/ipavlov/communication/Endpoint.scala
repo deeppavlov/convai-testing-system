@@ -2,7 +2,7 @@ package ai.ipavlov.communication
 
 import ai.ipavlov.communication.fbmessager.FBClient
 import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
-import ai.ipavlov.communication.telegram.{BotWorker, TelegramEndpoint}
+import ai.ipavlov.communication.telegram.{BotWorker, TelegramClient}
 import ai.ipavlov.communication.user._
 import ai.ipavlov.dialog.DialogFather
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
@@ -17,10 +17,8 @@ import scala.util.Try
 class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   import Endpoint._
 
-  private val telegramGate = context.actorOf(TelegramEndpoint.props(self, storage), "telegram-gate")
   private val botGate = context.actorOf(BotEndpoint.props(self), "bot-gate")
   private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessager.pageAccessToken")).getOrElse("unknown")
-  //private val fbGate = context.actorOf(FBEndpoint.props(self, storage, facebookPageAccessToken), "fb-gate")
 
   private val telegramToken = Try(context.system.settings.config.getString("telegram.token")).getOrElse("unknown")
   private val facebookSecret = Try(context.system.settings.config.getString("fbmessager.secret")).getOrElse("unknown")
@@ -32,9 +30,12 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
-  private val bot = new BotWorker(context.system, telegramGate,
+  private val bot = new BotWorker(context.system, self,
     Routes.route(botGate, self, facebookSecret, facebookToken, facebookPageAccessToken)(mat, context.dispatcher, context.system, log),
-    telegramToken, telegramWebhook).run()
+    telegramToken, telegramWebhook)
+  bot.run()
+  private val tgClient = context.actorOf(TelegramClient.props(bot.request), name="fbClient")
+  private val fbClient = context.actorOf(FBClient.props(facebookPageAccessToken), name="fbClient")
 
   /*private def initialized(talkConstructor: ActorRef): Receive = {
     case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
@@ -65,11 +66,11 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
 
 
   private def initialized(talkConstructor: ActorRef): Receive = {
-    val fbClient = context.actorOf(FBClient.props(talkConstructor, storage, facebookPageAccessToken), name="fbClient")
 
     def user(h: Human): ActorRef = {
       h match {
-        case _: FbChat => context.child("fb-" + h.id).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient), name = "fb-" + h.id))
+        case _: FbChat => context.child("fb-" + h.address).getOrElse(context.actorOf(User.props(h, talkConstructor, fbClient), name = "fb-" + h.address))
+        case _: TelegramChat => context.child("tg-" + h.address).getOrElse(context.actorOf(User.props(h, talkConstructor, tgClient), name = "tg-" + h.address))
       }
     }
 

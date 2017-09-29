@@ -1,7 +1,7 @@
 package ai.ipavlov.communication.fbmessager
 
 import ai.ipavlov.communication.user.Client
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.ActorMaterializer
@@ -13,7 +13,7 @@ import scala.util.Failure
   * @author vadim
   * @since 26.09.17
   */
-class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) extends Actor with ActorLogging {
+class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
   import context.dispatcher
 
   private implicit val system: ActorSystem = context.system
@@ -84,5 +84,5 @@ class FBClient(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) exte
 }
 
 object FBClient {
-  def props(daddy: ActorRef, storage: ActorRef, pageAccessToken: String) = Props(new FBClient(daddy, storage, pageAccessToken))
+  def props(pageAccessToken: String) = Props(new FBClient(pageAccessToken))
 }

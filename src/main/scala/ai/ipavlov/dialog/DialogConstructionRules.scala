@@ -44,7 +44,7 @@ trait DialogConstructionRules {
     val humanProb = (P0 * Math.exp(urgentlyDistributedK)) / (1 + P0 * (Math.exp(urgentlyDistributedK) - 1))
 
     (humans.zip(humans.reverse).take(humans.length / 2)
-      .map { case (u1, u2) => if (u1.id.hashCode < u2.id.hashCode) (u1, u2) else (u2, u1) }
+      .map { case (u1, u2) => if (u1.address.hashCode < u2.address.hashCode) (u1, u2) else (u2, u1) }
       .foldRight(List.empty[(UserSummary, UserSummary)]) { case ((a, b), acc) =>
         val isHumanPair = rnd.nextDouble() < humanProb
         val robot = rnd.shuffle(robots.filter(_._2 > 0)).headOption

@@ -70,8 +70,8 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
           case m@DialogFather.UserAvailable(_: Bot, _) => botActivationMessages += m
         }
         botActivationMessages.foreach(dialogConstructor ! _)
-        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("1", Some("vasya")), 1)
-        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("2", Some("petya")), 1)
+        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("1", "vasya"), 1)
+        dialogConstructor ! DialogFather.UserAvailable(TelegramChat("2", "petya"), 1)
 
         gate.expectMsgPF(3.seconds) { case Endpoint.SystemNotificationToUser(_, _) => }
         gate.expectMsgPF(3.seconds) {
@@ -83,8 +83,8 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
           case Endpoint.ActivateTalkForUser(_: Bot, _) => robot_dialogs += 1
         }
 
-        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", Some("vasya")))
-        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", Some("petya")))
+        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", "vasya"))
+        dialogConstructor ! DialogFather.UserLeave(TelegramChat("1", "petya"))
 
         system.stop(botGate)
         system.stop(dialogConstructor)
