@@ -190,6 +190,9 @@ class TelegramCallbacks(endpoint: ActorRef, telegramCall: RequestHandler) extend
   private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
 
   override val receive: Receive = {
+    case m =>
+      log.warning("received unknown message: {}", m)
+
     case Command(chat, "/start") =>
       telegramCall(SendMessage(Left(chat.id),
         """
