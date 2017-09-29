@@ -36,7 +36,25 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             system: ActorSystem,
             logger: LoggingAdapter): Route = extractRequest { request: HttpRequest =>
 
-    post {
+    get {
+      path("fbwh") {
+        parameters("hub.verify_token", "hub.mode", "hub.challenge") {
+          (tokenFromFb, mode, challenge) => complete {
+            verifyToken(tokenFromFb, mode, challenge, callbackToken)
+          }
+        }
+      }
+    } ~ post {
+      verifyPayload(request, fbSecret)(materializer, ec, logger) {
+        path("fbwh") {
+          entity(as[FBPObject]) { fbObject =>
+            complete {
+              handleMessage(endpoint, fbObject, pageAccessToken)
+            }
+          }
+        }
+      }
+    } ~ post {
       path(""".+""".r / "sendMessage") { token =>
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
@@ -56,24 +74,6 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             complete(toJson(l))
           case util.Failure(ex) =>
             complete(StatusCodes.BadRequest)
-        }
-      }
-    } ~ get {
-      path("fbwh") {
-        parameters("hub.verify_token", "hub.mode", "hub.challenge") {
-          (tokenFromFb, mode, challenge) => complete {
-            verifyToken(tokenFromFb, mode, challenge, callbackToken)
-          }
-        }
-      }
-    } ~ post {
-      verifyPayload(request, fbSecret)(materializer, ec, logger) {
-        path("fbwh") {
-          entity(as[FBPObject]) { fbObject =>
-            complete {
-              handleMessage(endpoint, fbObject, pageAccessToken)
-            }
-          }
         }
       }
     }
