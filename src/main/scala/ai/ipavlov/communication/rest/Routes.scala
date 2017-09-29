@@ -37,7 +37,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             logger: LoggingAdapter): Route = extractRequest { request: HttpRequest =>
 
     /*get {
-      path("fbwh") {
+      pathPrefix("fbwh") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
             verifyToken(tokenFromFb, mode, challenge, callbackToken)
@@ -46,7 +46,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
       }
     } ~ post {
       verifyPayload(request, fbSecret)(materializer, ec, logger) {
-        path("fbwh") {
+        pathPrefix("fbwh") {
           entity(as[FBPObject]) { fbObject =>
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
@@ -55,7 +55,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         }
       }
     } ~*/ post {
-      path(""".+""".r / "sendMessage") { token =>
+      pathPrefix(""".+""".r / "sendMessage") { token =>
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
           val r = (botService ? BotEndpoint.SendMessage(token, to, mes)).mapTo[Message]
