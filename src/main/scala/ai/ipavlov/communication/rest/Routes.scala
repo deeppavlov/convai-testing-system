@@ -58,7 +58,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             complete(StatusCodes.BadRequest)
         }
       }
-    } ~ get {
+    } /* ~ get {
       path("webhook") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
@@ -76,7 +76,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
           }
         }
       }
-    }
+    } */
   }
 
   private implicit val sendMesFormat: RootJsonFormat[SendMes] = new RootJsonFormat[SendMes] {
