@@ -231,6 +231,9 @@ class TelegramCallbacks(endpoint: ActorRef, telegramCall: RequestHandler) extend
 
     case Update(num, Some(message), _, _, _, _, _, None, _, _) if message.chat.username.isDefined && message.text.isDefined =>
       endpoint ! Endpoint.MessageFromUser(TelegramChat(message.chat.id.toString, message.chat.username.get), message.text.get)
+
+    case m =>
+      log.warning("received unknown message: {}", m)
   }
 }
 
