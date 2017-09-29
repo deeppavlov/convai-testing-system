@@ -36,7 +36,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             system: ActorSystem,
             logger: LoggingAdapter): Route = extractRequest { request: HttpRequest =>
 
-    get {
+    /*get {
       path("fbwh") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
@@ -54,7 +54,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
           }
         }
       }
-    } ~ post {
+    } ~*/ post {
       path(""".+""".r / "sendMessage") { token =>
         entity(as[SendMes](messageUnmarshallerFromEntityUnmarshaller(sprayJsonUnmarshaller(sendMesFormat)))) { case SendMes(to, mes) =>
           import info.mukel.telegrambot4s.marshalling.HttpMarshalling._
