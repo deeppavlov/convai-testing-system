@@ -37,7 +37,7 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             logger: LoggingAdapter): Route = extractRequest { request: HttpRequest =>
 
     get {
-      pathPrefix("fbwh") {
+      path("fbwh") {
         parameters("hub.verify_token", "hub.mode", "hub.challenge") {
           (tokenFromFb, mode, challenge) => complete {
             verifyToken(tokenFromFb, mode, challenge, callbackToken)
@@ -45,8 +45,8 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
         }
       }
     } ~ post {
-      verifyPayload(request, fbSecret)(materializer, ec, logger) {
-        pathPrefix("fbwh") {
+      path("fbwh") {
+        verifyPayload(request, fbSecret)(materializer, ec, logger) {
           entity(as[FBPObject]) { fbObject =>
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
