@@ -25,8 +25,8 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
-          FBButton("postback", cutStr(txt) + " \uD83D\uDC4D", "like " + messageId),
-          FBButton("postback", cutStr(txt) + " \uD83D\uDC4E", "dislike " + messageId)
+          FBButton("postback", cutStr(text) + " \uD83D\uDC4D", "like " + messageId),
+          FBButton("postback", cutStr(text) + " \uD83D\uDC4E", "dislike " + messageId)
         )))))
       )
 
