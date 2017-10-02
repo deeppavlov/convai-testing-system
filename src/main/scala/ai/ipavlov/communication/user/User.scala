@@ -67,7 +67,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(TryShutdown, _) => stop()
 
     case _ =>
-      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
+      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.helpMessage)
       stay()
   }
 
