@@ -9,9 +9,9 @@ import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Try
-import scala.util.control.NoStackTrace
 
 /**
   * @author vadim
@@ -23,7 +23,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
-  private implicit val ec = context.dispatcher
+  private implicit val ec: ExecutionContext = context.dispatcher
   private val canceble = context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
 
   override def postStop(): Unit = {
@@ -69,11 +69,9 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
 
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
-        sender ! akka.actor.Status.Failure(BadEvaluation)
         log.info("message {} not present in history", messageId)
       } { case (from, text, _) =>
         history.update(messageId, (from, text, category))
-        sender ! Ok
         log.info("rated message {} with {}", messageId, category)
       }
 
@@ -102,11 +100,9 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
 
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
-        sender ! akka.actor.Status.Failure(BadEvaluation)
-        log.info("message {} not present in history", messageId)
+        log.warning("message {} not present in history", messageId)
       } { case (from, text, _) =>
         history.update(messageId, (from, text, category))
-        sender ! Ok
         log.info("rated message {} with {}", messageId, category)
       }
 
@@ -123,6 +119,4 @@ object Dialog {
   case object EndDialog
 
   case class EvaluateMessage(messageId: String, category: Int)
-  case object Ok
-  case object BadEvaluation extends RuntimeException with NoStackTrace
 }
