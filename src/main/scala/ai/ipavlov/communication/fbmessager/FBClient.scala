@@ -57,10 +57,10 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
 
     def splitText(txt: String): Seq[(String, Boolean)] = {
       val folds = txt.split(" ")
-      folds.dropRight(1).foldRight(List(("", false))) { case (c, acc) =>
+      folds.dropRight(1).foldLeft(List(("", false))) { case (acc, c) =>
         if (acc.head._1.length <= 600) (acc.head._1 + " " + c, false) :: acc.tail
         else (c, false) :: acc
-      } :+ (folds.last, true)
+      }.reverse :+ (folds.last, true)
     }
 
     def post(txt: String, isLast: Boolean): Future[Unit] = {
