@@ -12,7 +12,7 @@ object Messages {
     |    - Windows & Linux & Android:
     |    Menu button left top, "Settings" and "Username" field.
     |2. To start a dialog type or choose a /begin command .
-    |3. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message from @ConvaiBot `Please wait for you peer.`.
+    |3. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message from @ConvaiBot `Please wait for you partner.`.
     |4. Peer might be a bot or another human evaluator.
     |5. After you were connected with your peer you will receive a starting message - a passage or two from a Wikipedia article.
     |6. Your task is to discuss the content of a presented passage with the peer and score her/his replies.
