@@ -75,7 +75,9 @@ object FBQuickReply extends DefaultJsonProtocol {
       case _ => deserializationError(s"unsupported format")
     }
 
-    override def read(json: JsValue): FBQuickReply = json.asJsObject.getFields("chat_id", "text") match {
+    override def read(json: JsValue): FBQuickReply = json.asJsObject.getFields("payload", "title") match {
+      case payload :: Nil => FBQuickReply(payload.toString(), None)
+      case payload :: title :: Nil => FBQuickReply(payload.toString(), Some(title.toString()))
       case _ => serializationError(s"Invalid json format: $json")
     }
   }
