@@ -37,34 +37,6 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   private val tgClient = context.actorOf(TelegramClient.props(bot.request), name="tg-client")
   private val fbClient = context.actorOf(FBClient.props(facebookPageAccessToken), name="fb-client")
 
-  /*private def initialized(talkConstructor: ActorRef): Receive = {
-    case message @ ChatMessageToUser(_: TelegramChat, _, _, _) => telegramGate forward message
-    case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
-    case message @ ChatMessageToUser(_: FbChat, _, _, _) => fbGate forward message
-
-    case m @ ActivateTalkForUser(_: TelegramChat, _) => telegramGate forward m
-    case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
-    case m @ ActivateTalkForUser(_: FbChat, _) => fbGate forward m
-
-    case m @ FinishTalkForUser(_: TelegramChat, _) => telegramGate forward m
-    case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
-    case m @ FinishTalkForUser(_: FbChat, _) => fbGate forward m
-
-    case m@AskEvaluationFromHuman(_: TelegramChat, _) => telegramGate forward m
-    case m@SystemNotificationToUser(_: TelegramChat, _) => telegramGate forward m
-    case m@EndHumanDialog(_: TelegramChat, _) => telegramGate forward m
-    case m@AskEvaluationFromHuman(_: FbChat, _) => fbGate forward m
-    case m@SystemNotificationToUser(_: FbChat, _) => fbGate forward m
-    case m@EndHumanDialog(_: FbChat, _) => fbGate forward m
-
-    case m: DialogFather.UserAvailable => talkConstructor forward m
-    case m: DialogFather.UserLeave => talkConstructor forward m
-    case m: DialogFather.CreateTestDialogWithBot => talkConstructor forward m
-
-    case m: ChancelTestDialog => telegramGate forward m
-  }*/
-
-
   private def initialized(talkConstructor: ActorRef): Receive = {
 
     def user(h: Human): ActorRef = {

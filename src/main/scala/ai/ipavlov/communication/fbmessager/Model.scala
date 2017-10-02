@@ -25,7 +25,7 @@ case class FBMessage(mid: Option[String] = None,
 
 case class FBPostback(payload: String, title: String)
 
-case class FBQuickReply(title: Option[String] = None, payload: String)
+case class FBQuickReply(payload: String, title: Option[String] = None)
 
 case class FBSender(id: String)
 

@@ -25,8 +25,8 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         text = Some(txt),
         metadata = Some(messageId),
         quick_replies = Some(List(
-          FBQuickReply(Some("\uD83D\uDC4D"), "like " + messageId),
-          FBQuickReply(Some("\uD83D\uDC4E"), " dislike " + messageId)
+          FBQuickReply("like " + messageId, Some("\uD83D\uDC4D")),
+          FBQuickReply(" dislike " + messageId, Some("\uD83D\uDC4E"))
         ))
       )
       )
