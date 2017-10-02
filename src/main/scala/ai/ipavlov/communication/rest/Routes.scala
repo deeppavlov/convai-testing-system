@@ -51,6 +51,9 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
             }
+          } ~ entity(as[String]) { str =>
+            log.error("Unknown message from FB! {}", str)
+            complete(StatusCodes.OK)
           }
         }
       }
