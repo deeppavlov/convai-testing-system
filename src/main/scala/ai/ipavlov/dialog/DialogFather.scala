@@ -44,7 +44,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
     case UserAvailable(user: UserSummary, maxConnections) =>
       if (!availableUsers.contains(user)) {
         availableUsers.put(user, (maxConnections, 0))
-        if (user.isInstanceOf[Human]) usersDedline.put(user, Deadline.now + 10.seconds)
+        if (user.isInstanceOf[Human]) usersDedline.put(user, Deadline.now + 30.seconds)
       }
 
       val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
@@ -108,7 +108,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private def availableUsersList: List[(UserSummary, Int, Deadline)] =
     availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList.map { t =>
-      (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 1.hour))
+      (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 30.seconds))
     }
 }
 
