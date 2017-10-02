@@ -55,20 +55,32 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
 
   private def sendMessage(text: String, receiverId: String, pageAccessToken: String, f: (String) => FBMessage): Unit = {
 
-    def splitText(txt: String): Seq[String] = txt.split(" ").foldLeft(List("")) { case (acc, c) =>
-      if (acc.head.length <= 600) (acc.head + " " + c) :: acc.tail
-      else c :: acc
-    }.reverse
+    def splitText(txt: String): Seq[(String, Boolean)] = {
+      val folds = txt.split(" ")
+      folds.dropRight(1).foldRight(List(("", false))) { case (c, acc) =>
+        if (acc.head._1.length <= 600) (acc.head._1 + " " + c, false) :: acc.tail
+        else (c, false) :: acc
+      } :+ (folds.last, true)
+    }
 
-    def post(txt: String): Future[Unit] = {
+    def post(txt: String, isLast: Boolean): Future[Unit] = {
       val responseUri = "https://graph.facebook.com/v2.6/me/messages"
 
       import spray.json._
 
-      val message = FBMessageEventOut(
-        recipient = FBRecipient(receiverId.toString),
-        message = f(txt)
-      ).toJson
+      val message = if (isLast)
+        FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = f(txt)
+        ).toJson
+      else
+        FBMessageEventOut(
+          recipient = FBRecipient(receiverId.toString),
+          message = FBMessage(
+            text = Some(txt),
+            metadata = None,
+            attachment = None)
+        ).toJson
 
       Http().singleRequest(HttpRequest(
         HttpMethods.POST,
@@ -79,7 +91,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
       }.map(_ => ())
     }
 
-    splitText(text).foldLeft(Future.successful(())) { case (ft, mes) => ft.flatMap(_ => post(mes)) }
+    splitText(text).foldLeft(Future.successful(())) { case (ft, (mes, isLast)) => ft.flatMap( _ => post(mes, isLast) ) }
   }
 
   private def cutStr(str: String): String = if (str.length > 15) str.substring(0, 12) + "..." else str
