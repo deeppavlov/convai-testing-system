@@ -65,6 +65,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(BotTestDialogCreation) using BotUnderTest(botId)
 
     case Event(TryShutdown, _) => stop()
+
+    case _ =>
+      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
+      stay()
   }
 
   when(WaitDialogCreation) {
