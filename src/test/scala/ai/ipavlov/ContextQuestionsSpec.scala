@@ -1,6 +1,6 @@
 package ai.ipavlov
 
-import ai.ipavlov.dialog.{SqadQuestions, WikiNewsQuestions}
+import ai.ipavlov.dialog.{SquadQuestions, WikiNewsQuestions}
 import org.scalatest.WordSpec
 
 /**
@@ -11,8 +11,8 @@ class ContextQuestionsSpec extends WordSpec {
 
   "SqadQuestions selectRandom" must {
     "return random string" in {
-      val l1 = SqadQuestions.selectRandom
-      val l2 = SqadQuestions.selectRandom
+      val l1 = SquadQuestions.selectRandom
+      val l2 = SquadQuestions.selectRandom
 
       assert(l1.isSuccess)
       assert(l2.isSuccess)

@@ -3,7 +3,7 @@ package ai.ipavlov
 import java.time.Clock
 
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.dialog.{DialogFather, MongoStorage, SqadQuestions, WikiNewsQuestions}
+import ai.ipavlov.dialog.{DialogFather, MongoStorage, SquadQuestions, WikiNewsQuestions}
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
@@ -25,9 +25,9 @@ object ConvaiTestingSystem extends App {
   private val mongoStorage = akkaSystem.actorOf(MongoStorage.props(), name="dialog-storage")
   private val gate = akkaSystem.actorOf(Endpoint.props(mongoStorage), name = "communication-endpoint")
 
-  private val contextDataset = Try(conf.getString("talk.context.type")).getOrElse("sqad") match {
+  private val contextDataset = Try(conf.getString("talk.context.type")).getOrElse("squad") match {
     case "wikinews" => WikiNewsQuestions
-    case _ => SqadQuestions
+    case _ => SquadQuestions
   }
 
   private val talkConstructor = akkaSystem.actorOf(DialogFather.props(gate, contextDataset, mongoStorage, rnd, Clock.systemDefaultZone()), "talk-constructor")
