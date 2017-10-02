@@ -73,13 +73,6 @@ trait RouteSupport extends Directives {
     logger.debug(s"Receive fbObject: $fbObject")
     fbObject.entry.foreach { entry =>
       entry.messaging.foreach {
-        /*case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, _, _, _, _, Some(FBQuickReply(payload, None, _)))), None) =>
-          payload.split(" ").toList match {
-            case "like" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id, sender.id), messageId, 2)
-            case "dislike" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id, sender.id), messageId, 1)
-            case m => logger.warning("bad evaluation message: {}", m)
-          }*/
-
         case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, Some(text), _, _, _, _)), None) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id, sender.id), text)
 
