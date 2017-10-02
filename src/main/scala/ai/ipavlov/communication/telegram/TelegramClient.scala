@@ -15,8 +15,8 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
     case Client.ShowChatMessage(receiverAddress, messageId, text) =>
       telegramCall(SendMessage(Left(receiverAddress.toLong), "<pre>(peer msg):</pre>" + xml.Utility.escape(text), Some(ParseMode.HTML), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
-          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(receiverAddress.toLong, "like")),
-          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(receiverAddress.toLong, "dislike"))
+          InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId, "like")),
+          InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId, "dislike"))
         ))
         ))))
 
@@ -43,7 +43,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
       ))
   }
 
-  private def encodeCbData(messageId: Long, text: String) = s"$messageId,$text"
+  private def encodeCbData(messageId: String, text: String) = s"$messageId,$text"
 }
 
 object TelegramClient {

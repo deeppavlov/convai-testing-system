@@ -187,7 +187,7 @@ class TelegramCallbacks(endpoint: ActorRef, telegramCall: RequestHandler) extend
 
   private def helpMessage(chatId: Long) = SendMessage(Left(chatId), Messages.helpMessage, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove()))
 */
-  private def encodeCbData(messageId: Int, text: String) = s"$messageId,$text"
+  private def encodeCbData(messageId: String, text: String) = s"$messageId,$text"
 
   override val receive: Receive = {
     case Command(chat, "/start") =>
@@ -208,16 +208,16 @@ class TelegramCallbacks(endpoint: ActorRef, telegramCall: RequestHandler) extend
           endpoint ! Endpoint.EvaluateFromUser(TelegramChat(chatId.toString, username), messageId, 1)
           telegramCall(AnswerCallbackQuery(cdId, None, Some(false), None, None))
           telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-            InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId.toInt, "like")),
-            InlineKeyboardButton.callbackData("\uD83D\uDC4E\u2605", encodeCbData(messageId.toInt, "dislike"))
+            InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId, "like")),
+            InlineKeyboardButton.callbackData("\uD83D\uDC4E\u2605", encodeCbData(messageId, "dislike"))
           )))
           )))
-        case (messageId :: "like" :: Nil, chatId) if Try(messageId.toInt).isSuccess =>
+        case (messageId :: "like" :: Nil, chatId) if Try(messageId).isSuccess =>
           endpoint ! Endpoint.EvaluateFromUser(TelegramChat(chatId.toString, username), messageId, 2)
           telegramCall(AnswerCallbackQuery(cdId, None, Some(false), None, None))
           telegramCall(EditMessageReplyMarkup(Some(Left(responseToMessage.chat.id)), Some(responseToMessage.messageId), replyMarkup = Some(InlineKeyboardMarkup(Seq(Seq(
-            InlineKeyboardButton.callbackData("\uD83D\uDC4D\u2605", encodeCbData(messageId.toInt, "like")),
-            InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId.toInt, "dislike"))
+            InlineKeyboardButton.callbackData("\uD83D\uDC4D\u2605", encodeCbData(messageId, "like")),
+            InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId, "dislike"))
           )))
           )))
       }
