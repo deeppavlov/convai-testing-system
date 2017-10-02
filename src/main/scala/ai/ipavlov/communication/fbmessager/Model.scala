@@ -25,7 +25,7 @@ case class FBMessage(mid: Option[String] = None,
 
 case class FBPostback(payload: String, title: String)
 
-case class FBQuickReply(payload: String, title: Option[String] = None)
+case class FBQuickReply(payload: String, title: Option[String] = None, content_type: Option[String] = Some("text"))
 
 case class FBSender(id: String)
 
@@ -66,7 +66,7 @@ object FBMessage extends DefaultJsonProtocol {
   implicit val format: RootJsonFormat[FBMessage] = jsonFormat7(FBMessage(_, _, _, _, _, _, _))
 }
 
-object FBQuickReply extends DefaultJsonProtocol {
+/*object FBQuickReply extends DefaultJsonProtocol {
   implicit val formatT: RootJsonFormat[FBQuickReply] = new RootJsonFormat[FBQuickReply] {
     import spray.json._
     override def write(obj: FBQuickReply): JsValue = obj match {
@@ -81,6 +81,10 @@ object FBQuickReply extends DefaultJsonProtocol {
       case _ => serializationError(s"Invalid json format: $json")
     }
   }
+}*/
+
+object FBQuickReply extends DefaultJsonProtocol {
+  implicit val format: RootJsonFormat[FBQuickReply] = jsonFormat3(FBQuickReply(_, _, _))
 }
 
 object FBSender extends DefaultJsonProtocol {
