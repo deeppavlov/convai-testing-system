@@ -47,10 +47,14 @@ object Routes extends Directives with DefaultJsonProtocol with SprayJsonSupport 
     } ~ post {
       path("fbwh") {
         verifyPayload(request, fbSecret)(materializer, ec, logger) {
-          entity(as[FBPObject]) { fbObject =>
+          /*entity(as[FBPObject]) { fbObject =>
             complete {
               handleMessage(endpoint, fbObject, pageAccessToken)
             }
+          }*/
+          entity(as[String]) { str =>
+            logger.info("!!!" + str)
+            complete(StatusCodes.OK)
           }
         }
       }

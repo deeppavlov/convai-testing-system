@@ -34,7 +34,7 @@ case class FBRecipient(id: String)
 case class FBMessageEventIn(sender: FBSender,
                             recipient: FBRecipient,
                             timestamp: Long,
-                            message: Option[FBMessage],
+                            message: Option[FBMessage] = None,
                             postback: Option[FBPostback] = None
                            )
 
