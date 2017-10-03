@@ -84,7 +84,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
   private def sendMessage(text: String, receiverId: String, pageAccessToken: String, f: (String) => FBMessage): Unit = {
 
     def splitText(txt: String): Seq[(String, Boolean)] = {
-      val folds = txt.split(" ").dropRight(1).foldLeft(List("")) { case (acc, c) =>
+      val folds = txt.split(" ").foldLeft(List("")) { case (acc, c) =>
         if (acc.head.length <= 600) (acc.head + " " + c) :: acc.tail
         else c :: acc
       }.reverse
