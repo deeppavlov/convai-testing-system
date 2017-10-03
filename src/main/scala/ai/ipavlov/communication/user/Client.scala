@@ -14,4 +14,5 @@ object Client {
   case class ShowSystemNotification(address: String, text: String)
   case class ShowEvaluationMessage(address: String, text: String)
   case class ShowLastNotificationInDialog(address: String, text: String)
+  case class ShowHelpMessage(address: String)
 }
