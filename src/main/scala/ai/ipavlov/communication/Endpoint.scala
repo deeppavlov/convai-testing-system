@@ -68,6 +68,9 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m: DialogFather.UserAvailable => talkConstructor forward m
       case m: DialogFather.UserLeave => talkConstructor forward m
       case m: DialogFather.CreateTestDialogWithBot => talkConstructor forward m
+
+      //TODO do this for other components
+      case s @ Configure => botGate forward s
     }
   }
 
@@ -105,5 +108,6 @@ object Endpoint {
   case class MessageFromUser(user: UserSummary, text: String)
   case class EvaluateFromUser(user: UserSummary, mid: String, eval: Int)
 
+  case object Configure
 }
 

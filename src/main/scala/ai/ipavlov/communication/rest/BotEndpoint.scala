@@ -8,13 +8,15 @@ import ai.ipavlov.dialog.Dialog
 import ai.ipavlov.dialog.DialogFather.UserAvailable
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.typesafe.config.Config
 import info.mukel.telegrambot4s.models.{Chat, ChatType, Message, Update}
 import spray.json._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.duration.{Deadline, _}
-import scala.util.{Random, Success, Try}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Random, Success, Try}
 
 /**
   * @author vadim
@@ -32,23 +34,44 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val delayOn: mutable.Set[String] = mutable.Set.empty[String]
 
-  private val botsQueues: Map[String, mutable.Queue[Update]] =
-    Try(context.system.settings.config.getConfigList("bot.registered").asScala).getOrElse(Seq.empty)
-      .map { botCfg =>
-        (Try(botCfg.getString("token")), Try(botCfg.getInt("max_connections")), Try(botCfg.getBoolean("delayOn")).getOrElse(false))
-      }.collect {
-      case (Success(token), Success(connections), dln) =>
-        log.info("bot {} registred", token)
-        daddy ! UserAvailable(Bot(token), connections)
-        if (dln) delayOn.add(token)
-        token -> mutable.Queue.empty[Update]
+  private val botsQueues: mutable.Map[String, mutable.Queue[Update]] = mutable.Map.empty[String, mutable.Queue[Update]]
+
+  private def loadBots(): Map[String, mutable.Queue[Update]] = {
+    val newBots = context.system.settings.config.getConfigList("bot.registered").asScala.toSet.map { botCfg: Config =>
+      Try {
+        (botCfg.getString("token"), botCfg.getInt("max_connections"), botCfg.getBoolean("delayOn"))
+      }.recoverWith {
+        case NonFatal(e) =>
+          log.warning("bad settings for bot {}, not used!", botCfg)
+          Failure(e)
+      }
+    }.collect {
+      case Success(cfg) => cfg
+    }
+
+    val newBotsIds = newBots.map(_._1)
+    val botsToRemove = botsQueues.keySet.diff(newBotsIds)
+    val botsToAdd = newBotsIds.diff(botsQueues.keySet)
+
+    botsToRemove.foreach { id =>
+      botsQueues.remove(id)
+    }
+
+    newBots.filter(id => botsToAdd.contains(id._1)).map { case (token, maxConn, isDelaed) =>
+      log.info("bot {} registred", token)
+      daddy ! UserAvailable(Bot(token), maxConn)
+      if (isDelaed) delayOn.add(token)
+      token -> mutable.Queue.empty[Update]
     }.toMap
+  }
 
   private val activeChats: mutable.Map[(Bot, Long), ActorRef] = mutable.Map.empty[(Bot, Long), ActorRef]
 
   private val waitedMessages = mutable.Set.empty[(ActorRef, Dialog.PushMessageToTalk, Deadline)]
 
   context.system.scheduler.schedule(1.second, 1.second) { self ! SendMessages }
+
+  self ! Endpoint.Configure
 
   override def receive: Receive = {
     case GetMessages(token) =>
@@ -91,6 +114,8 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
     case Endpoint.ActivateTalkForUser(user: Bot, talk) => activeChats.put(user -> talk.chatId, talk)
 
     case Endpoint.FinishTalkForUser(user: Bot, talk) => activeChats.remove(user -> talk.chatId)
+
+    case Endpoint.Configure => loadBots()
   }
 
   private def messageDeadline(m: String): Deadline = {
