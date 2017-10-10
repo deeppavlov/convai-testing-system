@@ -7,7 +7,7 @@ package ai.ipavlov.communication.user
 object Messages {
   val notSupported = "Messages of this type aren't supported \uD83D\uDE1E"
 
-  val youCantDoItNow =  "Sorry, you can't to do it now"
+  val youCantDoItNow =  "Sorry, you can't to do it now \uD83D\uDE1E"
 
   val exit = """`(system msg):` exit"""
 
