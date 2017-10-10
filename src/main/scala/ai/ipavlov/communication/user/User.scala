@@ -80,6 +80,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(InDialog) using DialogRef(talk)
 
     case Event(TryShutdown, _) => stay()
+
+    case Event(_: UserCommand, Uninitialized) =>
+      client ! Client.ShowSystemNotification(summary.address, Messages.youCantDoItNow)
+      stay()
   }
 
   when(InDialog) {

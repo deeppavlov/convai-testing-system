@@ -9,6 +9,8 @@ object Messages {
 
   val youCantDoItNow =  "Sorry, you can't to do it now \uD83D\uDE1E"
 
+  val youWait =  "Please, wait..."
+
   val exit = """`(system msg):` exit"""
 
   val lastNotificationInDialog = """Thank you! It was great! Please choose /begin to continue evaluation."""
