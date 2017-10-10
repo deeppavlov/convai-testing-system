@@ -82,7 +82,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(TryShutdown, _) => stay()
 
     case Event(_: UserCommand, Uninitialized) =>
-      client ! Client.ShowSystemNotification(summary.address, Messages.youCantDoItNow)
+      client ! Client.ShowSystemNotification(summary.address, Messages.pleaseWait)
       stay()
   }
 

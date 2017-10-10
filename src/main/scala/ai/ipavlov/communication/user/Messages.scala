@@ -9,7 +9,7 @@ object Messages {
 
   val youCantDoItNow =  "Sorry, you can't to do it now \uD83D\uDE1E"
 
-  val youWait =  "Please, wait..."
+  val pleaseWait =  "Please, wait..."
 
   val exit = """`(system msg):` exit"""
 
