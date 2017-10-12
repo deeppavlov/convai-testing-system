@@ -1,7 +1,7 @@
 package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.user.User.TryShutdown
+import ai.ipavlov.communication.user.User.{TryShutdown, UserCommand}
 import ai.ipavlov.dialog.{Dialog, DialogFather}
 import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
 
@@ -80,6 +80,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(InDialog) using DialogRef(talk)
 
     case Event(TryShutdown, _) => stay()
+
+    case Event(_: UserCommand, Uninitialized) =>
+      client ! Client.ShowSystemNotification(summary.address, Messages.pleaseWait)
+      stay()
   }
 
   when(InDialog) {
@@ -166,6 +170,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   whenUnhandled {
+    case Event(_: UserCommand, Uninitialized) =>
+      client ! Client.ShowSystemNotification(summary.address, Messages.youCantDoItNow)
+      stay()
+
     case Event(event, data) =>
       log.warning("Received unhandled event: {} in state {}", event, stateName)
       client ! Client.ShowSystemNotification(summary.address, Messages.notSupported)
