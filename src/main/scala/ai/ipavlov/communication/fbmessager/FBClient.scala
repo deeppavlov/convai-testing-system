@@ -21,7 +21,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case Client.ShowChatMessage(receiverId, messageId, text) =>
-      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage("`(peer msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(

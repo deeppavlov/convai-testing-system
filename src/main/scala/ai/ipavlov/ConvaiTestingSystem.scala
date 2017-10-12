@@ -9,6 +9,7 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
+import sun.misc.{Signal, SignalHandler}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,5 +42,9 @@ object ConvaiTestingSystem extends App {
     Await.ready(akkaSystem.terminate(), 30.seconds)
     logger.info("system shutting down")
   }
+
+  Signal.handle(new Signal("SIGHUP"), (sig: Signal) => {
+    gate ! Endpoint.Configure
+  })
 }
 
