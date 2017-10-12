@@ -36,13 +36,13 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val botsQueues: mutable.Map[String, mutable.Queue[Update]] = mutable.Map.empty[String, mutable.Queue[Update]]
 
-  private def loadBots(): Map[String, mutable.Queue[Update]] = {
+  private def loadBots(): Unit = {
     val newBots = context.system.settings.config.getConfigList("bot.registered").asScala.toSet.map { botCfg: Config =>
       Try {
-        (botCfg.getString("token"), botCfg.getInt("max_connections"), botCfg.getBoolean("delayOn"))
+        (botCfg.getString("token"), botCfg.getInt("max_connections"), Try(botCfg.getBoolean("delayOn")).getOrElse(false))
       }.recoverWith {
         case NonFatal(e) =>
-          log.warning("bad settings for bot {}, not used!", botCfg)
+          log.warning("bad settings for bot {}, not used! error: {}", botCfg, e)
           Failure(e)
       }
     }.collect {
@@ -61,8 +61,8 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       log.info("bot {} registred", token)
       daddy ! UserAvailable(Bot(token), maxConn)
       if (isDelaed) delayOn.add(token)
-      token -> mutable.Queue.empty[Update]
-    }.toMap
+      botsQueues += token -> mutable.Queue.empty[Update]
+    }
   }
 
   private val activeChats: mutable.Map[(Bot, Long), ActorRef] = mutable.Map.empty[(Bot, Long), ActorRef]
