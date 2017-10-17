@@ -67,7 +67,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
 
       daddy ! DialogFather.UserAvailable(Tester("5", "5"), 1)
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("5", "5"), "Please wait for your partner."))
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("5", "5"), "Please wait for your partner."))
       gate.expectNoMsg()
     }
 
@@ -78,21 +78,21 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester("1", "1"), 1)
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
       daddy ! DialogFather.UserAvailable(Bot("1"), 1)
       daddy ! DialogFather.UserAvailable(Tester("2", "2"), 1)
       val t: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester("1" , "1"), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("1"), t))
 
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
       }
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
       }
-      gate.expectMsgPF(3.seconds) { case Endpoint.ChatMessageToUser(Bot("1"), _, "/start test", _, _) => }
+      gate.expectMsgPF(3.seconds) { case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) => }
 
       clck.tick()
       gate.expectNoMsg()
@@ -107,30 +107,30 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester("1", "1"), 1)
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
       daddy ! DialogFather.UserAvailable(Tester("2", "2"), 1)
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner."))
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner."))
       daddy ! DialogFather.UserAvailable(Bot("111"), 1)
       val talk: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester("1", "1"), tr) => tr }
       gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("111"), talk))
 
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("1", "1"), "test"))
-      gate.expectMsgPF(3.seconds) { case Endpoint.ChatMessageToUser(Bot("111"), _, "/start test", _, _) => }
+      gate.expectMsg(Endpoint.ShowContextToUser(Tester("1", "1"), "test"))
+      gate.expectMsgPF(3.seconds) { case Endpoint.ShowChatMessageToUser(Bot("111"), _, "/start test", _, _) => }
 
       talk ! Dialog.PushMessageToTalk(Tester("1", "1"), "ololo")
-      gate.expectMsgPF(3.seconds){ case Endpoint.ChatMessageToUser(Bot("111"), _, "ololo", t, "0") if talk.hashCode() == t.hashCode() => }
+      gate.expectMsgPF(3.seconds){ case Endpoint.ShowChatMessageToUser(Bot("111"), _, "ololo", t, "0") if talk.hashCode() == t.hashCode() => }
 
       clck.tick()
 
       daddy ! DialogFather.UserLeave(Tester("1", "1"))
 
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality") =>
-        case Endpoint.ChatMessageToUser(Bot("111"), _, "/end", _, _) =>
+        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)") =>
+        case Endpoint.ShowChatMessageToUser(Bot("111"), _, "/end", _, _) =>
       }
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality") =>
-        case Endpoint.ChatMessageToUser(Bot("111"), _, "/end", _, _) =>
+        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)") =>
+        case Endpoint.ShowChatMessageToUser(Bot("111"), _, "/end", _, _) =>
       }
 
       talk ! Dialog.PushMessageToTalk(Tester("1", "1"), "1")
@@ -138,7 +138,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       talk ! Dialog.PushMessageToTalk(Tester("1", "1"), "2")
       gate.expectMsg(Endpoint.AskEvaluationFromHuman(Tester("1", "1"), s"Please evaluate the engagement"))
       talk ! Dialog.PushMessageToTalk(Tester("1", "1"), "3")
-      gate.expectMsg(Endpoint.EndHumanDialog(Tester("1", "1"), "Thank you! It was great! Please choose /begin to continue."))
+      gate.expectMsg(Endpoint.EndHumanDialog(Tester("1", "1"), "Thank you! It was great! Please choose /begin to have another conversation."))
       gate.expectMsg(Endpoint.FinishTalkForUser(Tester("1", "1"), talk))
       gate.expectNoMsg()
 
@@ -169,34 +169,34 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val daddy = system.actorOf(DialogFather.props(gate.ref, textGenerator, storage.ref, rnd, clck))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
       daddy ! DialogFather.UserAvailable(Tester("1", "1"), 1)
-      gate.expectMsg(Endpoint.SystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
       daddy ! DialogFather.UserAvailable(Bot("1"), 1)
       daddy ! DialogFather.UserAvailable(Tester("2", "2"), 1)
 
       val talk: ActorRef = gate.expectMsgPF(3.seconds) { case Endpoint.ActivateTalkForUser(Tester("1", "1"), tr) => tr }
       gate.expectMsgPF(3.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
-        case Endpoint.ChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
       gate.expectMsgPF(3.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
-        case Endpoint.ChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
       gate.expectMsgPF(3.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
-        case Endpoint.ChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
       gate.expectMsgPF(3.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
-        case Endpoint.SystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.SystemNotificationToUser(Tester("1", "1"), "test") =>
-        case Endpoint.ChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
     }
   }

@@ -5,6 +5,8 @@ import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
 import akka.stream.ActorMaterializer
+import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
+import info.mukel.telegrambot4s.models.ReplyKeyboardRemove
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -28,6 +30,13 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
           FBButton("postback", cutStr(text) + " \uD83D\uDC4D", "like " + messageId),
           FBButton("postback", cutStr(text) + " \uD83D\uDC4E", "dislike " + messageId)
         )))))
+      )
+
+    case Client.ShowContext(receiverAddress, text) =>
+      sendMessage(text, receiverAddress, pageAccessToken, txt => FBMessage(
+        text = Some(txt),
+        metadata = None
+      )
       )
 
     case Client.ShowSystemNotification(receiverId, text) =>

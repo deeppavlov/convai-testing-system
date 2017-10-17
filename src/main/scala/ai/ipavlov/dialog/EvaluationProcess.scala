@@ -45,7 +45,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           //TODO: face is empty becouse bot endpoint ignored face field
-          gate ! Endpoint.ChatMessageToUser(u, "", "/end", dialog.chatId, Instant.now().getNano.toString)
+          gate ! Endpoint.ShowChatMessageToUser(u, "", "/end", dialog.chatId, Instant.now().getNano.toString)
       }
   }
 

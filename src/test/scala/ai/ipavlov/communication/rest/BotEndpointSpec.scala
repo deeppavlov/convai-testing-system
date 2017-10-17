@@ -53,15 +53,15 @@ class BotEndpointSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFacto
       val ep = system.actorOf(BotEndpoint.props(daddy.ref, BrokenClock))
       val dialog1 = TestProbe()
       ep ! Endpoint.ActivateTalkForUser(Bot("0"), dialog1.ref)
-      ep ! Endpoint.ChatMessageToUser(Bot("0"), "ignored junk", "test1", dialog1.ref.hashCode(), Instant.now().getNano.toString)
+      ep ! Endpoint.ShowChatMessageToUser(Bot("0"), "ignored junk", "test1", dialog1.ref.hashCode(), Instant.now().getNano.toString)
       ep ! GetMessages("0")
       expectMsg(List(Update(0, Some(Message(0, None, Instant.now(BrokenClock).getNano, Chat(dialog1.ref.hashCode(), ChatType.Private), text = Some("test1"))))))
       ep ! GetMessages("0")
       expectMsg(List.empty)
-      ep ! Endpoint.ChatMessageToUser(Bot("0"), "ignored junk", "test2", dialog1.ref.hashCode(), Instant.now().getNano.toString)
+      ep ! Endpoint.ShowChatMessageToUser(Bot("0"), "ignored junk", "test2", dialog1.ref.hashCode(), Instant.now().getNano.toString)
       val dialog2 = TestProbe()
       ep ! Endpoint.ActivateTalkForUser(Bot("0"), dialog2.ref)
-      ep ! Endpoint.ChatMessageToUser(Bot("0"), "ignored junk", "test3", dialog2.ref.hashCode(), Instant.now().getNano.toString)
+      ep ! Endpoint.ShowChatMessageToUser(Bot("0"), "ignored junk", "test3", dialog2.ref.hashCode(), Instant.now().getNano.toString)
       ep ! GetMessages("0")
       expectMsg(List(
         Update(0, Some(Message(0, None, Instant.now(BrokenClock).getNano, Chat(dialog1.ref.hashCode(), ChatType.Private), text = Some("test2")))),

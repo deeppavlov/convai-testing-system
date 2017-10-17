@@ -73,7 +73,7 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
         dialogConstructor ! DialogFather.UserAvailable(TelegramChat("1", "vasya"), 1)
         dialogConstructor ! DialogFather.UserAvailable(TelegramChat("2", "petya"), 1)
 
-        gate.expectMsgPF(3.seconds) { case Endpoint.SystemNotificationToUser(_, _) => }
+        gate.expectMsgPF(3.seconds) { case Endpoint.ShowSystemNotificationToUser(_, _) => }
         gate.expectMsgPF(3.seconds) {
           case Endpoint.ActivateTalkForUser(_: Human, _) => human_dialogs += 1
           case Endpoint.ActivateTalkForUser(_: Bot, _) => robot_dialogs += 1

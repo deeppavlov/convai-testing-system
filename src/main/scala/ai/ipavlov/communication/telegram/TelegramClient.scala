@@ -20,6 +20,9 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
         ))
         ))))
 
+    case Client.ShowContext(receiverAddress, text) =>
+      telegramCall(SendMessage(Left(receiverAddress.toLong), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+
     case Client.ShowSystemNotification(receiverAddress, text) =>
       telegramCall(SendMessage(Left(receiverAddress.toLong), Messages.robotFace + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 

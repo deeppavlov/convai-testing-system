@@ -1,6 +1,7 @@
 package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
+import ai.ipavlov.communication.Endpoint.ShowContextToUser
 import ai.ipavlov.communication.user.User.{TryShutdown, UserCommand}
 import ai.ipavlov.dialog.{Dialog, DialogFather}
 import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
@@ -56,7 +57,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       client ! Client.ShowHelpMessage(summary.address, isShort = false)
       stay()
 
-    case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
+    case Event(Endpoint.ShowSystemNotificationToUser(_, mes), Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
@@ -72,7 +73,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(WaitDialogCreation) {
-    case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
+    case Event(Endpoint.ShowSystemNotificationToUser(_, mes), Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
@@ -87,10 +88,13 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(InDialog) {
-    case Event(Endpoint.SystemNotificationToUser(_, mes), DialogRef(t)) =>
+    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
+      client ! Client.ShowContext(summary.address, mes)
+      stay()
+    case Event(Endpoint.ShowSystemNotificationToUser(_, mes), DialogRef(t)) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
-    case Event(Endpoint.ChatMessageToUser(_, face, message, _, id), DialogRef(_)) =>
+    case Event(Endpoint.ShowChatMessageToUser(_, face, message, _, id), DialogRef(_)) =>
       //TODO
       client ! Client.ShowChatMessage(summary.address, face, id.toString, message)
       stay()
@@ -119,7 +123,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(BotTestDialogCreation) {
-    case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>
+    case Event(Endpoint.ShowSystemNotificationToUser(_, mes), Uninitialized) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
 
@@ -134,10 +138,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(BotTesting) {
-    case Event(Endpoint.SystemNotificationToUser(_, mes), _) =>
+    case Event(Endpoint.ShowSystemNotificationToUser(_, mes), _) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
-    case Event(Endpoint.ChatMessageToUser(_, face, message, _, id), _) =>
+    case Event(Endpoint.ShowChatMessageToUser(_, face, message, _, id), _) =>
       //TODO
       client ! Client.ShowChatMessage(summary.address, face, id.toString, message)
       stay()

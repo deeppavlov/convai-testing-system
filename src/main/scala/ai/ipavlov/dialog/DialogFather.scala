@@ -53,7 +53,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       val dialRes = availableDialogs(humanBotCoef)(availableUsersList)
       dialRes.foreach(assembleDialog(databaseDialogStorage))
       if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[UserSummary]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
-        gate ! Endpoint.SystemNotificationToUser(user, "Please wait for your partner.")
+        gate ! Endpoint.ShowSystemNotificationToUser(user, "Please wait for your partner.")
       }
 
       log.debug("new user available: {}", user)
