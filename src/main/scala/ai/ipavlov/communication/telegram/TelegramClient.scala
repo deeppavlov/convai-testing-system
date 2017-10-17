@@ -1,6 +1,6 @@
 package ai.ipavlov.communication.telegram
 
-import ai.ipavlov.communication.user.Client
+import ai.ipavlov.communication.user.{Client, Messages}
 import akka.actor.{Actor, ActorLogging, Props, Stash}
 import info.mukel.telegrambot4s.api.RequestHandler
 import info.mukel.telegrambot4s.methods.{ParseMode, SendMessage}
@@ -13,7 +13,7 @@ import info.mukel.telegrambot4s.models._
 class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLogging with Stash {
   override def receive: Receive = {
     case Client.ShowChatMessage(receiverAddress, messageId, text) =>
-      telegramCall(SendMessage(Left(receiverAddress.toLong), "<pre>(peer msg):</pre>" + xml.Utility.escape(text), Some(ParseMode.HTML), replyMarkup = Some(
+      telegramCall(SendMessage(Left(receiverAddress.toLong), Messages.randomFace + xml.Utility.escape(text), Some(ParseMode.HTML), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId, "dislike"))
@@ -21,7 +21,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
         ))))
 
     case Client.ShowSystemNotification(receiverAddress, text) =>
-      telegramCall(SendMessage(Left(receiverAddress.toLong), "`(system msg):` " + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+      telegramCall(SendMessage(Left(receiverAddress.toLong), Messages.robotFace + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
 
     case Client.ShowEvaluationMessage(receiverAddress, text) =>
       telegramCall(
@@ -36,7 +36,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
       )
 
     case Client.ShowLastNotificationInDialog(receiverId, text) =>
-      telegramCall(SendMessage(Left(receiverId.toLong), "`(system msg):` " + text, Some(ParseMode.Markdown),
+      telegramCall(SendMessage(Left(receiverId.toLong), Messages.robotFace + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") )
         )))
@@ -65,7 +65,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
           |11. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
         """.stripMargin
 
-      telegramCall(SendMessage(Left(address.toLong), "`(system msg):` " + text, Some(ParseMode.Markdown),
+      telegramCall(SendMessage(Left(address.toLong), Messages.robotFace + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
           Seq( KeyboardButton("/begin") )
         )))

@@ -1,6 +1,6 @@
 package ai.ipavlov.communication.fbmessager
 
-import ai.ipavlov.communication.user.Client
+import ai.ipavlov.communication.user.{Client, Messages}
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest}
@@ -21,7 +21,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case Client.ShowChatMessage(receiverId, messageId, text) =>
-      sendMessage("`(peer msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage(Messages.randomFace + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
@@ -31,19 +31,19 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
       )
 
     case Client.ShowSystemNotification(receiverId, text) =>
-      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage(Messages.robotFace + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
         metadata = None
       )
       )
     case Client.ShowEvaluationMessage(receiverId, text) =>
-      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage(Messages.robotFace + text, receiverId, pageAccessToken, txt => FBMessage(
         text = Some(txt),
         metadata = None
       )
       )
     case Client.ShowLastNotificationInDialog(receiverId, text) =>
-      sendMessage("`(system msg):` " + text, receiverId, pageAccessToken, txt => FBMessage(
+      sendMessage(Messages.robotFace + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
@@ -70,7 +70,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
           |10. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
         """.stripMargin
 
-      sendMessage("`(system msg):` " + text, address, pageAccessToken, txt => FBMessage(
+      sendMessage(Messages.robotFace + text, address, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
