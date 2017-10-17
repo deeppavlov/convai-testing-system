@@ -35,7 +35,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
 
     case Client.ShowContext(receiverAddress, text) =>
       sendMessage(text, receiverAddress, pageAccessToken, txt => FBMessage(
-        text = Some(txt),
+        text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
           FBButton("postback", Messages.robotFace + "end conversation.", "/end")
