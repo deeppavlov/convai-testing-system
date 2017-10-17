@@ -21,7 +21,11 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
         ))))
 
     case Client.ShowContext(receiverAddress, text) =>
-      telegramCall(SendMessage(Left(receiverAddress.toLong), text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
+      telegramCall(SendMessage(Left(receiverAddress.toLong), text, Some(ParseMode.Markdown), replyMarkup =
+        Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
+          Seq( KeyboardButton("/end") )
+        )))
+      ))
 
     case Client.ShowSystemNotification(receiverAddress, text) =>
       telegramCall(SendMessage(Left(receiverAddress.toLong), Messages.robotFace + text, Some(ParseMode.Markdown), replyMarkup = Some(ReplyKeyboardRemove())))
