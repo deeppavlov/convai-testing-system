@@ -97,8 +97,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.AskEvaluationFromHuman(_, text), DialogRef(_)) =>
       client ! Client.ShowEvaluationMessage(summary.address, text)
       stay()
-    case Event(Endpoint.EndHumanDialog(_, _), DialogRef(_)) =>
-      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
+    case Event(Endpoint.EndHumanDialog(_, text), DialogRef(_)) =>
+      client ! Client.ShowLastNotificationInDialog(summary.address, text)
       stay()
 
     case Event(User.AppendMessageToTalk(text), DialogRef(talk)) =>
@@ -144,8 +144,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.AskEvaluationFromHuman(_, text), _) =>
       client ! Client.ShowEvaluationMessage(summary.address, text)
       stay()
-    case Event(Endpoint.EndHumanDialog(_, _), _) =>
-      client ! Client.ShowLastNotificationInDialog(summary.address, Messages.lastNotificationInDialog)
+    case Event(Endpoint.EndHumanDialog(_, text), _) =>
+      client ! Client.ShowLastNotificationInDialog(summary.address, text)
       stay()
 
     case Event(User.AppendMessageToTalk(text), BotTestingData(_, talk)) =>

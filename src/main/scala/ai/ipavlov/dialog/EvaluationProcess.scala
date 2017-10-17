@@ -74,7 +74,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 5)).isSuccess =>
       log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
-      gate ! Endpoint.EndHumanDialog(u, "Thank you! It was great! Please choose /begin to continue evaluation.")
+      gate ! Endpoint.EndHumanDialog(u, """Thank you! It was great! Please choose /begin to continue.""")
       dialog ! CompleteEvaluation(u ,q, b, e)
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 5""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)

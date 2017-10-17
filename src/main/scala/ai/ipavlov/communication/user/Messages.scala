@@ -15,7 +15,5 @@ object Messages {
 
   val exit = """`(system msg):` exit"""
 
-  val lastNotificationInDialog = """Thank you! It was great! Please choose /begin to continue evaluation."""
-
   val robotFace = "\uD83E\uDD16 "
 }
