@@ -41,7 +41,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
       user match {
         case user: Human =>
           context.become(dialogEvaluationQuality(user))
-          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)")
+          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) and 5 (excellent)")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           //TODO: face is empty becouse bot endpoint ignored face field
