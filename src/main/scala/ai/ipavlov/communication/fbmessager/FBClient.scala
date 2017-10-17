@@ -20,8 +20,8 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
   private implicit val mat: ActorMaterializer = ActorMaterializer()
 
   override def receive: Receive = {
-    case Client.ShowChatMessage(receiverId, messageId, text) =>
-      sendMessage(Messages.randomFace + text, receiverId, pageAccessToken, txt => FBMessage(
+    case Client.ShowChatMessage(receiverId, face, messageId, text) =>
+      sendMessage(face + text, receiverId, pageAccessToken, txt => FBMessage(
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(

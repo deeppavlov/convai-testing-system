@@ -12,8 +12,8 @@ import info.mukel.telegrambot4s.models._
   */
 class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLogging with Stash {
   override def receive: Receive = {
-    case Client.ShowChatMessage(receiverAddress, messageId, text) =>
-      telegramCall(SendMessage(Left(receiverAddress.toLong), Messages.randomFace + xml.Utility.escape(text), Some(ParseMode.HTML), replyMarkup = Some(
+    case Client.ShowChatMessage(receiverAddress, face, messageId, text) =>
+      telegramCall(SendMessage(Left(receiverAddress.toLong), face + xml.Utility.escape(text), Some(ParseMode.HTML), replyMarkup = Some(
         InlineKeyboardMarkup(Seq(Seq(
           InlineKeyboardButton.callbackData("\uD83D\uDC4D", encodeCbData(messageId, "like")),
           InlineKeyboardButton.callbackData("\uD83D\uDC4E", encodeCbData(messageId, "dislike"))
@@ -27,7 +27,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
       telegramCall(
         SendMessage(
           Left(receiverAddress.toLong),
-          "`(system msg):` " + text,
+          Messages.robotFace + text,
           Some(ParseMode.Markdown),
           replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
             Seq( KeyboardButton("1"), KeyboardButton("2"), KeyboardButton("3"), KeyboardButton("4"), KeyboardButton("5") )

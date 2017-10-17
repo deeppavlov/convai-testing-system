@@ -43,6 +43,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   override def logDepth = 12
   import context.dispatcher
 
+  private val face = Messages.randomFace
+
   context.system.scheduler.schedule(30.seconds, 30.seconds, self, TryShutdown)
 
   startWith(Idle, Uninitialized)
@@ -92,7 +94,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       stay()
     case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), DialogRef(_)) =>
       //TODO
-      client ! Client.ShowChatMessage(summary.address, id.toString, message)
+      client ! Client.ShowChatMessage(summary.address, face, id.toString, message)
       stay()
     case Event(Endpoint.AskEvaluationFromHuman(_, text), DialogRef(_)) =>
       client ! Client.ShowEvaluationMessage(summary.address, text)
@@ -139,7 +141,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       stay()
     case Event(Endpoint.ChatMessageToUser(_, message: String, _, id), _) =>
       //TODO
-      client ! Client.ShowChatMessage(summary.address, id.toString, message)
+      client ! Client.ShowChatMessage(summary.address, face, id.toString, message)
       stay()
     case Event(Endpoint.AskEvaluationFromHuman(_, text), _) =>
       client ! Client.ShowEvaluationMessage(summary.address, text)
