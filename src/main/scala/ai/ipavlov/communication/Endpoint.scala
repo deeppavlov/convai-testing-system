@@ -47,7 +47,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
     }
 
     {
-      case m @ ChatMessageToUser(h: Human, _, _, _) => user(h) forward m
+      case m @ ChatMessageToUser(h: Human, _, _, _, _) => user(h) forward m
       case m @ SystemNotificationToUser(h: Human, _) => user(h) forward m
       case m @ ActivateTalkForUser(h: Human, _) => user(h) forward m
       case m @ FinishTalkForUser(h: Human, _) => user(h) forward m
@@ -62,7 +62,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m @ EvaluateFromUser(h: Human, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)
 
 
-      case message @ ChatMessageToUser(_: Bot, _, _, _) => botGate forward message
+      case message @ ChatMessageToUser(_: Bot, _, _, _, _) => botGate forward message
       case m @ ActivateTalkForUser(_: Bot, _) => botGate forward m
       case m @ FinishTalkForUser(_: Bot, _) => botGate forward m
       case m: DialogFather.UserAvailable => talkConstructor forward m
@@ -91,7 +91,7 @@ object Endpoint {
   def props(storage: ActorRef): Props = Props(new Endpoint(storage))
 
   sealed trait MessageFromDialog
-  case class ChatMessageToUser(receiver: UserSummary, message: String, fromDialogId: Int, id: String) extends MessageFromDialog
+  case class ChatMessageToUser(receiver: UserSummary, face: String, message: String, fromDialogId: Int, id: String) extends MessageFromDialog
   trait SystemNotification extends MessageFromDialog
   case class AskEvaluationFromHuman(receiver: Human, question: String) extends SystemNotification
   case class EndHumanDialog(receiver: Human, text: String) extends SystemNotification

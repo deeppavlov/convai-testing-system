@@ -26,7 +26,7 @@ class DialogSpec extends TestKit(ActorSystem("BotEndpointSpec")) with WordSpecLi
       val storage = TestProbe()
       val dialog = TestActorRef(new Dialog(FbChat("1", "1"), Bot("2"), "ololo", gate.ref, storage.ref, Clock.systemDefaultZone()))
       dialog ! PushMessageToTalk(FbChat("1", "1"), "!!!")
-      gate.expectMsgPF(3.seconds) { case Endpoint.ChatMessageToUser(Bot("2"), "!!!", _, _) => }
+      gate.expectMsgPF(3.seconds) { case Endpoint.ChatMessageToUser(Bot("2"), _, "!!!", _, _) => }
     }
   }
 }

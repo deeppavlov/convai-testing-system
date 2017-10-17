@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Random, Try}
 
 /**
   * @author vadim
@@ -19,6 +19,13 @@ import scala.util.Try
   */
 class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Implicits {
   import Dialog._
+
+  private def randomFace = Random.shuffle(List("\uD83D\uDC6E", "\uD83D\uDC70", "\uD83D\uDC71", "\uD83D\uDC72", "\uD83D\uDC73",
+    "\uD83D\uDC74", "\uD83D\uDC75", "\uD83D\uDC76", "\uD83D\uDC77", "\uD83D\uDC78", "\uD83D\uDC79", "\uD83D\uDC7A",
+    "\uD83D\uDC7B", "\uD83D\uDC7C", "\uD83D\uDC7D", "\uD83D\uDC7F", "\uD83D\uDC80", "\uD83D\uDC81", "\uD83D\uDC82")).head + " "
+
+  private val faceA = randomFace
+  private val faceB = randomFace
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(1.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
@@ -44,18 +51,18 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
 
   override def receive: Receive = {
     case StartDialog =>
-      def firstMessageFor(user: UserSummary, text: String): Endpoint.MessageFromDialog = user match {
+      def firstMessageFor(user: UserSummary, face: String, text: String): Endpoint.MessageFromDialog = user match {
         case u: Human => Endpoint.SystemNotificationToUser(u, text)
-        case u: Bot => Endpoint.ChatMessageToUser(u, "/start " + text, self.chatId, genId)
+        case u: Bot => Endpoint.ChatMessageToUser(u, face, "/start " + text, self.chatId, genId)
       }
 
-      gate ! firstMessageFor(a, txtContext)
-      gate ! firstMessageFor(b, txtContext)
+      gate ! firstMessageFor(a, faceA, txtContext)
+      gate ! firstMessageFor(b, faceB, txtContext)
 
     case PushMessageToTalk(from, text) =>
-      val oppanent = if (from == a) b else if (from == b) a else throw new IllegalArgumentException(s"$from not in talk")
+      val (oppanent, face) = if (from == a) (b, faceB) else if (from == b) (a, faceA) else throw new IllegalArgumentException(s"$from not in talk")
       val id = genId
-      gate ! Endpoint.ChatMessageToUser(oppanent, text, self.chatId, id)
+      gate ! Endpoint.ChatMessageToUser(oppanent, face, text, self.chatId, id)
       //TODO: use hash as id may leads to message lost!
       history.put(id, (from, text, 0))
       if (history.size > maxLen) self ! EndDialog

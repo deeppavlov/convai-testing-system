@@ -29,7 +29,8 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
           gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
-          gate ! Endpoint.ChatMessageToUser(u, "/end", dialog.chatId, Instant.now().getNano.toString)
+          //TODO: face is empty becouse bot endpoint ignored face field
+          gate ! Endpoint.ChatMessageToUser(u, "", "/end", dialog.chatId, Instant.now().getNano.toString)
       }
   }
 

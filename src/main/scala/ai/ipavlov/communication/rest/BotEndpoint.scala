@@ -105,7 +105,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
         case _ => true
       }
 
-    case Endpoint.ChatMessageToUser(Bot(token), text, dialogId, _) =>
+    case Endpoint.ChatMessageToUser(Bot(token), _, text, dialogId, _) =>
       botsQueues.get(token).fold[Any] {
         log.warning("bot {} not registered", token)
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))
