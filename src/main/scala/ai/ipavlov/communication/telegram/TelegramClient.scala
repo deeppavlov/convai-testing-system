@@ -45,7 +45,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
     case Client.ShowLastNotificationInDialog(receiverId, text) =>
       telegramCall(SendMessage(Left(receiverId.toLong), Messages.robotFace + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
-          Seq( KeyboardButton("/begin") )
+          Seq( KeyboardButton("/begin"), KeyboardButton("/help") )
         )))
       ))
 
