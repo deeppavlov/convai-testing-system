@@ -30,7 +30,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
     case AbortEvaluation =>
       log.warning(s"the evaluation was skipped")
       user match {
-        case u: Human => gate ! Endpoint.EndHumanDialog(u, "The evaluation skipped")
+        case u: Human => gate ! Endpoint.EndHumanDialog(u, "The evaluation skipped. Please choose /begin to have another conversation.")
         case _ =>
       }
       dialog ! CompleteEvaluation(user , 0, 0,  0)
@@ -41,7 +41,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
       user match {
         case user: Human =>
           context.become(dialogEvaluationQuality(user))
-          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality")
+          gate ! Endpoint.AskEvaluationFromHuman(user, s"Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)")
         case u: Bot =>
           dialog ! CompleteEvaluation(u ,0, 0, 0)
           //TODO: face is empty becouse bot endpoint ignored face field
@@ -74,7 +74,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 5)).isSuccess =>
       log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
-      gate ! Endpoint.EndHumanDialog(u, """Thank you! It was great! Please choose /begin to continue.""")
+      gate ! Endpoint.EndHumanDialog(u, """Thank you! It was great! Please choose /begin to have another conversation.""")
       dialog ! CompleteEvaluation(u ,q, b, e)
     case PushMessageToTalk(from: Human, _) => gate ! Endpoint.AskEvaluationFromHuman(from, """Please use integers from 1 to 5""")
     case m: PushMessageToTalk => log.debug("ignore message {}", m)

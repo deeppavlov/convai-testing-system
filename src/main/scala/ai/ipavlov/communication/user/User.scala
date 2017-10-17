@@ -53,7 +53,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
       goto(WaitDialogCreation) using Uninitialized
 
     case Event(User.Help, Uninitialized) =>
-      client ! Client.ShowHelpMessage(summary.address)
+      client ! Client.ShowHelpMessage(summary.address, isShort = false)
       stay()
 
     case Event(Endpoint.SystemNotificationToUser(_, mes), Uninitialized) =>

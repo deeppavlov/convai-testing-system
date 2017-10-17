@@ -52,8 +52,12 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         )))))
       )
 
-    case Client.ShowHelpMessage(address) =>
-      val text =
+    case Client.ShowHelpMessage(address, isShort) =>
+      val text = if (isShort)
+        """This is ConvAI bot.
+          |Press "begin" button to start a conversation or "help" for help.
+        """.stripMargin
+      else
         """
           |1. To start a dialog type or choose a /begin command .
           |2. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message from @ConvaiBot `Please wait for you partner.`

@@ -42,8 +42,12 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
         )))
       ))
 
-    case Client.ShowHelpMessage(address) =>
-      val text =
+    case Client.ShowHelpMessage(address, isShort) =>
+      val text = if (isShort)
+        """This is ConvAI bot.
+          |Press "begin" button to start a conversation or "help" for help.
+        """.stripMargin
+      else
         """
           |1. Please set your Username in Settings menu.
           |    - MacOS & iOS:
@@ -67,7 +71,7 @@ class TelegramClient(telegramCall: RequestHandler) extends Actor with ActorLoggi
 
       telegramCall(SendMessage(Left(address.toLong), Messages.robotFace + text, Some(ParseMode.Markdown),
         replyMarkup = Some(ReplyKeyboardMarkup(resizeKeyboard = Some(true), oneTimeKeyboard = Some(true), keyboard = Seq(
-          Seq( KeyboardButton("/begin") )
+          Seq( KeyboardButton("/begin"), KeyboardButton("/help") )
         )))
       ))
   }
