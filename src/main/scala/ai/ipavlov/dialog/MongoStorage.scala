@@ -2,7 +2,7 @@ package ai.ipavlov.dialog
 
 import java.time.Instant
 
-import ai.ipavlov.communication.user.{Bot, TelegramChat}
+import ai.ipavlov.communication.user.{Bot, Human}
 import akka.actor.{Actor, ActorLogging, Props}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.{ObservableImplicits, _}
@@ -78,7 +78,7 @@ object MongoStorage {
         wd.id,
         wd.users.map {
           case u: Bot => UserSummary(u.address, u.getClass.getName, u.address)
-          case u: TelegramChat => UserSummary(u.address, u.getClass.getName, u.username)
+          case u: Human => UserSummary(u.address, u.getClass.getName, u.username)
         },
         wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.address, txt, Instant.now().getNano, evaluation) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.address, q, b, e) } )

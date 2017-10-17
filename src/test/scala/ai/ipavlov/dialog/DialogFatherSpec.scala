@@ -125,11 +125,11 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       daddy ! DialogFather.UserLeave(Tester("1", "1"))
 
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)") =>
+        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) and 5 (excellent)") =>
         case Endpoint.ShowChatMessageToUser(Bot("111"), _, "/end", _, _) =>
       }
       gate.expectMsgPF(3.seconds) {
-        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) andgit ci  5 (excellent)") =>
+        case Endpoint.AskEvaluationFromHuman(Tester("1", "1"), "Chat is finished, please evaluate the overall quality by typing in a number between 1 (bad) and 5 (excellent)") =>
         case Endpoint.ShowChatMessageToUser(Bot("111"), _, "/end", _, _) =>
       }
 

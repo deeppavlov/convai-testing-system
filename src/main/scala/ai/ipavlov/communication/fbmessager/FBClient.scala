@@ -59,8 +59,8 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
-          FBButton("postback", "begin", "/begin"),
-          FBButton("postback", "help", "/help")
+          FBButton("postback", Messages.robotFace + "begin", "/begin"),
+          FBButton("postback", Messages.robotFace + "help", "/help")
         )))))
       )
 
@@ -90,8 +90,8 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         text = None,
         metadata = None,
         attachment = Some(FBAttachment("template", FBButtonsPayload(txt, List(
-          FBButton("postback", "begin", "/begin"),
-          FBButton("postback", "help", "/help")
+          FBButton("postback", Messages.robotFace + "begin", "/begin"),
+          FBButton("postback", Messages.robotFace + "help", "/help")
         )))))
       )
 
@@ -141,7 +141,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
     splitText(text).foldLeft(Future.successful(())) { case (ft, (mes, isLast)) => ft.flatMap( _ => post(mes, isLast) ) }
   }
 
-  private def cutStr(str: String): String = if (str.length > 15) str.substring(0, 12) + "..." else str
+  private def cutStr(str: String): String = "\"" + (if (str.length > 15) str.substring(0, 12) + "..." else str) + "\""
 }
 
 object FBClient {
