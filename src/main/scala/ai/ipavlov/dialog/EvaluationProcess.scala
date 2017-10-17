@@ -7,6 +7,7 @@ import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
 import ai.ipavlov.communication.Endpoint
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
+import scala.concurrent.duration._
 import scala.util.Try
 
 /**
@@ -16,12 +17,26 @@ import scala.util.Try
 class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) extends Actor with ActorLogging with Implicits {
   import Dialog._
   import EvaluationProcess._
+  import context.dispatcher
 
   var q = 0
   var b = 0
   var e = 0
 
-  override def receive: Receive = {
+  private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_evaluation_timeout").toNanos)).getOrElse(5.minutes)
+  private val canceble = context.system.scheduler.scheduleOnce(timeout) { self ! AbortEvaluation }
+
+  private def abort: Receive = {
+    case AbortEvaluation =>
+      log.warning(s"the evaluation was skipped")
+      user match {
+        case u: Human => gate ! Endpoint.EndHumanDialog(u, "The evaluation skipped")
+        case _ =>
+      }
+      dialog ! CompleteEvaluation(user , 0, 0,  0)
+  }
+
+  override def receive: Receive = abort.orElse {
     case StartEvaluation =>
       user match {
         case user: Human =>
@@ -34,7 +49,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
       }
   }
 
-  private def dialogEvaluationQuality(u: Human): Receive = {
+  private def dialogEvaluationQuality(u: Human): Receive = abort.orElse {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(r => (r > 0) && (r <= 5)).isSuccess =>
       log.debug(s"the $u rated the quality by $rate")
       q = rate.toInt
@@ -45,7 +60,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
 
   }
 
-  private def dialogEvaluationBreadth(u: Human): Receive = {
+  private def dialogEvaluationBreadth(u: Human): Receive = abort.orElse {
       case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 5)).isSuccess =>
         log.debug(s"the $u rated the breadth by $rate")
         b = rate.toInt
@@ -55,7 +70,7 @@ class EvaluationProcess(user: UserSummary, dialog: ActorRef, gate: ActorRef) ext
       case m: PushMessageToTalk => log.debug("ignore message {}", m)
   }
 
-  private def dialogEvaluationEngagement(u: Human): Receive = {
+  private def dialogEvaluationEngagement(u: Human): Receive = abort.orElse {
     case PushMessageToTalk(_, rate) if Try(rate.toInt).filter(rate => (rate > 0) && (rate <= 5)).isSuccess =>
       log.debug(s"the $u rated the engagement by $rate")
       e = rate.toInt
@@ -72,4 +87,6 @@ object EvaluationProcess {
   case class CompleteEvaluation(user: UserSummary, quality: Int, breadth: Int, engagement: Int)
 
   case object StartEvaluation
+
+  case object AbortEvaluation
 }
