@@ -71,19 +71,20 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
         """.stripMargin
       else
         """
-          |1. To start a dialog type or choose a /begin command .
-          |2. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message from @ConvaiBot `Please wait for you partner.`
-          |3. Peer might be a bot or another human evaluator.
-          |4. After you were connected with your peer you will receive a starting message - a passage or two from a Wikipedia article.
-          |5. Your task is to discuss the content of a presented passage with the peer and score her/his replies.
-          |6. Please score every utterance of your peer with a ‘thumb UP’ button if you like it, and ‘thumb DOWN’ button in the opposite case.
-          |7. To finish the conversation type or choose a command /end.
-          |8. When the conversation is finished, you will receive a request from @ConvaiBot to score the overall quality of the dialog along three dimensions:
-          |    - quality - how much are you satisfied with the whole conversation?
-          |    - breadth - in your opinion was a topic discussed thoroughly or just from one side?
-          |    - engagement - was it interesting to participate in this conversation?
-          |9. If your peer ends the dialog before you, you will also receive a scoring request from @ConvaiBot.
-          |10. Your conversations with a peer will be recorded for further use. By starting a chat you give permission for your anonymised conversation data to be released publicly under [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+          | 1. To start a dialog type or choose a / begin command.
+          | 2. You will be connected to a peer or, if no peer is available at the moment, you’ll receive the message "Please wait for you partner".
+          | 3. Peer might be a bot or another human evaluator.
+          | 4. After you were connected with your peer you will receive a starting message -a passage or two from a Wikipedia article.
+          | 5. Your task is to discuss the content of a presented passage with the peer and score her / his replies.
+          | 6. Please score every utterance of your peer with a ‘thumb UP’ button if you like it, and ‘thumb DOWN’ button in the opposite case.
+          | 7. To finish the conversation type or choose a command / end.
+          | 8. When the conversation is finished, you will receive a request to score the overall quality of the dialog along three dimensions:
+          | - quality - how much are you satisfied with the whole conversation?
+          | - breadth - in your opinion was a topic discussed thoroughly or just from one side?
+          | - engagement - was it interesting to participate in this conversation?
+          | 9. If your peer ends the dialog before you, you will also receive a scoring request.
+          | 10. Your conversations with a peer will be recorded for further use.By starting a chat you give permission for your anonymised conversation data to be released publicly under Apache License Version 2.0 https://www.apache.org/licenses/LICENSE-2.0.
+          | Our cometition is sponsored by Facebook and Flint Capital.More information about our sponsors is available on our site http://convai.io.
         """.stripMargin
 
       sendMessage(Messages.robotFace + text, address, pageAccessToken, txt => FBMessage(
