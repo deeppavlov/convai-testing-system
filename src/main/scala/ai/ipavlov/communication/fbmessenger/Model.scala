@@ -1,4 +1,4 @@
-package ai.ipavlov.communication.fbmessager
+package ai.ipavlov.communication.fbmessenger
 
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 

@@ -1,4 +1,4 @@
-package ai.ipavlov.communication.fbmessager
+package ai.ipavlov.communication.fbmessenger
 
 import ai.ipavlov.communication.user.{Client, Messages}
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}

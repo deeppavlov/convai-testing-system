@@ -1,6 +1,6 @@
 package ai.ipavlov.communication
 
-import ai.ipavlov.communication.fbmessager.FBClient
+import ai.ipavlov.communication.fbmessenger.FBClient
 import ai.ipavlov.communication.rest.{BotEndpoint, Routes}
 import ai.ipavlov.communication.telegram.{BotWorker, TelegramClient}
 import ai.ipavlov.communication.user._
@@ -18,11 +18,11 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
   import Endpoint._
 
   private val botGate = context.actorOf(BotEndpoint.props(self), "bot-gate")
-  private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessager.pageAccessToken")).getOrElse("unknown")
+  private val facebookPageAccessToken = Try(context.system.settings.config.getString("fbmessenger.pageAccessToken")).getOrElse("unknown")
 
   private val telegramToken = Try(context.system.settings.config.getString("telegram.token")).getOrElse("unknown")
-  private val facebookSecret = Try(context.system.settings.config.getString("fbmessager.secret")).getOrElse("unknown")
-  private val facebookToken = Try(context.system.settings.config.getString("fbmessager.token")).getOrElse("unknown")
+  private val facebookSecret = Try(context.system.settings.config.getString("fbmessenger.secret")).getOrElse("unknown")
+  private val facebookToken = Try(context.system.settings.config.getString("fbmessenger.token")).getOrElse("unknown")
   private val telegramWebhook = Try(context.system.settings.config.getString("telegram.webhook")).getOrElse {
     log.error("telegram.webhook not set!")
     "https://localhost"

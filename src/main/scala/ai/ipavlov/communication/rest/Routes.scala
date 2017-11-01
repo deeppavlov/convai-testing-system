@@ -1,6 +1,6 @@
 package ai.ipavlov.communication.rest
 
-import ai.ipavlov.communication.fbmessager.{FBPObject, RouteSupport}
+import ai.ipavlov.communication.fbmessenger.{FBPObject, RouteSupport}
 import ai.ipavlov.communication.user.FbChat
 import akka.actor.{ActorRef, ActorSystem}
 import akka.event.LoggingAdapter

@@ -1,4 +1,4 @@
-package ai.ipavlov.communication.fbmessager
+package ai.ipavlov.communication.fbmessenger
 
 import java.nio.charset.StandardCharsets
 import javax.crypto.Mac
