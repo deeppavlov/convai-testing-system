@@ -4,7 +4,7 @@ organization := "ai.ipavlov"
 
 version := "0.1-" + sys.env.getOrElse("BUILD_NUMBER", "SNAPSHOT")
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.4"
 
 maintainer := "Vadim Polulyakh <bavadim@gmail.com>"
 
@@ -72,6 +72,4 @@ publish := {
 mappings in Universal <+= (packageBin in Compile, sourceDirectory ) map {
   (_, src) => src / "main" / "resources" / "reference.conf" -> "conf/reference.conf"
 }
-
-
 
