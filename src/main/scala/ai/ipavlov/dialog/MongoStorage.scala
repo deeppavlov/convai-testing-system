@@ -2,8 +2,9 @@ package ai.ipavlov.dialog
 
 import java.time.Instant
 
-import ai.ipavlov.communication.user.{Bot, Human}
+import ai.ipavlov.communication.user.{Bot, Human, User}
 import akka.actor.{Actor, ActorLogging, Props}
+import akka.pattern.PipeToSupport
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.{ObservableImplicits, _}
 import org.mongodb.scala.bson.ObjectId
@@ -16,7 +17,7 @@ import scala.util.{Failure, Success, Try}
   * @author vadim
   * @since 13.07.17
   */
-class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
+class MongoStorage extends Actor with ActorLogging with ObservableImplicits with PipeToSupport {
   import MongoStorage._
   import context.dispatcher
 
@@ -42,6 +43,10 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits {
         case Failure(e) => log.error("assessment didn't save: {}", e)
         case Success(v) => log.debug("assessments saved, {}", v.toString())
       }
+
+    case GetBlackList =>
+      val blacklist: MongoCollection[MongoStorage.BlackList] = database.getCollection("blacklist")
+      blacklist.find().toFuture().pipeTo(sender())
   }
 
   private def unitialized: Receive = {
@@ -101,5 +106,8 @@ object MongoStorage {
   }
 
   case class WriteLanguageAssessment(login: Option[String], chatId: Long, level: Int)
+
+  case object GetBlackList
+  case class BlackList(users: Set[User])
 }
 

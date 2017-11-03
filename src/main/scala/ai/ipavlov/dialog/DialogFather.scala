@@ -5,6 +5,7 @@ import java.time.Clock
 import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
 import ai.ipavlov.communication.Endpoint
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import akka.pattern.AskSupport
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -15,7 +16,8 @@ import scala.util.{Random, Try}
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, clck: Clock, val rnd: Random) extends Actor with ActorLogging with DialogConstructionRules {
+class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, val database: ActorRef, clck: Clock, val rnd: Random) extends
+  Actor with ActorLogging with AskSupport with DialogConstructionRules with BlackListSupport {
   import DialogFather._
   private implicit val ec = context.dispatcher
 
@@ -31,7 +33,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(databaseDialogStorage))
+      availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(database))
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
@@ -51,7 +53,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
 
       val dialRes = availableDialogs(humanBotCoef)(availableUsersList)
-      dialRes.foreach(assembleDialog(databaseDialogStorage))
+      dialRes.foreach(assembleDialog(database))
       if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[UserSummary]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
         gate ! Endpoint.ShowSystemNotificationToUser(user, "Please wait for your partner.")
       }
