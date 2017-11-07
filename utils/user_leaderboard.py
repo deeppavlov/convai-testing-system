@@ -3,7 +3,7 @@
 import sys
 import json
 
-from common import team_users_lower, dialog_min_len
+from .common import team_users_lower, dialog_min_len
 
 
 def calc_score(q):
@@ -11,6 +11,7 @@ def calc_score(q):
         return sum(q) / float(len(q))
     else:
         return 0
+
 
 user_evaluations = dict()
 user_names = dict()

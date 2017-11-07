@@ -2,7 +2,6 @@
 
 import sys
 import json
-import random
 
 if len(sys.argv) != 2:
     print("Example: filter.py <min number of replies>", file=sys.stderr)

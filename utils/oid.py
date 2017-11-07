@@ -18,7 +18,7 @@ deadlines = [
 ]
 
 if len(sys.argv) != 2 or 0 > int(sys.argv[1]) >= len(deadlines):
-    print("example: oid.py <competition day (1-7 or 0 for al days)>", file=sys.stderr)
+    print("example: oid.py <competition day (1-7 or 0 for all days)>", file=sys.stderr)
     sys.exit(1)
 
 day = int(sys.argv[1])
