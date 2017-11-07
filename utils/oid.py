@@ -25,6 +25,8 @@ deadlines = [
     (datetime.datetime(2017, 7, 27, 22, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 28, 22, 0, 0, 0, tzlocal())),
     (datetime.datetime(2017, 7, 28, 22, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 29, 22, 0, 0, 0, tzlocal())),
     (datetime.datetime(2017, 7, 29, 22, 0, 0, 0, tzlocal()), datetime.datetime(2017, 7, 30, 22, 0, 0, 0, tzlocal())),
+    (datetime.datetime(2017, 7, 30, 22, 0, 0, 0, tzlocal()), datetime.datetime(2020, 1, 1, 1, 0, 0, 0, tzlocal()))
+
 ]
 
 if len(sys.argv) != 2:
