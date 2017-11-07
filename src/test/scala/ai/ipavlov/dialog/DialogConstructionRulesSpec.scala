@@ -15,7 +15,7 @@ class DialogConstructionRulesSpec extends WordSpecLike with Matchers {
   private val deadline10sec = Deadline.now + 10.seconds
 
   "A DialogConstructionRules availableDialogs" must {
-    val constructor = new DialogConstructionRules {
+    val constructor = new BalancedDialogConstructionRules {
       override protected val textGenerator: ContextQuestions = new ContextQuestions {
         override def selectRandom: Try[String] = Success("test")
       }

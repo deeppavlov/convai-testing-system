@@ -11,7 +11,7 @@ import scala.util.{Failure, Random, Success}
   * @author vadim
   * @since 13.07.17
   */
-trait DialogConstructionRules {
+trait BalancedDialogConstructionRules {
   protected val textGenerator: ContextQuestions
 
   val rnd: Random

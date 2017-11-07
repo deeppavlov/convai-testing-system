@@ -8,6 +8,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.AskSupport
 
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{Random, Try}
@@ -16,10 +17,13 @@ import scala.util.{Random, Try}
   * @author vadim
   * @since 06.07.17
   */
-class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions, val database: ActorRef, clck: Clock, val rnd: Random) extends
-  Actor with ActorLogging with AskSupport with DialogConstructionRules with BlackListSupport {
+abstract class DialogFather(gate: ActorRef,
+                   protected val textGenerator: ContextQuestions,
+                   val database: ActorRef,
+                   clck: Clock,
+                   val rnd: Random) extends Actor with ActorLogging with AskSupport {
   import DialogFather._
-  private implicit val ec = context.dispatcher
+  private implicit val ec: ExecutionContextExecutor = context.dispatcher
 
   private val humanBotCoef: Double = Try(context.system.settings.config.getDouble("talk.bot.human_bot_coefficient")).getOrElse(1)
 
@@ -31,9 +35,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
 
+  def blacklist: Future[Set[UserSummary]]
+  def availableDialogs(humanBotCoef: Double)(users: List[(UserSummary, Int, Deadline)]): Seq[(UserSummary, UserSummary, String)]
+
   override def receive: Receive = {
     case AssembleDialogs =>
-      availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(database))
+      availableUsersList.foreach { aul =>
+        availableDialogs(humanBotCoef)(aul).foreach(assembleDialog(database))
+      }
 
     case Terminated(t) =>
       usersChatsInTalks.remove(t).foreach { ul =>
@@ -52,10 +61,14 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       val mustBeChanged = usersChatsInTalks.filter { case (_, ul) => ul.contains(user) }.keySet
       mustBeChanged.foreach { k => usersChatsInTalks.get(k).map(_.filter(_ != user)).map(usersChatsInTalks.put(k, _)) }
 
-      val dialRes = availableDialogs(humanBotCoef)(availableUsersList)
-      dialRes.foreach(assembleDialog(database))
-      if (user.isInstanceOf[Human] && !dialRes.foldLeft(Set.empty[UserSummary]) { case (s, (a, b, _)) => s + a + b }.contains(user)) {
-        gate ! Endpoint.ShowSystemNotificationToUser(user, "Please wait for your partner.")
+      availableUsersList
+        .map { aul => availableDialogs(humanBotCoef)(aul) }
+        .foreach { dialRes =>
+          dialRes.foreach(assembleDialog(database))
+
+          val isAvailable = !dialRes.foldLeft(Set.empty[UserSummary]) { case (s, (a, b, _)) => s + a + b }.contains(user)
+          val isHuman = user.isInstanceOf[Human]
+          if (isHuman && isAvailable) gate ! Endpoint.ShowSystemNotificationToUser(user, "Please wait for your partner.")
       }
 
       log.debug("new user available: {}", user)
@@ -86,7 +99,7 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
 
   private val nopStorage = context.actorOf(Props(new NopStorage), name="nop-storage")
 
-  private def assembleDialog(storage: ActorRef)(available: (UserSummary, UserSummary, String)) = available match {
+  private def assembleDialog(storage: ActorRef)(available: (UserSummary, UserSummary, String)): Unit = available match {
     case (a: Bot, b: Bot, _) => log.debug("bot-bot dialogs disabled, ignore pair {}-{}", a, b)
     case (a, b, txt) =>
       val dialog = context.actorOf(Dialog.props(a, b, txt, gate, storage, clck), name = s"dialog-${java.util.UUID.randomUUID()}")
@@ -108,15 +121,27 @@ class DialogFather(gate: ActorRef, protected val textGenerator: ContextQuestions
       dialog ! Dialog.StartDialog
   }
 
-  private def availableUsersList: List[(UserSummary, Int, Deadline)] =
-    availableUsers.filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }.map { case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)}.toList.map { t =>
-      (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 10.seconds))
+  private def availableUsersList: Future[List[(UserSummary, Int, Deadline)]] = {
+    blacklist.map { bl =>
+      availableUsers
+        .filter { case (user, (maxConn, currentConn)) => currentConn < maxConn }
+        .filter { case (user, _) => !bl.contains(user) }
+        .map { case (user, (maxConn, currentConn)) =>
+          user -> (maxConn - currentConn) }.toList
+        .map { t =>
+          (t._1, t._2, usersDedline.getOrElse(t._1, Deadline.now + 10.seconds))
+        }
+    }.recover {
+      case e =>
+        log.error("can not read blacklist, all users will ban. Error: {}", e)
+        List.empty
     }
+  }
 }
 
 object DialogFather {
   def props(gate: ActorRef, textGenerator: ContextQuestions, databaseDialogStorage: ActorRef, rnd: Random, clock: Clock) =
-    Props(new DialogFather(gate, textGenerator, databaseDialogStorage, clock, rnd))
+    Props(new DialogFather(gate, textGenerator, databaseDialogStorage, clock, rnd) with DBBlackList with BalancedDialogConstructionRules)
 
   private case object AssembleDialogs
   case class CreateTestDialogWithBot(user: Human, botId: String)
