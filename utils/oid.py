@@ -29,9 +29,11 @@ deadlines = [
 
 ]
 
-if len(sys.argv) != 2:
+if len(sys.argv) > 2:
     usage()
-
+elif len(sys.argv) == 1:
+    sys.argv += ["0"]
+    
 if len(sys.argv[1]) == 1:
     try:
         day = int(sys.argv[1])
