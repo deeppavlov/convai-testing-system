@@ -6,12 +6,11 @@ import ai.ipavlov.communication.user._
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.PipeToSupport
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
-import org.mongodb.scala.{ObservableImplicits, _}
 import org.mongodb.scala.bson.ObjectId
 import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros._
+import org.mongodb.scala.{ObservableImplicits, _}
 
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -115,6 +114,6 @@ object MongoStorage {
   case class WriteLanguageAssessment(login: Option[String], chatId: Long, level: Int)
 
   case object GetBlackList
-  case class BlackList(users: Set[UserSummary])
+
 }
 

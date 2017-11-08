@@ -78,22 +78,22 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       val clck = new FakeClock
       val daddy = system.actorOf(daddyProps(gate.ref, clck, TestProbe().ref))
       gate.expectMsg(Endpoint.SetDialogFather(daddy))
-      daddy ! DialogFather.UserAvailable(Tester("1", "1"), 1)
-      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "Please wait for your partner."))
-      daddy ! DialogFather.UserAvailable(Bot("1"), 1)
-      daddy ! DialogFather.UserAvailable(Tester("2", "2"), 1)
-      val t: ActorRef = gate.expectMsgPF(30.seconds) { case Endpoint.ActivateTalkForUser(Tester("1" , "1"), tr) => tr }
-      gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("1"), t))
+      daddy ! DialogFather.UserAvailable(Tester("vasya1", "1"), 1)
+      gate.expectMsg(Endpoint.ShowSystemNotificationToUser(Tester("vasya1", "1"), "Please wait for your partner."))
+      daddy ! DialogFather.UserAvailable(Bot("bot1"), 1)
+      daddy ! DialogFather.UserAvailable(Tester("vasya2", "2"), 1)
+      val t: ActorRef = gate.expectMsgPF(30.seconds) { case Endpoint.ActivateTalkForUser(Tester("vasya1" , "1"), tr) => tr }
+      gate.expectMsg(Endpoint.ActivateTalkForUser(Bot("bot1"), t))
 
       gate.expectMsgPF(30.seconds) {
-        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("vasya2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("vasya1", "1"), "test") =>
       }
       gate.expectMsgPF(30.seconds) {
-        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("vasya2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("vasya1", "1"), "test") =>
       }
-      gate.expectMsgPF(30.seconds) { case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) => }
+      gate.expectMsgPF(30.seconds) { case Endpoint.ShowChatMessageToUser(Bot("bot1"), _, "/start test", _, _) => }
 
       clck.tick()
       gate.expectNoMsg()
@@ -173,13 +173,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsgPF(30.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
         case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
-        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
-      }
-      gate.expectMsgPF(30.seconds) {
-        case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
-        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
         case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
       gate.expectMsgPF(30.seconds) {
@@ -191,7 +185,13 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsgPF(30.seconds) {
         case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
         case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
-        case Endpoint.ShowSystemNotificationToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
+        case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
+      }
+      gate.expectMsgPF(30.seconds) {
+        case Endpoint.ActivateTalkForUser(Bot("1"), _) =>
+        case Endpoint.ShowSystemNotificationToUser(Tester("2", "2"), "Please wait for your partner.") =>
+        case Endpoint.ShowContextToUser(Tester("1", "1"), "test") =>
         case Endpoint.ShowChatMessageToUser(Bot("1"), _, "/start test", _, _) =>
       }
     }
