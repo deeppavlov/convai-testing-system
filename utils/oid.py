@@ -47,7 +47,7 @@ if len(sys.argv[1]) == 1:
         usage()
 else:
     try:
-        d = datetime.datetime(*time.strptime(sys.argv[1], "%Y%m%d")[6:], tzlocal())
+        d = datetime.datetime(*time.strptime(sys.argv[1], "%Y%m%d")[:6], tzinfo=tzlocal())
         oid_stop = d + datetime.timedelta(hours=22)
         oid_start = oid_stop - datetime.timedelta(days=1)
     except ValueError:
