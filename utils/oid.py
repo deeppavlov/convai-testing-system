@@ -36,13 +36,12 @@ elif len(sys.argv) == 1:
 else:
     inp = sys.argv[1]
 
-
 if len(inp) == 1:
     try:
         day = int(inp)
     except ValueError:
         usage()
-    if 0 >= day > len(deadlines):
+    if 0 <= day < len(deadlines):
         start_date = deadlines[day][0]
         end_date = deadlines[day][1]
 
