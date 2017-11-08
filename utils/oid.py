@@ -32,11 +32,14 @@ deadlines = [
 if len(sys.argv) > 2:
     usage()
 elif len(sys.argv) == 1:
-    sys.argv += ["0"]
-    
-if len(sys.argv[1]) == 1:
+    inp = "0"
+else:
+    inp = sys.argv[1]
+
+
+if len(inp) == 1:
     try:
-        day = int(sys.argv[1])
+        day = int(inp)
     except ValueError:
         usage()
     if 0 >= day > len(deadlines):
