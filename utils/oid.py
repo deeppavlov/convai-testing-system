@@ -48,8 +48,8 @@ if len(sys.argv[1]) == 1:
 else:
     try:
         d = datetime.datetime(*time.strptime(sys.argv[1], "%Y%m%d")[:6], tzinfo=tzlocal())
-        oid_stop = d + datetime.timedelta(hours=22)
-        oid_start = oid_stop - datetime.timedelta(days=1)
+        oid_stop = ObjectId.from_datetime(d + datetime.timedelta(hours=22))
+        oid_start = ObjectId.from_datetime(d - datetime.timedelta(hours=2))
     except ValueError:
         usage()
 
