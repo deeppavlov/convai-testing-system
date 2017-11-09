@@ -1,3 +1,11 @@
+## Notice on paths
+The export scripts is supposed to be placed two levels of hierarchy higher than ```./export``` folder. 
+
+So we propose to use command like this: ```for F in *.sh; do ln -s $F ../../; done``` 
+
+Internally the path for the project still set to ```nips_router_bot```, so you need to name the formed with cloned repo accordingly. 
+
+## Scripts
 * [calc_stat.sh](./calc_stat.sh) - calculates statistics for teams for specified day: ```./calc_stat.sh [YYYYMMDD]```
 * [calc_daily_leaderboard.sh](./calc_daily_leaderboard.sh) - calculates leader board on whole dataset: ```./calc_daily_leaderboard.sh```
 * [calc_team_leaderboard.sh](./calc_team_leaderboard.sh) - calculates leaderboard for each exported team: ```calc_team_leaderboard.sh```
