@@ -2,6 +2,7 @@
 
 import sys
 import json
+
 lines = sys.stdin.readlines()
 for line in lines:
     d = json.loads(line)
