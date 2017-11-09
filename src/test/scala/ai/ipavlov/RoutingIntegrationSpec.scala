@@ -5,8 +5,8 @@ import java.time.Clock
 import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.communication.rest.BotEndpoint
 import ai.ipavlov.communication.user.{Bot, Human, TelegramChat}
-import ai.ipavlov.dialog.{DialogFather, SquadQuestions}
-import akka.actor.{ActorRef, ActorSystem}
+import ai.ipavlov.dialog.{BalancedDialogConstructionRules, DialogFather, NoBlackList, SquadQuestions}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -54,7 +54,8 @@ class RoutingIntegrationSpec extends TestKit(ActorSystem("BotEndpointSpec", Conf
         val storage = TestProbe()
         val gate = TestProbe()
         val botGate = system.actorOf(BotEndpoint.props(gate.ref), "bot-gate"+i)
-        val talkConstructor = system.actorOf(DialogFather.props(gate.ref, SquadQuestions, storage.ref, scala.util.Random, Clock.systemDefaultZone()), "talk-constructor" + i)
+        val props = DialogFather.props(gate.ref, SquadQuestions, storage.ref, scala.util.Random, Clock.systemDefaultZone())
+        val talkConstructor = system.actorOf(Props(new DialogFather(gate.ref, SquadQuestions, storage.ref, Clock.systemDefaultZone(), scala.util.Random) with NoBlackList with BalancedDialogConstructionRules), "talk-constructor" + i)
         var dialogConstructor: ActorRef = null
         val botActivationMessages = mutable.ArrayBuffer[DialogFather.UserAvailable]()
         gate.expectMsgPF(3.seconds) {

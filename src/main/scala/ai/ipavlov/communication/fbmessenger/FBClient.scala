@@ -77,7 +77,7 @@ class FBClient(pageAccessToken: String) extends Actor with ActorLogging {
           | 4. After you were connected with your peer you will receive a starting message -a passage or two from a Wikipedia article.
           | 5. Your task is to discuss the content of a presented passage with the peer and score her/his replies.
           | 6. Please score every utterance of your peer with a ‘thumb UP’ button if you like it, and ‘thumb DOWN’ button in the opposite case.
-          | 7. To finish the conversation type or choose a command /end.
+          | 7. To finish the conversation type or choose a command /end. If you were insulted type /complain.
           | 8. When the conversation is finished, you will receive a request to score the overall quality of the dialog along three dimensions:
           | - quality - how much are you satisfied with the whole conversation?
           | - breadth - in your opinion was a topic discussed thoroughly or just from one side?

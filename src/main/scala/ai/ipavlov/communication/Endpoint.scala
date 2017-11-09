@@ -58,6 +58,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
       case m @ MessageFromUser(h: Human, text) if text.trim == "/begin" => user(h) ! User.Begin
       case m @ MessageFromUser(h: Human, text) if text.trim == "/end" => user(h) ! User.End
       case m @ MessageFromUser(h: Human, text) if text.trim == "/help" => user(h) ! User.Help
+      case m @ MessageFromUser(h: Human, text) if text.trim == "/complain" => user(h) ! User.Complain
       case m @ MessageFromUser(h: Human, text) if text.trim.startsWith("/test") => user(h) ! User.Test(text.trim.substring("/test".length).trim)
       case m @ MessageFromUser(h: Human, text) => user(h) ! User.AppendMessageToTalk(text)
       case m @ EvaluateFromUser(h: Human, mid, eval) => user(h) ! User.EvaluateMessage(mid, eval)

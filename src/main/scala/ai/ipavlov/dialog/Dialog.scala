@@ -82,6 +82,16 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
         log.info("rated message {} with {}", messageId, category)
       }
 
+    case Complain(user) =>
+      val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.address}")
+      e1 ! EvaluationProcess.StartEvaluation
+      val e2 = context.actorOf(EvaluationProcess.props(b, self, gate), name=s"evaluation-process-${self.chatId}-${b.address}")
+      e2 ! EvaluationProcess.StartEvaluation
+      context.become(onEvaluation(e1, e2))
+
+      val complainTo = if (a == user) b else a
+      database ! MongoStorage.Complain(user, complainTo, self.chatId)
+      log.info("user {} comlained to user {}, dialog id {}", user, complainTo, self.chatId)
   }
 
   private val evaluations: mutable.Set[(UserSummary, (Int, Int, Int))] = mutable.Set.empty[(UserSummary, (Int, Int, Int))]
@@ -124,6 +134,7 @@ object Dialog {
 
   case object StartDialog
   case object EndDialog
+  case class Complain(user: UserSummary)
 
   case class EvaluateMessage(messageId: String, category: Int)
 }
