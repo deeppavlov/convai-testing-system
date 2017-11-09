@@ -2,7 +2,7 @@ package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.communication.Endpoint.ShowContextToUser
-import ai.ipavlov.communication.user.User.{TryShutdown, UserCommand}
+import ai.ipavlov.communication.user.User.{Complain, TryShutdown, UserCommand}
 import ai.ipavlov.dialog.{Dialog, DialogFather}
 import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
 
@@ -115,8 +115,12 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.FinishTalkForUser(_, _), DialogRef(_)) =>
       goto(Idle) using Uninitialized
 
-    case Event(User.End, DialogRef(t)) =>
+    case Event(User.End, DialogRef(_)) =>
       dialogDaddy ! DialogFather.UserLeave(summary)
+      stay()
+
+    case Event(User.Complain, DialogRef(t)) =>
+      t ! Complain
       stay()
 
     case Event(TryShutdown, _) => stay()
@@ -200,6 +204,7 @@ object User {
   sealed trait UserCommand
   case object Begin extends UserCommand
   case object End extends UserCommand
+  case object Complain extends UserCommand
   case object Help extends UserCommand
   case class  Test(botId: String) extends UserCommand
 

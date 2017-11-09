@@ -4,7 +4,7 @@ import java.time.Clock
 
 import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
 import ai.ipavlov.communication.Endpoint
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash, Terminated}
 import akka.pattern.AskSupport
 
 import scala.collection.mutable
@@ -21,7 +21,7 @@ abstract class DialogFather(gate: ActorRef,
                    protected val textGenerator: ContextQuestions,
                    val database: ActorRef,
                    clck: Clock,
-                   val rnd: Random) extends Actor with ActorLogging with AskSupport with ConstructionRules with BlacklistSupport {
+                   val rnd: Random) extends Actor with ActorLogging with AskSupport with Stash with ConstructionRules with BlacklistSupport {
   import DialogFather._
   private implicit val ec: ExecutionContextExecutor = context.dispatcher
 
@@ -37,7 +37,17 @@ abstract class DialogFather(gate: ActorRef,
   context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
   context.system.scheduler.schedule(0.seconds, 1.minute) { self ! ReadBlacklist }
 
-  override def receive: Receive = {
+  blacklist.foreach(ul => self ! SetBlacklist(ul))
+
+  private val initialization: Receive = {
+    case SetBlacklist(ul) =>
+      bannedUsers = ul
+      context.become(ready)
+      unstashAll()
+    case _ => stash()
+  }
+
+  private val ready: Receive = {
     case AssembleDialogs =>
       availableDialogs(humanBotCoef)(availableUsersList).foreach(assembleDialog(database))
 
@@ -93,6 +103,8 @@ abstract class DialogFather(gate: ActorRef,
       }
   }
 
+  override def receive: Receive = initialization
+
   private val nopStorage = context.actorOf(Props(new NopStorage), name="nop-storage")
 
   private def assembleDialog(storage: ActorRef)(available: (UserSummary, UserSummary, String)): Unit = available match {
@@ -120,7 +132,10 @@ abstract class DialogFather(gate: ActorRef,
   private def availableUsersList: List[(UserSummary, Int, Deadline)] =
     availableUsers
       .filter {
-        case (user, (maxConn, currentConn)) => currentConn < maxConn && !bannedUsers.contains(user)
+        case (user, (maxConn, currentConn)) => currentConn < maxConn
+      }
+      .filter {
+        case (user, (maxConn, currentConn)) => !bannedUsers.contains(user)
       }
       .map {
         case (user, (maxConn, currentConn)) => user -> (maxConn - currentConn)

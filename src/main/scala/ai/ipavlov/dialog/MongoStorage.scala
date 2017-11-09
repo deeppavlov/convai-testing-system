@@ -47,6 +47,13 @@ class MongoStorage extends Actor with ActorLogging with ObservableImplicits with
     case GetBlackList =>
       val blacklist: MongoCollection[UserSummaryDTO] = database.getCollection("blacklist")
       blacklist.find().toFuture().map(_.map(dto2user).toSet).pipeTo(sender())
+
+    case m: Complain =>
+      val complains: MongoCollection[Complain] = database.getCollection("complains")
+      complains.insertOne(m).toFuture.onComplete {
+        case Failure(e) => log.error("complain didn't save: {}", e)
+        case Success(v) => log.debug("complain saved, {}", v.toString())
+      }
   }
 
   private def unitialized: Receive = {
@@ -115,5 +122,6 @@ object MongoStorage {
 
   case object GetBlackList
 
+  case class Complain(from: UserSummary, to: UserSummary, dialogId: Int)
 }
 
