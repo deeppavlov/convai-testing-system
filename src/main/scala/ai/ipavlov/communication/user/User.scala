@@ -63,7 +63,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
     case Event(User.Test(botId), Uninitialized) =>
       dialogDaddy ! DialogFather.CreateTestDialogWithBot (summary, botId)
-      goto(BotTesting) using BotUnderTest(botId)
+      goto(BotTestDialogCreation) using BotUnderTest(botId)
 
     case Event(TryShutdown, _) => stop()
 
@@ -139,6 +139,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
       client ! Client.ShowSystemNotification(summary.address, cause)
       goto(Idle) using Uninitialized
+
+    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
+      client ! Client.ShowContext(summary.address, mes)
+      stay()
   }
 
   when(BotTesting) {
