@@ -9,8 +9,6 @@ import scala.concurrent.Future
 
 trait DBBlackList extends BlacklistSupport { self: Actor with ActorLogging with AskSupport =>
   val database: ActorRef
-  implicit val timeout: akka.util.Timeout = 3.seconds
 
   def blacklist: Future[Set[UserSummary]] = database.ask(MongoStorage.GetBlackList)(3.seconds, context.self).mapTo[Set[UserSummary]]
-
 }

@@ -63,7 +63,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
 
     case Event(User.Test(botId), Uninitialized) =>
       dialogDaddy ! DialogFather.CreateTestDialogWithBot (summary, botId)
-      goto(BotTestDialogCreation) using BotUnderTest(botId)
+      goto(BotTesting) using BotUnderTest(botId)
 
     case Event(TryShutdown, _) => stop()
 
