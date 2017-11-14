@@ -139,14 +139,10 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
       client ! Client.ShowSystemNotification(summary.address, cause)
       goto(Idle) using Uninitialized
-
-    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
-      client ! Client.ShowContext(summary.address, mes)
-      stay()
   }
 
   when(BotTesting) {
-    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
+    case Event(Endpoint.ShowContextToUser(_, mes), _) =>
       client ! Client.ShowContext(summary.address, mes)
       stay()
     case Event(Endpoint.ShowSystemNotificationToUser(_, mes), _) =>
