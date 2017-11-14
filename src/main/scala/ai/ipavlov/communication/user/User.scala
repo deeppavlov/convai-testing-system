@@ -142,6 +142,9 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(BotTesting) {
+    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
+      client ! Client.ShowContext(summary.address, mes)
+      stay()
     case Event(Endpoint.ShowSystemNotificationToUser(_, mes), _) =>
       client ! Client.ShowSystemNotification(summary.address, mes)
       stay()
@@ -173,6 +176,8 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
     case Event(Endpoint.ChancelTestDialog(_, cause), _) =>
       log.info("test dialog canceled: {}", cause)
       goto(Idle) using Uninitialized
+
+    case Event(User.Complain, DialogRef(t)) => stay()
 
     case Event(TryShutdown, _) => stay()
   }
