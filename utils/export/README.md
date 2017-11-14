@@ -1,7 +1,7 @@
 ## Notice on paths
-The export scripts is supposed to be placed two levels of hierarchy higher than ```./export``` folder. 
+The export scripts is supposed to be placed three levels of hierarchy higher than ```./export``` folder. 
 
-So we propose to use command like this: ```for F in *.sh; do ln -s $F ../../; done``` 
+So we propose to use command like this: ```for F in *.sh; do ln -s $F ../../../; done``` 
 
 Internally the path for the project still set to ```nips_router_bot```, so you need to name the formed with cloned repo accordingly. 
 
