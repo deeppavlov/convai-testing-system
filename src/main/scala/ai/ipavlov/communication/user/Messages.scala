@@ -16,4 +16,6 @@ object Messages {
   val exit = """`(system msg):` exit"""
 
   val robotFace = "\uD83E\uDD16 "
+  val thumbUp = "\uD83D\uDC4D"
+  val thumbDown = "\uD83D\uDC4E"
 }
