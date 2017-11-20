@@ -42,8 +42,8 @@ case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
 
 case class FBEntry(id: String,
                    time: Long,
-                   messaging: List[FBMessageEventIn],
-                   standby: List[FBMessageEventIn]
+                   messaging: Option[List[FBMessageEventIn]],
+                   standby: Option[List[FBMessageEventIn]]
                   )
 
 case class FBPObject(`object`: String, entry: List[FBEntry])
