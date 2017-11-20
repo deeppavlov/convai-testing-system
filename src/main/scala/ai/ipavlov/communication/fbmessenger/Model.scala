@@ -42,7 +42,9 @@ case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
 
 case class FBEntry(id: String,
                    time: Long,
-                   messaging: List[FBMessageEventIn])
+                   messaging: List[FBMessageEventIn],
+                   standby: List[FBMessageEventIn]
+                  )
 
 case class FBPObject(`object`: String, entry: List[FBEntry])
 
@@ -55,11 +57,11 @@ object FBPObject extends DefaultJsonProtocol {
 }
 
 object FBMessageEventIn extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat5(FBMessageEventIn(_,_, _, _, _))
+  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat5(FBMessageEventIn(_, _, _, _, _))
 }
 
 object FBEntry extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBEntry] = jsonFormat3(FBEntry(_, _, _))
+  implicit val format: RootJsonFormat[FBEntry] = jsonFormat4(FBEntry(_, _, _, _))
 }
 
 object FBMessage extends DefaultJsonProtocol {

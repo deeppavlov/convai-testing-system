@@ -72,7 +72,7 @@ trait RouteSupport extends Directives {
   (StatusCode, List[HttpHeader], Option[Either[String, String]]) = {
     logger.debug(s"Receive fbObject: $fbObject")
     fbObject.entry.foreach { entry =>
-      entry.messaging.foreach {
+      (entry.messaging ++ entry.standby).foreach {
         case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, Some(text), _, _, _, _)), None) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id, sender.id), text)
 
