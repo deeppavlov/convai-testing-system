@@ -23,7 +23,7 @@ case class FBMessage(mid: Option[String] = None,
                      quick_reply: Option[FBQuickReply] = None
                     )
 
-case class FBPostback(payload: String, title: String)
+case class FBPostback(payload: Option[String], title: String)
 
 case class FBQuickReply(payload: String, title: Option[String] = None, content_type: Option[String] = Some("text"))
 
