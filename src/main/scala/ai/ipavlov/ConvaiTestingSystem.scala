@@ -43,7 +43,7 @@ object ConvaiTestingSystem extends App {
     logger.info("system shutting down")
   }
 
-  Signal.handle(new Signal("SIGHUP"), (sig: Signal) => {
+  Signal.handle(new Signal("HUP"), (sig: Signal) => {
     gate ! Endpoint.Configure
   })
 }
