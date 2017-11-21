@@ -86,6 +86,8 @@ trait RouteSupport extends Directives {
         case FBMessageEventIn(sender, _, _, None, Some(FBPostback(payload, _))) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id, sender.id), payload)
 
+        case m @ FBMessageEventIn(_, _, _, _, _) => logger.debug("unhandled message {}", m)
+
         case m => logger.warning("unhandled message {}", m)
       }
     }
