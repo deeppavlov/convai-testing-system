@@ -47,4 +47,3 @@ object ConvaiTestingSystem extends App {
     gate ! Endpoint.Configure
   })
 }
-
