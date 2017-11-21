@@ -69,12 +69,17 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
 
   private val waitedMessages = mutable.Set.empty[(ActorRef, Dialog.PushMessageToTalk, Deadline)]
 
+  private val deadBots = mutable.Set.empty[String]
+
   context.system.scheduler.schedule(1.second, 1.second) { self ! SendMessages }
+
+  context.system.scheduler.schedule(1.minute, 1.minute) { self ! CheckDeadBots }
 
   self ! Endpoint.Configure
 
   override def receive: Receive = {
     case GetMessages(token) =>
+      deadBots.remove(token)
       sender ! botsQueues.get(token).fold[Any] {
         log.warning("bot {} not registered", token)
         akka.actor.Status.Failure(new IllegalArgumentException("bot not registered"))
@@ -104,6 +109,10 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
           false
         case _ => true
       }
+
+    case CheckDeadBots =>
+      log.warning("This bots may be hangs: {}", deadBots)
+      botsQueues.keys.foreach(deadBots.add)
 
     case Endpoint.ShowChatMessageToUser(Bot(token), _, text, dialogId, _) =>
       botsQueues.get(token).fold[Any] {
@@ -164,4 +173,5 @@ object BotEndpoint extends SprayJsonSupport with DefaultJsonProtocol  {
   implicit val sendMessageFormat: JsonFormat[SendMessage] = jsonFormat3(SendMessage)
 
   private case object SendMessages
+  private case object CheckDeadBots
 }
