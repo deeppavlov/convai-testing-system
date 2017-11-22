@@ -37,7 +37,11 @@ abstract class DialogFather(gate: ActorRef,
   context.system.scheduler.schedule(5.second, 5.second) { self ! AssembleDialogs }
   context.system.scheduler.schedule(1.minute, 1.minute) { self ! ReadBlacklist }
 
-  blacklist.foreach(ul => self ! SetBlacklist(ul))
+  blacklist.recover {
+    case e =>
+      log.error("can't read blacklist: {}", {})
+      Set.empty
+  }.foreach(ul => self ! SetBlacklist(ul))
 
   private val initialization: Receive = {
     case SetBlacklist(ul) =>
