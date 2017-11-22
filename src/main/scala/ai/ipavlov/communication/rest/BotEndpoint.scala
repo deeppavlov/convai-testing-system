@@ -111,7 +111,7 @@ class BotEndpoint(daddy: ActorRef, clock: Clock) extends Actor with ActorLogging
       }
 
     case CheckDeadBots =>
-      log.warning("This bots may be hangs: {}", deadBots)
+      if (deadBots.nonEmpty) log.warning("This bots may be hangs: {}", deadBots.mkString(","))
       botsQueues.keys.foreach(deadBots.add)
 
     case Endpoint.ShowChatMessageToUser(Bot(token), _, text, dialogId, _) =>
