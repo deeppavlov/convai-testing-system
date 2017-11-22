@@ -40,7 +40,7 @@ abstract class DialogFather(gate: ActorRef,
   blacklist.recover {
     case e =>
       log.error("can't read blacklist: {}", {})
-      Set.empty
+      Set.empty[UserSummary]
   }.foreach(ul => self ! SetBlacklist(ul))
 
   private val initialization: Receive = {
