@@ -4,7 +4,7 @@ import java.time.{Clock, Instant}
 
 import ai.ipavlov.Implicits
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
+import ai.ipavlov.communication.user.{Bot, Human, Messages, UserSummary}
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 
 import scala.annotation.tailrec
@@ -20,12 +20,8 @@ import scala.util.{Random, Try}
 class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef, database: ActorRef, clck: Clock) extends Actor with ActorLogging with Implicits {
   import Dialog._
 
-  private def randomFace = Random.shuffle(List("\uD83D\uDC6E", "\uD83D\uDC70", "\uD83D\uDC71", "\uD83D\uDC72", "\uD83D\uDC73",
-    "\uD83D\uDC74", "\uD83D\uDC75", "\uD83D\uDC76", "\uD83D\uDC77", "\uD83D\uDC78", "\uD83D\uDC79", "\uD83D\uDC7A",
-    "\uD83D\uDC7B", "\uD83D\uDC7C", "\uD83D\uDC7D", "\uD83D\uDC7F", "\uD83D\uDC80", "\uD83D\uDC81", "\uD83D\uDC82")).head + " "
-
-  private val faceA = randomFace
-  private val faceB = randomFace
+  private val faceA = Messages.randomUserSymbol
+  private val faceB = Messages.randomUserSymbol
 
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(10.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
