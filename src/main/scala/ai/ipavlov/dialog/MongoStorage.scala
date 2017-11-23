@@ -3,6 +3,7 @@ package ai.ipavlov.dialog
 import java.time.Instant
 
 import ai.ipavlov.communication.user._
+import ai.ipavlov.dialog.Dialog.HistoryItem
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.PipeToSupport
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -87,7 +88,7 @@ object MongoStorage {
 
   private case class DialogEvaluation(userId: String, quality: Int, breadth: Int, engagement: Int)
 
-  private case class DialogThreadItem(userId: String, text: String, time: Int, evaluation: Int)
+  private case class DialogThreadItem(userId: String, text: String, time: Long, evaluation: Int)
 
   private case class Dialog(_id: ObjectId, dialogId: Int, users: Set[UserSummaryDTO], context: String, thread: Seq[DialogThreadItem], evaluation: Set[DialogEvaluation])
   private object Dialog {
@@ -98,7 +99,7 @@ object MongoStorage {
           case u: Bot => UserSummaryDTO(u.address, u.getClass.getName, u.address)
           case u: Human => UserSummaryDTO(u.address, u.getClass.getName, u.username)
         },
-        wd.context, wd.thread.map { case (u, txt, evaluation) => DialogThreadItem(u.address, txt, Instant.now().getNano, evaluation) },
+        wd.context, wd.thread.map { case HistoryItem(u, txt, evaluation, timestamp) => DialogThreadItem(u.address, txt, timestamp, evaluation) },
         wd.evaluation.map { case (u, (q, b, e)) => DialogEvaluation(u.address, q, b, e) } )
   }
 
@@ -111,7 +112,7 @@ object MongoStorage {
     ), DEFAULT_CODEC_REGISTRY
   )
 
-  case class WriteDialog(id: Int, users: Set[UserSummary], context: String, thread: Seq[(UserSummary, String, Int)], evaluation: Set[(UserSummary, (Int, Int, Int))])
+  case class WriteDialog(id: Int, users: Set[UserSummary], context: String, thread: Seq[HistoryItem], evaluation: Set[(UserSummary, (Int, Int, Int))])
 
   private case class WriteLanguageAssessmentDTO(_id: ObjectId, login: Option[String], chatId: Long, level: Int)
   private object WriteLanguageAssessmentDTO {

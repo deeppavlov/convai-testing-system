@@ -5,6 +5,7 @@ import java.util.Random
 
 import ai.ipavlov.communication.Endpoint
 import ai.ipavlov.communication.user.{Bot, Human, UserSummary}
+import ai.ipavlov.dialog.Dialog.HistoryItem
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
@@ -143,7 +144,7 @@ class DialogFatherSpec extends TestKit(ActorSystem("BotEndpointSpec", ConfigFact
       gate.expectMsg(Endpoint.FinishTalkForUser(Tester("1", "1"), talk))
       gate.expectNoMsg()
 
-      storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester("1", "1"), Bot("111")), "test", Seq((Tester("1", "1"), "ololo", 0)), Set((Tester("1", "1"),(1,2,3)), (Bot("111"),(0,0,0)))))
+      storage.expectMsg(MongoStorage.WriteDialog(talk.hashCode(), Set(Tester("1", "1"), Bot("111")), "test", Seq(HistoryItem(Tester("1", "1"), "ololo", 0, 0)), Set((Tester("1", "1"),(1,2,3)), (Bot("111"),(0,0,0)))))
     }
   }
 

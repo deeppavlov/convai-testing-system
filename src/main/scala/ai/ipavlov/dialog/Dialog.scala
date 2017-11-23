@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.{Random, Try}
+import scala.util.Try
 
 /**
   * @author vadim
@@ -34,7 +34,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
     super.postStop()
   }
 
-  private val history: mutable.LinkedHashMap[String, (ai.ipavlov.communication.user.UserSummary, String, Int)] = mutable.LinkedHashMap.empty[String, (ai.ipavlov.communication.user.UserSummary, String, Int)]
+  private val history: mutable.LinkedHashMap[String, HistoryItem] = mutable.LinkedHashMap.empty[String, HistoryItem]
 
   log.info("start talk between {} and {}", a, b)
 
@@ -60,7 +60,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       val id = genId
       gate ! Endpoint.ShowChatMessageToUser(oppanent, face, text, self.chatId, id)
       //TODO: use hash as id may leads to message lost!
-      history.put(id, (from, text, 0))
+      history.put(id, HistoryItem(from, text, 0, Instant.now(clck).getEpochSecond))
       if (history.size > maxLen) self ! EndDialog
 
     case EndDialog =>
@@ -73,8 +73,8 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
         log.info("message {} not present in history", messageId)
-      } { case (from, text, _) =>
-        history.update(messageId, (from, text, category))
+      } { case HistoryItem(from, text, _, timestamp) =>
+        history.update(messageId, HistoryItem(from, text, category, timestamp))
         log.info("rated message {} with {}", messageId, category)
       }
 
@@ -114,8 +114,8 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
     case EvaluateMessage(messageId, category) =>
       history.get(messageId).fold {
         log.warning("message {} not present in history", messageId)
-      } { case (from, text, _) =>
-        history.update(messageId, (from, text, category))
+      } { case HistoryItem(from, text, _, timestamp) =>
+        history.update(messageId, HistoryItem(from, text, category, timestamp))
         log.info("rated message {} with {}", messageId, category)
       }
 
@@ -133,4 +133,6 @@ object Dialog {
   case class Complain(user: UserSummary)
 
   case class EvaluateMessage(messageId: String, category: Int)
+
+  case class HistoryItem(summary: UserSummary, text: String, eval: Int, timestamp: Long)
 }
