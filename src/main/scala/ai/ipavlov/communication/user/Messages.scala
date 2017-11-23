@@ -18,6 +18,8 @@ object Messages extends DialogSymbols with SpeechBubble {
   val robotFace = "\uD83E\uDD16 "
   val thumbUp = "\uD83D\uDC4D"
   val thumbDown = "\uD83D\uDC4E"
+
+  val partnerHangUp = "It seems it takes much time for your peer to answer, do you like to end chat?"
 }
 
 trait DialogSymbols {

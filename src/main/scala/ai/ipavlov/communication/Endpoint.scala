@@ -49,7 +49,7 @@ class Endpoint(storage: ActorRef) extends Actor with ActorLogging with Stash {
     {
       case m @ ShowChatMessageToUser(h: Human, _, _, _, _) => user(h) forward m
       case m @ ShowSystemNotificationToUser(h: Human, _) => user(h) forward m
-      case m @ ShowContextToUser(h: Human, _) => user(h) forward m
+      case m @ ShowInDialogSystemFlowup(h: Human, _) => user(h) forward m
       case m @ ActivateTalkForUser(h: Human, _) => user(h) forward m
       case m @ FinishTalkForUser(h: Human, _) => user(h) forward m
       case m @ AskEvaluationFromHuman(h: Human, _) => user(h) forward m
@@ -98,7 +98,7 @@ object Endpoint {
   case class AskEvaluationFromHuman(receiver: Human, question: String) extends SystemNotification
   case class EndHumanDialog(receiver: Human, text: String) extends SystemNotification
   case class ShowSystemNotificationToUser(receiver: UserSummary, message: String) extends SystemNotification
-  case class ShowContextToUser(receiver: UserSummary, message: String) extends SystemNotification
+  case class ShowInDialogSystemFlowup(receiver: UserSummary, message: String) extends SystemNotification
 
   case class ActivateTalkForUser(user: UserSummary, talk: ActorRef)
   case class FinishTalkForUser(user: UserSummary, talk: ActorRef)

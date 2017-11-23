@@ -1,7 +1,7 @@
 package ai.ipavlov.communication.user
 
 import ai.ipavlov.communication.Endpoint
-import ai.ipavlov.communication.Endpoint.ShowContextToUser
+import ai.ipavlov.communication.Endpoint.ShowInDialogSystemFlowup
 import ai.ipavlov.communication.user.User.{Complain, TryShutdown, UserCommand}
 import ai.ipavlov.dialog.{Dialog, DialogFather}
 import akka.actor.{ActorRef, FSM, LoggingFSM, Props}
@@ -88,7 +88,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(InDialog) {
-    case Event(Endpoint.ShowContextToUser(_, mes), DialogRef(t)) =>
+    case Event(Endpoint.ShowInDialogSystemFlowup(_, mes), DialogRef(t)) =>
       client ! Client.ShowContext(summary.address, mes)
       stay()
     case Event(Endpoint.ShowSystemNotificationToUser(_, mes), DialogRef(t)) =>
@@ -142,7 +142,7 @@ class User(summary: Human, dialogDaddy: ActorRef, client: ActorRef) extends Logg
   }
 
   when(BotTesting) {
-    case Event(Endpoint.ShowContextToUser(_, mes), _) =>
+    case Event(Endpoint.ShowInDialogSystemFlowup(_, mes), _) =>
       client ! Client.ShowContext(summary.address, mes)
       stay()
     case Event(Endpoint.ShowSystemNotificationToUser(_, mes), _) =>

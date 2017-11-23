@@ -9,7 +9,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -23,16 +23,15 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
   private val faceA = Messages.randomUserSymbol
   private val faceB = Messages.randomUserSymbol
 
+  private val idleTimers = mutable.Map[UserSummary, Deadline](a -> (Deadline.now + 1.minute), b -> (Deadline.now + 1.minute))
+
+  private implicit val ec: ExecutionContextExecutor = context.dispatcher
+
   private val timeout = Try(Duration.fromNanos(context.system.settings.config.getDuration("talk.talk_timeout").toNanos)).getOrElse(10.minutes)
   private val maxLen = Try(context.system.settings.config.getInt("talk.talk_length_max")).getOrElse(1000)
 
-  private implicit val ec: ExecutionContext = context.dispatcher
-  private val canceble = context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
-
-  override def postStop(): Unit = {
-    canceble.cancel()
-    super.postStop()
-  }
+  context.system.scheduler.schedule(1.minute, 1.minute) { self ! CheckIdleUsers }
+  context.system.scheduler.scheduleOnce(timeout) { self ! EndDialog }
 
   private val history: mutable.LinkedHashMap[String, HistoryItem] = mutable.LinkedHashMap.empty[String, HistoryItem]
 
@@ -48,7 +47,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
   override def receive: Receive = {
     case StartDialog =>
       def firstMessageFor(user: UserSummary, face: String, text: String): Endpoint.MessageFromDialog = user match {
-        case u: Human => Endpoint.ShowContextToUser(u, text)
+        case u: Human => Endpoint.ShowInDialogSystemFlowup(u, text)
         case u: Bot => Endpoint.ShowChatMessageToUser(u, face, "/start " + text, self.chatId, genId)
       }
 
@@ -62,6 +61,8 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       //TODO: use hash as id may leads to message lost!
       history.put(id, HistoryItem(from, text, 0, Instant.now(clck).getEpochSecond))
       if (history.size > maxLen) self ! EndDialog
+
+      idleTimers.get(from).foreach(s => idleTimers += from -> (s + 1.minute))
 
     case EndDialog =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.address}")
@@ -88,6 +89,11 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       val complainTo = if (a == user) b else a
       database ! MongoStorage.Complain(user, complainTo, self.chatId)
       log.info("user {} comlained to user {}, dialog id {}", user, complainTo, self.chatId)
+
+    case CheckIdleUsers =>
+      idleTimers.foreach { case (u, deadline) =>
+        if (deadline.isOverdue()) gate ! Endpoint.ShowInDialogSystemFlowup(u, Messages.partnerHangUp)
+      }
   }
 
   private val evaluations: mutable.Set[(UserSummary, (Int, Int, Int))] = mutable.Set.empty[(UserSummary, (Int, Int, Int))]
@@ -119,6 +125,8 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
         log.info("rated message {} with {}", messageId, category)
       }
 
+    case CheckIdleUsers =>
+
     case m => log.debug("message ignored {}", m)
   }
 }
@@ -135,4 +143,6 @@ object Dialog {
   case class EvaluateMessage(messageId: String, category: Int)
 
   case class HistoryItem(summary: UserSummary, text: String, eval: Int, timestamp: Long)
+
+  private case object CheckIdleUsers
 }
