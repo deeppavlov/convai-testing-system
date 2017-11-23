@@ -1,5 +1,7 @@
 package ai.ipavlov.communication.fbmessenger
 
+import java.awt.TrayIcon.MessageType
+
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 /**
@@ -35,7 +37,8 @@ case class FBMessageEventIn(sender: FBSender,
                             recipient: FBRecipient,
                             timestamp: Long,
                             message: Option[FBMessage] = None,
-                            postback: Option[FBPostback] = None
+                            postback: Option[FBPostback] = None,
+                            messageType: Option[String] = Some("RESPONSE")
                            )
 
 case class FBMessageEventOut(recipient: FBRecipient, message: FBMessage)
@@ -57,7 +60,7 @@ object FBPObject extends DefaultJsonProtocol {
 }
 
 object FBMessageEventIn extends DefaultJsonProtocol {
-  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat5(FBMessageEventIn(_, _, _, _, _))
+  implicit val format: RootJsonFormat[FBMessageEventIn] = jsonFormat6(FBMessageEventIn(_, _, _, _, _, _))
 }
 
 object FBEntry extends DefaultJsonProtocol {

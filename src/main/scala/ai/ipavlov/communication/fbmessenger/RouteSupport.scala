@@ -75,20 +75,20 @@ trait RouteSupport extends Directives {
       val mes = entry.messaging.getOrElse(List.empty) ++ entry.standby.getOrElse(List.empty)
 
       mes.foreach {
-        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, Some(text), _, _, _, _)), None) =>
+        case FBMessageEventIn(sender, recepient, _, Some(FBMessage(id, _, Some(text), _, _, _, _)), None, _) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id, sender.id), text)
 
-        case FBMessageEventIn(sender, _, _, None, Some(FBPostback(Some(payload), _))) if payload.startsWith("like") || payload.startsWith("dislike") =>
+        case FBMessageEventIn(sender, _, _, None, Some(FBPostback(Some(payload), _)), _) if payload.startsWith("like") || payload.startsWith("dislike") =>
           payload.split(" ").toList match {
             case "like" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id, sender.id), messageId, 2)
             case "dislike" :: messageId :: Nil => endpoint ! Endpoint.EvaluateFromUser(FbChat(sender.id, sender.id), messageId, 1)
             case m => logger.warning("bad evaluation message: {}", m)
           }
 
-        case FBMessageEventIn(sender, _, _, None, Some(FBPostback(Some(payload), _))) =>
+        case FBMessageEventIn(sender, _, _, None, Some(FBPostback(Some(payload), _)), _) =>
           endpoint ! Endpoint.MessageFromUser(FbChat(sender.id, sender.id), payload)
 
-        case m @ FBMessageEventIn(_, _, _, _, _) => logger.debug("unhandled message {}", m)
+        case m @ FBMessageEventIn(_, _, _, _, _, _) => logger.debug("unhandled message {}", m)
 
         case m => logger.warning("unhandled message {}", m)
       }
