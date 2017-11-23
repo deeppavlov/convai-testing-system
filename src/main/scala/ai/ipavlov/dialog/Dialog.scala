@@ -62,7 +62,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       history.put(id, HistoryItem(from, text, 0, Instant.now(clck).getEpochSecond))
       if (history.size > maxLen) self ! EndDialog
 
-      idleTimers.get(from).foreach(s => idleTimers += from -> (s + 1.minute))
+      idleTimers.get(from).foreach(s => idleTimers += from -> (Deadline.now + 1.minute))
 
     case EndDialog =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.address}")
@@ -91,8 +91,11 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       log.info("user {} comlained to user {}, dialog id {}", user, complainTo, self.chatId)
 
     case CheckIdleUsers =>
-      idleTimers.foreach { case (u, deadline) =>
-        if (deadline.isOverdue()) gate ! Endpoint.ShowInDialogSystemFlowup(u, Messages.partnerHangUp)
+      idleTimers.foreach {
+        case (u: Human, deadline) if deadline.isOverdue() =>
+          gate ! Endpoint.ShowInDialogSystemFlowup(u, Messages.partnerHangUp)
+          idleTimers += (u -> (Deadline.now + 1.hour))
+        case _ =>
       }
   }
 
