@@ -62,7 +62,7 @@ class Dialog(a: UserSummary, b: UserSummary, txtContext: String, gate: ActorRef,
       history.put(id, HistoryItem(from, text, 0, Instant.now(clck).getEpochSecond))
       if (history.size > maxLen) self ! EndDialog
 
-      idleTimers.get(from).foreach(s => idleTimers += from -> (Deadline.now + 1.minute))
+      idleTimers.get(from).foreach(s => idleTimers += from -> (Deadline.now + 10.minutes))
 
     case EndDialog =>
       val e1 = context.actorOf(EvaluationProcess.props(a, self, gate), name=s"evaluation-process-${self.chatId}-${a.address}")
